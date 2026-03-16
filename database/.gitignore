@@ -1,4 +1,4 @@
-# Local database runtime files
+﻿# Local database runtime files
 *.db
 *.sqlite
 *.sqlite3

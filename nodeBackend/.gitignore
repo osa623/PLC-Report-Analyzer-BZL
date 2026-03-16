@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 
 # Build output
@@ -8,7 +8,6 @@ build/
 # Environment and secrets
 .env
 .env.*
-!.env.example
 
 # Logs
 npm-debug.log*
