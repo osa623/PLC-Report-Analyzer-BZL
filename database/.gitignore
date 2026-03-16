@@ -1,0 +1,14 @@
+﻿# Local database runtime files
+*.db
+*.sqlite
+*.sqlite3
+
+# Dump files
+*.sql.gz
+*.dump
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
