@@ -1,0 +1,11 @@
+const WorkflowState = {
+  UPLOADED: "UPLOADED",
+  PARSING: "PARSING",
+  EXTRACTING: "EXTRACTING",
+  ANALYZING: "ANALYZING",
+  GENERATING_REPORT: "GENERATING_REPORT",
+  COMPLETED: "COMPLETED",
+  FAILED: "FAILED"
+};
+
+module.exports = { WorkflowState };
