@@ -1,20 +1,16 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 
-from core.dependencies import get_processor_service
+from core.dependencies import get_extraction_service
 from models.schemas import ProcessRequest, ProcessResponse
+from services.extraction_service import ExtractionService
 
 router = APIRouter()
 
 
-@router.post("/extract-balance-sheet", response_model=ProcessResponse)
-def process_document(
+@router.post("/extract-financials", response_model=ProcessResponse)
+def extract_financials(
     request: ProcessRequest,
-    processor_service = Depends(get_processor_service),
+    extraction_service: ExtractionService = Depends(get_extraction_service),
 ) -> ProcessResponse:
-    details = processor_service.process(request.report_id, request.file_path)
-    return ProcessResponse(
-        report_id=request.report_id,
-        service="balance_sheet_extractor",
-        status="SUCCESS",
-        details=details,
-    )
+    status = extraction_service.process(request.report_id, request.file_path)
+    return ProcessResponse(report_id=request.report_id, status=status)
