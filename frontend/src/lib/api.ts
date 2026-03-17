@@ -217,6 +217,83 @@ export interface ExtractedDataRecord {
   updatedAt: string;
 }
 
+function parseNumericValue(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  let normalized = trimmed
+    .replace(/,/g, "")
+    .replace(/\s+/g, "")
+    .replace(/^\((.*)\)$/, "-$1");
+
+  if (normalized.endsWith("%")) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function flattenRecordData(
+  node: unknown,
+  bucket: { label: string; value: number }[],
+  parentLabel?: string
+): void {
+  if (node === null || node === undefined) {
+    return;
+  }
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      flattenRecordData(item, bucket, parentLabel);
+    }
+    return;
+  }
+
+  if (typeof node !== "object") {
+    const parsed = parseNumericValue(node);
+    if (parsed !== null && parentLabel) {
+      bucket.push({ label: parentLabel, value: parsed });
+    }
+    return;
+  }
+
+  const obj = node as Record<string, unknown>;
+  const labelKey = Object.keys(obj).find((k) => /^(label|item|description|name|particular)/i.test(k));
+  const rowLabel = labelKey && typeof obj[labelKey] === "string" ? String(obj[labelKey]).trim() : parentLabel;
+
+  for (const [key, val] of Object.entries(obj)) {
+    if (labelKey && key === labelKey) {
+      continue;
+    }
+    if (/^note$/i.test(key)) {
+      continue;
+    }
+
+    const numeric = parseNumericValue(val);
+    if (numeric !== null) {
+      const effectiveLabel = rowLabel ? `${rowLabel} | ${key}` : key;
+      bucket.push({ label: effectiveLabel, value: numeric });
+      continue;
+    }
+
+    if (typeof val === "object" && val !== null) {
+      const nestedLabel = rowLabel ? `${rowLabel} | ${key}` : key;
+      flattenRecordData(val, bucket, nestedLabel);
+    }
+  }
+}
+
 // ── Financial Data API calls (Node backend on /api/data) ────────────────
 
 export const dataApi = {
@@ -274,11 +351,17 @@ export async function getRecordsByCompanyAndType(
 export function mapDataToRows(
   record: ExtractedDataRecord
 ): { label: string; value: number }[] {
-  return Object.entries(record.data)
-    .filter(([, v]) => typeof v === "number" || typeof v === "string")
-    .map(([label, v]) => ({
-      label,
-      value: Number(v) || 0,
-    }));
+  const rows: { label: string; value: number }[] = [];
+  flattenRecordData(record.data, rows);
+
+  const seen = new Set<string>();
+  return rows.filter((row) => {
+    const key = `${row.label}::${row.value}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
