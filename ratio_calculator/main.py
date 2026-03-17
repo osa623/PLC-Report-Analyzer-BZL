@@ -1,9 +1,12 @@
-﻿from fastapi import FastAPI
+﻿import logging
+
+from fastapi import FastAPI
 
 from api.routes import router
 from core.config import get_settings
 
 settings = get_settings()
+logging.basicConfig(level=getattr(logging, settings.log_level))
 app = FastAPI(title="ratio_calculator", version="1.0.0")
 app.include_router(router)
 
