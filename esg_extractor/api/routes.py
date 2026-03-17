@@ -1,20 +1,16 @@
 ﻿from fastapi import APIRouter, Depends
 
-from core.dependencies import get_processor_service
+from core.dependencies import get_worker
 from models.schemas import ProcessRequest, ProcessResponse
+from workers.extraction_worker import ExtractionWorker
 
 router = APIRouter()
 
 
 @router.post("/extract-esg", response_model=ProcessResponse)
-def process_document(
+def extract_esg(
     request: ProcessRequest,
-    processor_service = Depends(get_processor_service),
+    worker: ExtractionWorker = Depends(get_worker),
 ) -> ProcessResponse:
-    details = processor_service.process(request.report_id, request.file_path)
-    return ProcessResponse(
-        report_id=request.report_id,
-        service="esg_extractor",
-        status="SUCCESS",
-        details=details,
-    )
+    status = worker.run(request.report_id, request.file_path)
+    return ProcessResponse(report_id=request.report_id, status=status)
