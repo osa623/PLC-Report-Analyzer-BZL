@@ -119,9 +119,34 @@ function extractCategoryData(
  * Handles both array-of-objects (with "Label"/"Value" columns) and flat objects.
  */
 function flattenToLabelValue(
-    raw: Record<string, unknown> | unknown[]
+    raw: Record<string, unknown> | unknown[],
+    preferredYear?: string
 ): Record<string, number> {
     const result: Record<string, number> = {};
+
+    const parseNumeric = (value: unknown): number | null => {
+        if (typeof value === "number") {
+            return Number.isFinite(value) ? value : null;
+        }
+        if (typeof value !== "string") {
+            return null;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) return null;
+
+        let normalized = trimmed
+            .replace(/,/g, "")
+            .replace(/\s+/g, "")
+            .replace(/^\((.*)\)$/, "-$1");
+
+        if (normalized.endsWith("%")) {
+            normalized = normalized.slice(0, -1);
+        }
+
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) ? parsed : null;
+    };
 
     if (Array.isArray(raw)) {
         for (const item of raw) {
@@ -135,42 +160,36 @@ function flattenToLabelValue(
 
             if (labelKey) {
                 const label = String(obj[labelKey] || "");
-                // Collect ALL numeric columns as potential values
-                for (const [k, v] of Object.entries(obj)) {
-                    if (k === labelKey) continue;
-                    if (k.toLowerCase().includes("note")) continue;
-                    const num = Number(v);
-                    if (!isNaN(num) && label) {
-                        // Append the column name to distinguish multi-year columns
-                        const seriesKey =
-                            Object.keys(obj).filter(
-                                (x) => x !== labelKey && !x.toLowerCase().includes("note")
-                            ).length > 1
-                                ? `${label}`
-                                : label;
-                        // Use the FIRST numeric column as the primary value
-                        if (!(seriesKey in result)) {
-                            result[seriesKey] = num;
-                        }
-                    }
+                const numericColumns = Object.entries(obj)
+                    .filter(([k]) => k !== labelKey && !k.toLowerCase().includes("note"))
+                    .map(([k, v]) => ({ key: k, value: parseNumeric(v) }))
+                    .filter((entry): entry is { key: string; value: number } => entry.value !== null);
+
+                if (!label || numericColumns.length === 0) {
+                    continue;
+                }
+
+                const preferredColumn = preferredYear
+                    ? numericColumns.find((entry) => entry.key.includes(preferredYear))
+                    : undefined;
+
+                const selected = preferredColumn ?? numericColumns[0];
+                if (!(label in result)) {
+                    result[label] = selected.value;
                 }
             } else {
                 // Fallback: treat each key-value as label-value
                 for (const [k, v] of Object.entries(obj)) {
-                    const num = Number(v);
-                    if (!isNaN(num)) result[k] = num;
+                    const num = parseNumeric(v);
+                    if (num !== null) result[k] = num;
                 }
             }
         }
     } else {
         // Flat object
         for (const [k, v] of Object.entries(raw)) {
-            if (typeof v === "number") {
-                result[k] = v;
-            } else if (typeof v === "string") {
-                const num = Number(v.replace(/,/g, ""));
-                if (!isNaN(num)) result[k] = num;
-            }
+            const num = parseNumeric(v);
+            if (num !== null) result[k] = num;
         }
     }
 
@@ -245,7 +264,7 @@ export function useCompanyGraphData(
                     record.data as Record<string, unknown>,
                     category
                 );
-                const flat = flattenToLabelValue(catData);
+                const flat = flattenToLabelValue(catData, record.year);
 
                 // Merge: a year may have multiple records; keep first non-zero
                 if (!yearDataMap[record.year]) {
