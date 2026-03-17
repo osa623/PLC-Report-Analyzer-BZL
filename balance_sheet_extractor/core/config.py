@@ -1,4 +1,5 @@
-﻿from functools import lru_cache
+from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -6,7 +7,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     service_name: str = "balance_sheet_extractor"
     service_port: int = 8004
-    database_url: str = "postgresql+psycopg2://postgres:postgres@postgres:5432/cse_finance"
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+
+    redis_url: str = "redis://redis:6379/0"
+    redis_key_prefix: str = "report"
+    redis_ttl_seconds: int = 900
+
+    gemini_api_key: str = ""
+    gemini_model_name: str = "gemini-2.0-flash"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
