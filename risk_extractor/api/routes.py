@@ -1,20 +1,16 @@
 ﻿from fastapi import APIRouter, Depends
 
-from core.dependencies import get_processor_service
+from core.dependencies import get_worker
 from models.schemas import ProcessRequest, ProcessResponse
+from workers.extraction_worker import ExtractionWorker
 
 router = APIRouter()
 
 
-@router.post("/extract-risks", response_model=ProcessResponse)
-def process_document(
+@router.post("/extract-risk", response_model=ProcessResponse)
+def extract_risk(
     request: ProcessRequest,
-    processor_service = Depends(get_processor_service),
+    worker: ExtractionWorker = Depends(get_worker),
 ) -> ProcessResponse:
-    details = processor_service.process(request.report_id, request.file_path)
-    return ProcessResponse(
-        report_id=request.report_id,
-        service="risk_extractor",
-        status="SUCCESS",
-        details=details,
-    )
+    status = worker.run(request.report_id, request.file_path)
+    return ProcessResponse(report_id=request.report_id, status=status)
