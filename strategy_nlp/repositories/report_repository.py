@@ -1,19 +1,24 @@
 ﻿import json
 
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from redis import Redis
 
 
 class ReportRepository:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+    def __init__(
+        self,
+        redis_client: Redis,
+        key_prefix: str,
+        key_suffix: str,
+        ttl_seconds: int,
+    ) -> None:
+        self.redis_client = redis_client
+        self.key_prefix = key_prefix
+        self.key_suffix = key_suffix
+        self.ttl_seconds = ttl_seconds
+
+    def build_key(self, report_id: str) -> str:
+        return f"{self.key_prefix}:{report_id}:{self.key_suffix}"
 
     def persist_result(self, report_id: str, payload: dict) -> None:
-        query = text(
-            """
-            INSERT INTO patterns (report_id, payload)
-            VALUES (:report_id, CAST(:payload AS jsonb))
-            """
-        )
-        self.db.execute(query, {"report_id": report_id, "payload": json.dumps(payload)})
-        self.db.commit()
+        key = self.build_key(report_id)
+        self.redis_client.set(name=key, value=json.dumps(payload, ensure_ascii=True), ex=self.ttl_seconds)
