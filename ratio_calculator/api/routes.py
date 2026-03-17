@@ -1,7 +1,8 @@
 ﻿from fastapi import APIRouter, Depends
 
-from core.dependencies import get_processor_service
+from core.dependencies import get_ratio_service
 from models.schemas import ProcessRequest, ProcessResponse
+from services.ratio_service import RatioService
 
 router = APIRouter()
 
@@ -9,12 +10,7 @@ router = APIRouter()
 @router.post("/calculate-ratios", response_model=ProcessResponse)
 def process_document(
     request: ProcessRequest,
-    processor_service = Depends(get_processor_service),
+    ratio_service: RatioService = Depends(get_ratio_service),
 ) -> ProcessResponse:
-    details = processor_service.process(request.report_id, request.file_path)
-    return ProcessResponse(
-        report_id=request.report_id,
-        service="ratio_calculator",
-        status="SUCCESS",
-        details=details,
-    )
+    status = ratio_service.process(request.report_id)
+    return ProcessResponse(report_id=request.report_id, status=status)
