@@ -1,5 +1,3 @@
-version: "3.9"
-
 x-common-python-service: &common-python-service
   restart: unless-stopped
   depends_on:
@@ -64,7 +62,7 @@ services:
 
   financial_statement_extractor:
     <<: *common-python-service
-    build: ./financial_statement_extractor
+    build: ./income_statement_extractor
     container_name: cse-financial-statement-extractor
     ports:
       - "8003:8003"
@@ -78,7 +76,7 @@ services:
 
   cashflow_extractor:
     <<: *common-python-service
-    build: ./cashflow_extractor
+    build: ./cashflow_statement_extractor
     container_name: cse-cashflow-extractor
     ports:
       - "8005:8005"
