@@ -52,5 +52,6 @@ class ExtractionService:
             },
         }
 
-        self.repository.persist_result(report_id=report_id, payload=payload)
+        if not self.repository.persist_result(report_id=report_id, payload=payload):
+            return "failed"
         return status

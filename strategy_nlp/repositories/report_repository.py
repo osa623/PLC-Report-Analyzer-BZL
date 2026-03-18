@@ -1,9 +1,9 @@
-﻿import json
+﻿from redis import Redis
 
-from redis import Redis
+from common.report_repository import ReportRepositoryContract
 
 
-class ReportRepository:
+class ReportRepository(ReportRepositoryContract):
     def __init__(
         self,
         redis_client: Redis,
@@ -11,14 +11,10 @@ class ReportRepository:
         key_suffix: str,
         ttl_seconds: int,
     ) -> None:
-        self.redis_client = redis_client
-        self.key_prefix = key_prefix
-        self.key_suffix = key_suffix
-        self.ttl_seconds = ttl_seconds
-
-    def build_key(self, report_id: str) -> str:
-        return f"{self.key_prefix}:{report_id}:{self.key_suffix}"
-
-    def persist_result(self, report_id: str, payload: dict) -> None:
-        key = self.build_key(report_id)
-        self.redis_client.set(name=key, value=json.dumps(payload, ensure_ascii=True), ex=self.ttl_seconds)
+        super().__init__(
+            redis_client=redis_client,
+            key_prefix=key_prefix,
+            ttl_seconds=ttl_seconds,
+            default_mode="set",
+            default_identifier=key_suffix,
+        )

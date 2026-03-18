@@ -12,9 +12,10 @@ def process_document(
     processor_service = Depends(get_processor_service),
 ) -> ProcessResponse:
     details = processor_service.process(request.report_id, request.file_path)
+    status = str(details.get("status", "SUCCESS")) if isinstance(details, dict) else "failed"
     return ProcessResponse(
         report_id=request.report_id,
         service="document_parser",
-        status="SUCCESS",
+        status=status,
         details=details,
     )

@@ -50,7 +50,8 @@ class GeminiProcessingStrategy(ProcessingStrategy):
             "file_path": file_path,
             "corporate_metadata": extracted,
         }
-        self.repository.persist_result(report_id, payload)
+        write_ok = self.repository.persist_result(report_id, payload)
+        payload["status"] = "SUCCESS" if write_ok else "failed"
         return payload
 
 
