@@ -36,6 +36,8 @@ class ProcessingStrategy(ABC):
     def run(self, report_id: str, file_path: str) -> dict:
         raise NotImplementedError
 
+class ProcessingService:
+    """Compatibility wrapper for callers still importing ProcessingService."""
 
 class GeminiProcessingStrategy(ProcessingStrategy):
     def __init__(self, repository: ReportRepository) -> None:
@@ -59,8 +61,8 @@ class ProcessingService:
     def __init__(self, strategy: ProcessingStrategy) -> None:
         self.strategy = strategy
 
-    def process(self, report_id: str, file_path: str) -> dict:
-        return self.strategy.run(report_id, file_path)
+    def process(self, report_id: str, file_path: str) -> str:
+        return self.delegate.process(report_id, file_path)
 
 
 class ProcessingServiceFactory:
