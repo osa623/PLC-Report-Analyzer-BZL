@@ -1,6 +1,16 @@
-﻿class ReportRepository:
-    """Legacy compatibility placeholder. Pattern persistence is handled in PatternService."""
+﻿from redis import Redis
 
-    def persist_result(self, report_id: str, payload: dict) -> None:
-        _ = report_id
-        _ = payload
+from common.report_repository import ReportRepositoryContract
+
+
+class ReportRepository(ReportRepositoryContract):
+    """Compatibility repository aligned to unified Redis contract."""
+
+    def __init__(self, redis_client: Redis, key_prefix: str, ttl_seconds: int) -> None:
+        super().__init__(
+            redis_client=redis_client,
+            key_prefix=key_prefix,
+            ttl_seconds=ttl_seconds,
+            default_mode="set",
+            default_identifier="patterns",
+        )

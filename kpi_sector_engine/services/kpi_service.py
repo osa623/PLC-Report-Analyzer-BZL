@@ -137,7 +137,11 @@ class SectorKPIService:
         return canonical
 
     def process(self, report_id: str, sector: str) -> str:
-        ratios_raw = self.redis_client.get(self._ratios_key(report_id))
+        try:
+            ratios_raw = self.redis_client.get(self._ratios_key(report_id))
+        except Exception:
+            logger.error("Redis unavailable while reading ratios for report_id=%s", report_id)
+            return "failed"
         if ratios_raw is None:
             return "not_found"
 
@@ -179,10 +183,14 @@ class SectorKPIService:
             },
         }
 
-        self.redis_client.set(
-            name=self._output_key(report_id),
-            value=json.dumps(output_payload, ensure_ascii=True),
-            ex=self.ttl_seconds,
-        )
+        try:
+            self.redis_client.set(
+                name=self._output_key(report_id),
+                value=json.dumps(output_payload, ensure_ascii=True),
+                ex=self.ttl_seconds,
+            )
+        except Exception:
+            logger.error("Redis unavailable while writing sector KPIs for report_id=%s", report_id)
+            return "failed"
 
         return "completed"

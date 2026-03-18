@@ -101,7 +101,11 @@ class RatioService:
 
     def process(self, report_id: str) -> str:
         source_key = self._input_key(report_id)
-        raw = self.redis_client.get(source_key)
+        try:
+            raw = self.redis_client.get(source_key)
+        except Exception:
+            logger.error("Redis unavailable while reading key=%s", source_key)
+            return "failed"
         if raw is None:
             return "not_found"
 
@@ -157,10 +161,14 @@ class RatioService:
             "ratios": ratios,
         }
 
-        self.redis_client.set(
-            name=self._output_key(report_id),
-            value=json.dumps(result, ensure_ascii=True),
-            ex=self.ttl_seconds,
-        )
+        try:
+            self.redis_client.set(
+                name=self._output_key(report_id),
+                value=json.dumps(result, ensure_ascii=True),
+                ex=self.ttl_seconds,
+            )
+        except Exception:
+            logger.error("Redis unavailable while writing ratios for report_id=%s", report_id)
+            return "failed"
 
         return "completed"

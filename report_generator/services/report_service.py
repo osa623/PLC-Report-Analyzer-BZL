@@ -41,7 +41,11 @@ class ReportService:
         return f"{self.input_prefix}:{report_id}"
 
     def _load_json(self, key: str) -> Any:
-        raw = self.redis_client.get(key)
+        try:
+            raw = self.redis_client.get(key)
+        except Exception:
+            logger.error("Redis unavailable while reading key=%s", key)
+            return None
         if raw is None:
             return None
         try:
@@ -285,10 +289,14 @@ class ReportService:
             "narrative_consistency": narrative_consistency,
         }
 
-        self.redis_client.set(
-            name=self._key(report_id, self.final_report_suffix),
-            value=json.dumps(final_report, ensure_ascii=True),
-            ex=self.ttl_seconds,
-        )
+        try:
+            self.redis_client.set(
+                name=self._key(report_id, self.final_report_suffix),
+                value=json.dumps(final_report, ensure_ascii=True),
+                ex=self.ttl_seconds,
+            )
+        except Exception:
+            logger.error("Redis unavailable while writing final report for report_id=%s", report_id)
+            return "failed"
 
         return "completed"
