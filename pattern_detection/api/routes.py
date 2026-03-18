@@ -1,7 +1,8 @@
 ﻿from fastapi import APIRouter, Depends
 
-from core.dependencies import get_processor_service
+from core.dependencies import get_pattern_service
 from models.schemas import ProcessRequest, ProcessResponse
+from services.pattern_service import PatternService
 
 router = APIRouter()
 
@@ -9,12 +10,7 @@ router = APIRouter()
 @router.post("/detect-patterns", response_model=ProcessResponse)
 def process_document(
     request: ProcessRequest,
-    processor_service = Depends(get_processor_service),
+    pattern_service: PatternService = Depends(get_pattern_service),
 ) -> ProcessResponse:
-    details = processor_service.process(request.report_id, request.file_path)
-    return ProcessResponse(
-        report_id=request.report_id,
-        service="pattern_detection",
-        status="SUCCESS",
-        details=details,
-    )
+    status = pattern_service.process(request.report_id)
+    return ProcessResponse(report_id=request.report_id, status=status)

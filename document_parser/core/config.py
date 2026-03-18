@@ -11,10 +11,9 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://redis:6379/0"
     redis_key_prefix: str = "report"
-    redis_document_chunks_suffix: str = "document_chunks"
     redis_ttl_seconds: int = 900
 
-    max_pages_per_chunk: int = 3
+    gemini_api_key: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

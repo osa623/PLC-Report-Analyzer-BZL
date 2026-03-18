@@ -1,18 +1,15 @@
 ﻿from collections.abc import Generator
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from redis import Redis
 
 from core.config import get_settings
 
 settings = get_settings()
-engine = create_engine(settings.database_url, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+redis_client = Redis.from_url(settings.redis_url, decode_responses=True)
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
+def get_redis() -> Generator[Redis, None, None]:
     try:
-        yield db
+        yield redis_client
     finally:
-        db.close()
+        pass

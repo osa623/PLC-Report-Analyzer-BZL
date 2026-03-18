@@ -1,19 +1,16 @@
-﻿import json
+﻿from redis import Redis
 
-from sqlalchemy import text
-from sqlalchemy.orm import Session
+from common.report_repository import ReportRepositoryContract
 
 
-class ReportRepository:
-    def __init__(self, db: Session) -> None:
-        self.db = db
+class ReportRepository(ReportRepositoryContract):
+    """Compatibility repository aligned to unified Redis contract."""
 
-    def persist_result(self, report_id: str, payload: dict) -> None:
-        query = text(
-            """
-            INSERT INTO patterns (report_id, payload)
-            VALUES (:report_id, CAST(:payload AS jsonb))
-            """
+    def __init__(self, redis_client: Redis, key_prefix: str, ttl_seconds: int) -> None:
+        super().__init__(
+            redis_client=redis_client,
+            key_prefix=key_prefix,
+            ttl_seconds=ttl_seconds,
+            default_mode="set",
+            default_identifier="patterns",
         )
-        self.db.execute(query, {"report_id": report_id, "payload": json.dumps(payload)})
-        self.db.commit()

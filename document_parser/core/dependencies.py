@@ -1,15 +1,20 @@
 ﻿from fastapi import Depends
 from redis import Redis
 
-from core.config import Settings, get_settings
-from core.redis_client import get_redis_client
+from core.database import get_redis
+from core.config import get_settings
 from repositories.report_repository import ReportRepository
 from services.chunking_service import ChunkingService
 from services.parsing_service import ParsingService
 
 
-def get_settings_dependency() -> Settings:
-    return get_settings()
+def get_repository(redis_client: Redis = Depends(get_redis)) -> ReportRepository:
+    settings = get_settings()
+    return ReportRepository(
+        redis_client=redis_client,
+        key_prefix=settings.redis_key_prefix,
+        ttl_seconds=settings.redis_ttl_seconds,
+    )
 
 
 def get_repository(
