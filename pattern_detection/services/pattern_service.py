@@ -93,7 +93,11 @@ class PatternService:
         return numerator / denominator
 
     def _load_json(self, key: str) -> Any:
-        raw = self.redis_client.get(key)
+        try:
+            raw = self.redis_client.get(key)
+        except Exception:
+            logger.error("Redis unavailable while reading key=%s", key)
+            return None
         if raw is None:
             return None
         try:
@@ -451,10 +455,14 @@ class PatternService:
             },
         }
 
-        self.redis_client.set(
-            name=self._key(report_id, self.patterns_suffix),
-            value=json.dumps(output_payload, ensure_ascii=True),
-            ex=self.ttl_seconds,
-        )
+        try:
+            self.redis_client.set(
+                name=self._key(report_id, self.patterns_suffix),
+                value=json.dumps(output_payload, ensure_ascii=True),
+                ex=self.ttl_seconds,
+            )
+        except Exception:
+            logger.error("Redis unavailable while writing patterns for report_id=%s", report_id)
+            return "failed"
 
         return "completed"
