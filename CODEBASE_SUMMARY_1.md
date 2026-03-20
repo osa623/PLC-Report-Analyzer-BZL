@@ -291,3 +291,8 @@ If you are onboarding quickly, read in this order:
 ## 12) Current Reality in One Line
 
 The platform has a strong modular microservice foundation and substantial Redis-first analytical logic, but it currently needs contract and deployment alignment (service names, endpoints, and storage consistency) to guarantee reliable end-to-end orchestration.
+
+-- cmnd for the terminal -- 
+
+Set-Location D:\PLC-Report-Analyzer-BZL
+.\start_all_backends_local.ps1 -DbHost localhost -DbPort 5010 -DbName cse_finance -DbUser postgres -DbPassword "OSANDA623@2001"
