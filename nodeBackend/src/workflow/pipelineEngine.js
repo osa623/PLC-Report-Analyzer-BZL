@@ -20,15 +20,15 @@ class PipelineEngine {
           report_id: reportId,
           file_path: filePath
         }),
-        this.serviceClient.post("balance_sheet_extractor", "/extract-balance-sheet", {
+        this.serviceClient.post("balance_sheet_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.serviceClient.post("cashflow_extractor", "/extract-cashflow", {
+        this.serviceClient.post("cashflow_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.serviceClient.post("segment_extractor", "/extract-segments", {
+        this.serviceClient.post("segment_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
@@ -36,7 +36,7 @@ class PipelineEngine {
           report_id: reportId,
           file_path: filePath
         }),
-        this.serviceClient.post("risk_extractor", "/extract-risks", {
+        this.serviceClient.post("risk_extractor", "/extract-risk", {
           report_id: reportId,
           file_path: filePath
         }),
@@ -50,8 +50,8 @@ class PipelineEngine {
 
       await Promise.all([
         this.serviceClient.post("ratio_calculator", "/calculate-ratios", { report_id: reportId, file_path: filePath }),
-        this.serviceClient.post("strategy_nlp", "/analyze-strategy", { report_id: reportId, file_path: filePath }),
-        this.serviceClient.post("kpi_sector_engine", "/calculate-kpi", { report_id: reportId, file_path: filePath }),
+        this.serviceClient.post("strategy_nlp", "/extract-strategy", { report_id: reportId, file_path: filePath }),
+        this.serviceClient.post("kpi_sector_engine", "/sector-kpis", { report_id: reportId, file_path: filePath }),
         this.serviceClient.post("pattern_detection", "/detect-patterns", { report_id: reportId, file_path: filePath })
       ]);
 
