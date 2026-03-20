@@ -1,10 +1,16 @@
 param(
     [switch]$InstallDeps,
     [switch]$SkipNode,
-    [switch]$ForceReinstallDeps
+    [switch]$ForceReinstallDeps,
+    [int]$DbPort = 5432,
+    [string]$DbHost = "localhost",
+    [string]$DbName = "cse_finance",
+    [string]$DbUser = "postgres",
+    [string]$DbPassword = "buyzonlab123"
 )
 
 $ErrorActionPreference = "Stop"
+$dbPortExplicit = $PSBoundParameters.ContainsKey("DbPort")
 
 $root = $PSScriptRoot
 $logsDir = Join-Path $root "logs"
@@ -12,8 +18,49 @@ if (-not (Test-Path $logsDir)) {
     New-Item -ItemType Directory -Path $logsDir | Out-Null
 }
 
+function Resolve-DbPort {
+    param(
+        [int]$RequestedPort,
+        [bool]$IsExplicit
+    )
+
+    if ($IsExplicit) {
+        return $RequestedPort
+    }
+
+    $requestedOpen = (Test-NetConnection -ComputerName $DbHost -Port $RequestedPort -WarningAction SilentlyContinue).TcpTestSucceeded
+    if ($requestedOpen) {
+        return $RequestedPort
+    }
+
+    $pgProcIds = Get-Process -Name postgres -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id
+    if (-not $pgProcIds) {
+        return $RequestedPort
+    }
+
+    $detectedPorts = Get-NetTCPConnection -State Listen -OwningProcess $pgProcIds -ErrorAction SilentlyContinue |
+        Select-Object -ExpandProperty LocalPort -Unique |
+        Sort-Object
+
+    if ($detectedPorts) {
+        return [int]$detectedPorts[0]
+    }
+
+    return $RequestedPort
+}
+
+$resolvedDbPort = Resolve-DbPort -RequestedPort $DbPort -IsExplicit $dbPortExplicit
+
 # Local DB override for all services (non-docker run)
-$localDbUrl = "postgresql+psycopg2://postgres:postgres@localhost:5432/cse_finance"
+$localDbUrl = "postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}" -f $DbUser, $DbPassword, $DbHost, $resolvedDbPort, $DbName
+$localNodeDbUrl = "postgresql://{0}:{1}@{2}:{3}/{4}" -f $DbUser, $DbPassword, $DbHost, $resolvedDbPort, $DbName
+
+$dbReachable = (Test-NetConnection -ComputerName $DbHost -Port $resolvedDbPort -WarningAction SilentlyContinue).TcpTestSucceeded
+if (-not $dbReachable) {
+    throw "Database is not reachable at $DbHost`:$resolvedDbPort. Start PostgreSQL or pass correct -DbHost/-DbPort."
+}
+
+Write-Host ("Using DB: {0}:{1}/{2} (user {3})" -f $DbHost, $resolvedDbPort, $DbName, $DbUser) -ForegroundColor Cyan
 
 $pythonServices = @(
     @{ Name = "document_parser"; Port = 8001 },
@@ -139,9 +186,9 @@ if (-not $SkipNode) {
         }
 
         $prevNodeDbUrl = $env:DATABASE_URL
-        $env:DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/cse_finance"
+        $env:DATABASE_URL = $localNodeDbUrl
         try {
-            $nodeProc = Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev" -WorkingDirectory $nodePath -PassThru -RedirectStandardOutput $nodeLog -RedirectStandardError $nodeErr
+            $nodeProc = Start-Process -FilePath "npm.cmd" -ArgumentList "run", "start" -WorkingDirectory $nodePath -PassThru -RedirectStandardOutput $nodeLog -RedirectStandardError $nodeErr
         }
         finally {
             if ($null -eq $prevNodeDbUrl) {
