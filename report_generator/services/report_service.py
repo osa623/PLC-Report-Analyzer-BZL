@@ -1,9 +1,17 @@
 import json
 import logging
 from collections import defaultdict
+from pathlib import Path
+from textwrap import wrap
 from typing import Any
 
 from redis import Redis
+from reportlab.graphics import renderPDF
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.shapes import Drawing, String
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +26,23 @@ class ReportService:
 
     _PROFITABILITY_RATIOS = {"gross_margin", "net_margin"}
     _LIQUIDITY_RATIOS = {"current_ratio", "operating_cashflow_ratio"}
+    _STATEMENT_SECTIONS = (
+        "income_statement",
+        "balance_sheet",
+        "cashflow",
+        "segments",
+        "segment",
+    )
+    _METRIC_ALIASES = {
+        "total_revenue": {"revenue", "total_revenue", "gross_income", "income"},
+        "net_profit": {"net_profit", "profit", "profit_after_tax", "profit_attributable"},
+        "operating_cashflow": {
+            "operating_cashflow",
+            "cash_flow_from_operating_activities",
+            "net_cash_from_operating_activities",
+        },
+        "total_assets": {"total_assets", "assets"},
+    }
 
     def __init__(
         self,
@@ -27,6 +52,8 @@ class ReportService:
         patterns_suffix: str,
         final_report_suffix: str,
         ttl_seconds: int,
+        output_dir: str,
+        pattern_min_confidence: float,
     ) -> None:
         self.redis_client = redis_client
         self.input_prefix = input_prefix
@@ -34,6 +61,9 @@ class ReportService:
         self.patterns_suffix = patterns_suffix
         self.final_report_suffix = final_report_suffix
         self.ttl_seconds = ttl_seconds
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.pattern_min_confidence = pattern_min_confidence
 
     def _key(self, report_id: str, suffix: str | None = None) -> str:
         if suffix:
@@ -83,7 +113,7 @@ class ReportService:
         return None
 
     @staticmethod
-    def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+    def _extract_rows_from_known_keys(payload: Any) -> list[dict[str, Any]]:
         if isinstance(payload, list):
             return [item for item in payload if isinstance(item, dict)]
 
@@ -98,6 +128,18 @@ class ReportService:
 
         if not rows and {"year", "entity_type", "semantic_type", "value"}.issubset(set(payload.keys())):
             rows.append(payload)
+
+        return rows
+
+    def _extract_rows(self, payload: Any) -> list[dict[str, Any]]:
+        rows = self._extract_rows_from_known_keys(payload)
+
+        if isinstance(payload, dict):
+            for section in self._STATEMENT_SECTIONS:
+                section_payload = payload.get(section)
+                section_rows = self._extract_rows_from_known_keys(section_payload)
+                if section_rows:
+                    rows.extend(section_rows)
 
         return rows
 
@@ -168,8 +210,7 @@ class ReportService:
             "efficiency": efficiency,
         }
 
-    @staticmethod
-    def _build_patterns(pattern_payload: Any) -> list[dict[str, Any]]:
+    def _build_patterns(self, pattern_payload: Any) -> list[dict[str, Any]]:
         if not isinstance(pattern_payload, dict):
             return []
 
@@ -186,7 +227,7 @@ class ReportService:
                 confidence_value = float(confidence)
             except (TypeError, ValueError):
                 continue
-            if confidence_value <= 0.6:
+            if confidence_value < self.pattern_min_confidence:
                 continue
 
             filtered.append(
@@ -262,10 +303,220 @@ class ReportService:
                 )
         return consistency
 
-    def process(self, report_id: str) -> str:
+    def _build_semantic_distribution(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        counts: dict[str, int] = defaultdict(int)
+        for row in rows:
+            semantic = str(row.get("semantic_type") or "unknown").strip().lower() or "unknown"
+            counts[semantic] += 1
+
+        top_items = sorted(counts.items(), key=lambda item: item[1], reverse=True)[:8]
+        return [{"semantic_type": semantic, "count": count} for semantic, count in top_items]
+
+    def _build_metric_trends(self, rows: list[dict[str, Any]]) -> dict[str, dict[int, float]]:
+        trends: dict[str, dict[int, float]] = {metric: {} for metric in self._METRIC_ALIASES}
+        for row in rows:
+            year = self._as_year(row.get("year"))
+            if year is None:
+                continue
+            semantic = str(row.get("semantic_type") or "").strip().lower()
+            value = self._to_float(row.get("value"))
+            if not semantic or value is None:
+                continue
+
+            for metric, aliases in self._METRIC_ALIASES.items():
+                if semantic in aliases:
+                    trends[metric][year] = value
+
+        return trends
+
+    def _build_top_line_items(self, rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, Any]]:
+        scored: list[tuple[float, dict[str, Any]]] = []
+        for row in rows:
+            value = self._to_float(row.get("value"))
+            if value is None:
+                continue
+            scored.append((abs(value), row))
+
+        top_rows = [row for _, row in sorted(scored, key=lambda item: item[0], reverse=True)[:limit]]
+        normalized: list[dict[str, Any]] = []
+        for row in top_rows:
+            normalized.append(
+                {
+                    "year": row.get("year"),
+                    "entity_type": row.get("entity_type"),
+                    "semantic_type": row.get("semantic_type"),
+                    "label": row.get("label"),
+                    "value": self._to_float(row.get("value")),
+                }
+            )
+        return normalized
+
+    def _build_extraction_overview(self, base_payload: Any, rows: list[dict[str, Any]]) -> list[str]:
+        lines: list[str] = []
+        if isinstance(base_payload, dict):
+            section_presence = []
+            for section in self._STATEMENT_SECTIONS:
+                if section in base_payload:
+                    section_presence.append(section)
+            if section_presence:
+                lines.append("Detected sections: " + ", ".join(section_presence))
+        lines.append(f"Extracted normalized row count: {len(rows)}")
+
+        sample_rows = rows[:8]
+        for idx, row in enumerate(sample_rows, start=1):
+            year = row.get("year")
+            label = row.get("label")
+            semantic = row.get("semantic_type")
+            value = row.get("value")
+            entity = row.get("entity_type")
+            lines.append(
+                f"Sample {idx}: year={year}, entity={entity}, semantic={semantic}, label={label}, value={value}"
+            )
+
+        return lines
+
+    def _write_pdf(self, report_id: str, report_payload: dict[str, Any]) -> str:
+        pdf_path = self.output_dir / f"{report_id}.pdf"
+
+        doc = canvas.Canvas(str(pdf_path), pagesize=A4)
+        width, height = A4
+        left_margin = 50
+        top = height - 50
+        y = top
+
+        def write_line(text: str, size: int = 10) -> None:
+            nonlocal y
+            if y < 50:
+                doc.showPage()
+                y = top
+            doc.setFont("Helvetica", size)
+            doc.drawString(left_margin, y, text)
+            y -= size + 4
+
+        def ensure_space(height_required: int) -> None:
+            nonlocal y
+            if y < height_required:
+                doc.showPage()
+                y = top
+
+        def draw_bar_chart(title: str, categories: list[str], values: list[float]) -> None:
+            nonlocal y
+            if not categories or not values:
+                return
+
+            ensure_space(260)
+            drawing_width = 500
+            drawing_height = 200
+            drawing = Drawing(drawing_width, drawing_height)
+            drawing.add(String(10, drawing_height - 15, title, fontSize=11))
+
+            chart = VerticalBarChart()
+            chart.x = 40
+            chart.y = 35
+            chart.height = 130
+            chart.width = 430
+            chart.data = [values]
+            chart.valueAxis.valueMin = 0
+            chart.valueAxis.valueMax = max(values) * 1.15 if max(values) > 0 else 1
+            chart.valueAxis.valueStep = max(1, int(chart.valueAxis.valueMax / 5))
+            chart.categoryAxis.categoryNames = categories
+            chart.categoryAxis.labels.boxAnchor = "ne"
+            chart.categoryAxis.labels.angle = 25
+            chart.categoryAxis.labels.dy = -12
+            chart.bars[0].fillColor = colors.HexColor("#3A6EA5")
+            drawing.add(chart)
+
+            renderPDF.draw(drawing, doc, left_margin, y - drawing_height)
+            y -= drawing_height + 20
+
+        def write_wrapped(label: str, value: Any) -> None:
+            text = f"{label}: {value}"
+            for line in wrap(text, 100):
+                write_line(line)
+
+        write_line("PLC Report Analyzer - Generated Report", 14)
+        write_line(f"Report ID: {report_id}")
+        write_line("")
+
+        write_line("Summary", 12)
+        summary = report_payload.get("summary", {})
+        for key, value in summary.items():
+            write_wrapped(key, value)
+
+        latest_metrics = []
+        metric_labels = []
+        for key in ("total_revenue", "net_profit", "operating_cashflow", "total_assets"):
+            value = summary.get(key)
+            if isinstance(value, (int, float)):
+                metric_labels.append(key)
+                latest_metrics.append(float(value))
+
+        if latest_metrics:
+            write_line("")
+            draw_bar_chart("Latest Summary Metrics", metric_labels, latest_metrics)
+
+        write_line("")
+        write_line("Ratios", 12)
+        ratios = report_payload.get("ratios", {})
+        for category, entries in ratios.items():
+            write_line(f"- {category}")
+            if isinstance(entries, dict):
+                for ratio_name, ratio_data in entries.items():
+                    write_wrapped(f"  {ratio_name}", ratio_data)
+
+        write_line("")
+        write_line("Patterns", 12)
+        patterns = report_payload.get("patterns", [])
+        if not patterns:
+            write_line("- No high-confidence patterns")
+        for pattern in patterns:
+            write_wrapped("- pattern_type", pattern.get("pattern_type"))
+            write_wrapped("  description", pattern.get("description"))
+            write_wrapped("  confidence", pattern.get("confidence"))
+
+        write_line("")
+        write_line("Risk Flags", 12)
+        risk_flags = report_payload.get("risk_flags", [])
+        if not risk_flags:
+            write_line("- No risk flags")
+        for flag in risk_flags:
+            write_wrapped("- flag_type", flag.get("flag_type"))
+            write_wrapped("  description", flag.get("description"))
+            write_wrapped("  confidence", flag.get("confidence"))
+
+        write_line("")
+        write_line("Top Financial Line Items", 12)
+        top_items = report_payload.get("top_line_items", [])
+        if not top_items:
+            write_line("- No numeric line items available")
+        for item in top_items:
+            write_wrapped(
+                "- item",
+                f"year={item.get('year')}, semantic={item.get('semantic_type')}, label={item.get('label')}, value={item.get('value')}",
+            )
+
+        semantic_distribution = report_payload.get("semantic_distribution", [])
+        if semantic_distribution:
+            write_line("")
+            categories = [str(item.get("semantic_type")) for item in semantic_distribution]
+            values = [float(item.get("count") or 0) for item in semantic_distribution]
+            draw_bar_chart("Semantic Distribution (Row Count)", categories, values)
+
+        write_line("")
+        write_line("Raw Extracted Data Overview", 12)
+        extraction_overview = report_payload.get("extraction_overview", [])
+        if not extraction_overview:
+            write_line("- No extraction overview available")
+        for line in extraction_overview:
+            write_wrapped("-", line)
+
+        doc.save()
+        return str(pdf_path.resolve())
+
+    def process(self, report_id: str) -> dict[str, Any]:
         base_payload = self._load_json(self._key(report_id))
         if base_payload is None:
-            return "not_found"
+            return {"status": "not_found", "pdf_path": None}
 
         ratio_payload = self._load_json(self._key(report_id, self.ratios_suffix)) or {}
         pattern_payload = self._load_json(self._key(report_id, self.patterns_suffix)) or {}
@@ -278,6 +529,10 @@ class ReportService:
         segment_analysis = self._build_segment_analysis(rows, latest_year)
         risk_flags = self._build_risk_flags(patterns)
         narrative_consistency = self._build_narrative_consistency(patterns)
+        extraction_overview = self._build_extraction_overview(base_payload, rows)
+        semantic_distribution = self._build_semantic_distribution(rows)
+        metric_trends = self._build_metric_trends(rows)
+        top_line_items = self._build_top_line_items(rows)
 
         final_report = {
             "report_id": report_id,
@@ -287,6 +542,10 @@ class ReportService:
             "segment_analysis": segment_analysis,
             "risk_flags": risk_flags,
             "narrative_consistency": narrative_consistency,
+            "extraction_overview": extraction_overview,
+            "semantic_distribution": semantic_distribution,
+            "metric_trends": metric_trends,
+            "top_line_items": top_line_items,
         }
 
         try:
@@ -297,6 +556,12 @@ class ReportService:
             )
         except Exception:
             logger.error("Redis unavailable while writing final report for report_id=%s", report_id)
-            return "failed"
+            return {"status": "failed", "pdf_path": None}
 
-        return "completed"
+        try:
+            pdf_path = self._write_pdf(report_id, final_report)
+        except Exception:
+            logger.exception("PDF generation failed for report_id=%s", report_id)
+            return {"status": "failed", "pdf_path": None}
+
+        return {"status": "completed", "pdf_path": pdf_path}

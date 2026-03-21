@@ -12,5 +12,11 @@ def process_document(
     request: ProcessRequest,
     report_service: ReportService = Depends(get_report_service),
 ) -> ProcessResponse:
-    status = report_service.process(request.report_id)
-    return ProcessResponse(report_id=request.report_id, status=status)
+    result = report_service.process(request.report_id)
+    if isinstance(result, dict):
+        return ProcessResponse(
+            report_id=request.report_id,
+            status=result.get("status", "failed"),
+            pdf_path=result.get("pdf_path"),
+        )
+    return ProcessResponse(report_id=request.report_id, status="failed")

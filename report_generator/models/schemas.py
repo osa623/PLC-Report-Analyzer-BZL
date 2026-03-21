@@ -10,6 +10,7 @@ class ProcessRequest(BaseModel):
 class ProcessResponse(BaseModel):
     report_id: str
     status: Literal["completed", "not_found", "failed"]
+    pdf_path: str | None = None
 
 
 class FinalPattern(BaseModel):
