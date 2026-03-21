@@ -6,7 +6,10 @@ param(
     [string]$DbHost = "localhost",
     [string]$DbName = "cse_finance",
     [string]$DbUser = "postgres",
-    [string]$DbPassword = "buyzonlab123"
+    [string]$DbPassword = "buyzonlab123",
+    [string]$RedisHost = "127.0.0.1",
+    [int]$RedisPort = 6379,
+    [int]$RedisDb = 0
 )
 
 $ErrorActionPreference = "Stop"
@@ -54,6 +57,7 @@ $resolvedDbPort = Resolve-DbPort -RequestedPort $DbPort -IsExplicit $dbPortExpli
 # Local DB override for all services (non-docker run)
 $localDbUrl = "postgresql+psycopg2://{0}:{1}@{2}:{3}/{4}" -f $DbUser, $DbPassword, $DbHost, $resolvedDbPort, $DbName
 $localNodeDbUrl = "postgresql://{0}:{1}@{2}:{3}/{4}" -f $DbUser, $DbPassword, $DbHost, $resolvedDbPort, $DbName
+$localRedisUrl = "redis://{0}:{1}/{2}" -f $RedisHost, $RedisPort, $RedisDb
 
 $dbReachable = (Test-NetConnection -ComputerName $DbHost -Port $resolvedDbPort -WarningAction SilentlyContinue).TcpTestSucceeded
 if (-not $dbReachable) {
@@ -61,6 +65,14 @@ if (-not $dbReachable) {
 }
 
 Write-Host ("Using DB: {0}:{1}/{2} (user {3})" -f $DbHost, $resolvedDbPort, $DbName, $DbUser) -ForegroundColor Cyan
+
+$redisReachable = (Test-NetConnection -ComputerName $RedisHost -Port $RedisPort -WarningAction SilentlyContinue).TcpTestSucceeded
+if (-not $redisReachable) {
+    Write-Warning "Redis is not reachable at $RedisHost`:$RedisPort. Services will start, but extraction/report generation can fail until Redis is available."
+}
+else {
+    Write-Host ("Using Redis: {0}:{1} (db {2})" -f $RedisHost, $RedisPort, $RedisDb) -ForegroundColor Cyan
+}
 
 $pythonServices = @(
     @{ Name = "document_parser"; Port = 8001 },
@@ -80,6 +92,25 @@ $pythonServices = @(
 )
 
 $started = @()
+
+function Wait-ForPortReady {
+    param(
+        [string]$TargetHost,
+        [int]$Port,
+        [int]$TimeoutSeconds = 30
+    )
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $reachable = (Test-NetConnection -ComputerName $TargetHost -Port $Port -WarningAction SilentlyContinue).TcpTestSucceeded
+        if ($reachable) {
+            return $true
+        }
+        Start-Sleep -Seconds 1
+    }
+
+    return $false
+}
 
 function Ensure-PythonEnvironment {
     param(
@@ -144,7 +175,9 @@ function Start-PythonService {
     $errFile = Join-Path $logsDir ("{0}.err.log" -f $ServiceName)
 
     $prevDbUrl = $env:DATABASE_URL
+    $prevRedisUrl = $env:REDIS_URL
     $env:DATABASE_URL = $localDbUrl
+    $env:REDIS_URL = $localRedisUrl
     try {
         $proc = Start-Process -FilePath $pythonExe -ArgumentList "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "$Port" -WorkingDirectory $servicePath -PassThru -RedirectStandardOutput $logFile -RedirectStandardError $errFile
     }
@@ -155,6 +188,13 @@ function Start-PythonService {
         else {
             $env:DATABASE_URL = $prevDbUrl
         }
+
+        if ($null -eq $prevRedisUrl) {
+            Remove-Item Env:REDIS_URL -ErrorAction SilentlyContinue
+        }
+        else {
+            $env:REDIS_URL = $prevRedisUrl
+        }
     }
 
     $started += [pscustomobject]@{
@@ -163,6 +203,11 @@ function Start-PythonService {
         pid = $proc.Id
         log = $logFile
         err = $errFile
+    }
+
+    $isReady = Wait-ForPortReady -TargetHost "127.0.0.1" -Port $Port -TimeoutSeconds 30
+    if (-not $isReady) {
+        Write-Warning ("{0} did not open :{1} within timeout; it may still be initializing." -f $ServiceName, $Port)
     }
 
     Write-Host ("Started {0} on :{1} (PID {2})" -f $ServiceName, $Port, $proc.Id) -ForegroundColor Green
@@ -178,7 +223,30 @@ if (-not $SkipNode) {
             Write-Host "Installing Node deps for nodeBackend ..." -ForegroundColor Cyan
             Push-Location $nodePath
             try {
-                npm install
+                $tempRoot = Join-Path $root "temp"
+                $npmCache = Join-Path $tempRoot "npm-cache"
+                if (-not (Test-Path $tempRoot)) {
+                    New-Item -ItemType Directory -Path $tempRoot | Out-Null
+                }
+                if (-not (Test-Path $npmCache)) {
+                    New-Item -ItemType Directory -Path $npmCache | Out-Null
+                }
+
+                $prevTmp = $env:TMP
+                $prevTemp = $env:TEMP
+                $prevNpmCache = $env:npm_config_cache
+                $env:TMP = $tempRoot
+                $env:TEMP = $tempRoot
+                $env:npm_config_cache = $npmCache
+
+                try {
+                    npm install
+                }
+                finally {
+                    if ($null -eq $prevTmp) { Remove-Item Env:TMP -ErrorAction SilentlyContinue } else { $env:TMP = $prevTmp }
+                    if ($null -eq $prevTemp) { Remove-Item Env:TEMP -ErrorAction SilentlyContinue } else { $env:TEMP = $prevTemp }
+                    if ($null -eq $prevNpmCache) { Remove-Item Env:npm_config_cache -ErrorAction SilentlyContinue } else { $env:npm_config_cache = $prevNpmCache }
+                }
             }
             finally {
                 Pop-Location
@@ -205,6 +273,11 @@ if (-not $SkipNode) {
             pid = $nodeProc.Id
             log = $nodeLog
             err = $nodeErr
+        }
+
+        $nodeReady = Wait-ForPortReady -TargetHost "127.0.0.1" -Port 3000 -TimeoutSeconds 30
+        if (-not $nodeReady) {
+            Write-Warning "node_orchestrator did not open :3000 within timeout; it may still be initializing."
         }
 
         Write-Host ("Started node_orchestrator on :3000 (PID {0})" -f $nodeProc.Id) -ForegroundColor Green

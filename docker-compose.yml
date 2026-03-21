@@ -3,6 +3,8 @@ x-common-python-service: &common-python-service
   depends_on:
     postgres:
       condition: service_healthy
+    redis:
+      condition: service_healthy
   networks:
     - cse-network
 
@@ -21,6 +23,19 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d cse_finance"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cse-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: cse-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
