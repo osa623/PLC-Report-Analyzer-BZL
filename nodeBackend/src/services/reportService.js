@@ -15,7 +15,7 @@ class ReportService {
 
     const extension = path.extname(file.originalname) || ".pdf";
     const fileName = `${uuidv4()}${extension}`;
-    const targetPath = path.join(this.uploadDir, fileName);
+    const targetPath = path.resolve(this.uploadDir, fileName);
 
     fs.writeFileSync(targetPath, file.buffer);
 
