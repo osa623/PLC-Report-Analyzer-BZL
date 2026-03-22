@@ -88,7 +88,8 @@ $pythonServices = @(
     @{ Name = "strategy_nlp"; Port = 8011 },
     @{ Name = "kpi_sector_engine"; Port = 8012 },
     @{ Name = "pattern_detection"; Port = 8013 },
-    @{ Name = "report_generator"; Port = 8014 }
+    @{ Name = "report_generator"; Port = 8014 },
+    @{ Name = "comparative_analysis"; Port = 8015 }
 )
 
 $started = @()

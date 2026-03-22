@@ -6,12 +6,7 @@ from textwrap import wrap
 from typing import Any
 
 from redis import Redis
-from reportlab.graphics import renderPDF
-from reportlab.graphics.charts.barcharts import VerticalBarChart
-from reportlab.graphics.shapes import Drawing, String
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
+from redis import Redis
 
 logger = logging.getLogger(__name__)
 
@@ -375,143 +370,7 @@ class ReportService:
 
         return lines
 
-    def _write_pdf(self, report_id: str, report_payload: dict[str, Any]) -> str:
-        pdf_path = self.output_dir / f"{report_id}.pdf"
 
-        doc = canvas.Canvas(str(pdf_path), pagesize=A4)
-        width, height = A4
-        left_margin = 50
-        top = height - 50
-        y = top
-
-        def write_line(text: str, size: int = 10) -> None:
-            nonlocal y
-            if y < 50:
-                doc.showPage()
-                y = top
-            doc.setFont("Helvetica", size)
-            doc.drawString(left_margin, y, text)
-            y -= size + 4
-
-        def ensure_space(height_required: int) -> None:
-            nonlocal y
-            if y < height_required:
-                doc.showPage()
-                y = top
-
-        def draw_bar_chart(title: str, categories: list[str], values: list[float]) -> None:
-            nonlocal y
-            if not categories or not values:
-                return
-
-            ensure_space(260)
-            drawing_width = 500
-            drawing_height = 200
-            drawing = Drawing(drawing_width, drawing_height)
-            drawing.add(String(10, drawing_height - 15, title, fontSize=11))
-
-            chart = VerticalBarChart()
-            chart.x = 40
-            chart.y = 35
-            chart.height = 130
-            chart.width = 430
-            chart.data = [values]
-            chart.valueAxis.valueMin = 0
-            chart.valueAxis.valueMax = max(values) * 1.15 if max(values) > 0 else 1
-            chart.valueAxis.valueStep = max(1, int(chart.valueAxis.valueMax / 5))
-            chart.categoryAxis.categoryNames = categories
-            chart.categoryAxis.labels.boxAnchor = "ne"
-            chart.categoryAxis.labels.angle = 25
-            chart.categoryAxis.labels.dy = -12
-            chart.bars[0].fillColor = colors.HexColor("#3A6EA5")
-            drawing.add(chart)
-
-            renderPDF.draw(drawing, doc, left_margin, y - drawing_height)
-            y -= drawing_height + 20
-
-        def write_wrapped(label: str, value: Any) -> None:
-            text = f"{label}: {value}"
-            for line in wrap(text, 100):
-                write_line(line)
-
-        write_line("PLC Report Analyzer - Generated Report", 14)
-        write_line(f"Report ID: {report_id}")
-        write_line("")
-
-        write_line("Summary", 12)
-        summary = report_payload.get("summary", {})
-        for key, value in summary.items():
-            write_wrapped(key, value)
-
-        latest_metrics = []
-        metric_labels = []
-        for key in ("total_revenue", "net_profit", "operating_cashflow", "total_assets"):
-            value = summary.get(key)
-            if isinstance(value, (int, float)):
-                metric_labels.append(key)
-                latest_metrics.append(float(value))
-
-        if latest_metrics:
-            write_line("")
-            draw_bar_chart("Latest Summary Metrics", metric_labels, latest_metrics)
-
-        write_line("")
-        write_line("Ratios", 12)
-        ratios = report_payload.get("ratios", {})
-        for category, entries in ratios.items():
-            write_line(f"- {category}")
-            if isinstance(entries, dict):
-                for ratio_name, ratio_data in entries.items():
-                    write_wrapped(f"  {ratio_name}", ratio_data)
-
-        write_line("")
-        write_line("Patterns", 12)
-        patterns = report_payload.get("patterns", [])
-        if not patterns:
-            write_line("- No high-confidence patterns")
-        for pattern in patterns:
-            write_wrapped("- pattern_type", pattern.get("pattern_type"))
-            write_wrapped("  description", pattern.get("description"))
-            write_wrapped("  confidence", pattern.get("confidence"))
-
-        write_line("")
-        write_line("Risk Flags", 12)
-        risk_flags = report_payload.get("risk_flags", [])
-        if not risk_flags:
-            write_line("- No risk flags")
-        for flag in risk_flags:
-            write_wrapped("- flag_type", flag.get("flag_type"))
-            write_wrapped("  description", flag.get("description"))
-            write_wrapped("  confidence", flag.get("confidence"))
-
-        write_line("")
-        write_line("Top Financial Line Items", 12)
-        top_items = report_payload.get("top_line_items", [])
-        if not top_items:
-            write_line("- No numeric line items available")
-        for item in top_items:
-            write_wrapped(
-                "- item",
-                f"year={item.get('year')}, semantic={item.get('semantic_type')}, label={item.get('label')}, value={item.get('value')}",
-            )
-
-        semantic_distribution = report_payload.get("semantic_distribution", [])
-        if semantic_distribution:
-            write_line("")
-            categories = [str(item.get("semantic_type")) for item in semantic_distribution]
-            values = [float(item.get("count") or 0) for item in semantic_distribution]
-            draw_bar_chart("Semantic Distribution (Row Count)", categories, values)
-
-        write_line("")
-        write_line("Raw Extracted Data Overview", 12)
-        extraction_overview = report_payload.get("extraction_overview", [])
-        if not extraction_overview:
-            write_line("- No extraction overview available")
-        for line in extraction_overview:
-            write_wrapped("-", line)
-
-        doc.save()
-        return str(pdf_path.resolve())
 
     def process(self, report_id: str) -> dict[str, Any]:
         base_payload = self._load_json(self._key(report_id))
@@ -559,9 +418,30 @@ class ReportService:
             return {"status": "failed", "pdf_path": None}
 
         try:
-            pdf_path = self._write_pdf(report_id, final_report)
+            from services.pdf_builder import PDFBuilder
+            builder = PDFBuilder()
+            pdf_path_str = str((self.output_dir / f"{report_id}.pdf").resolve())
+            pdf_path = builder.build_single_report(pdf_path_str, final_report)
         except Exception:
             logger.exception("PDF generation failed for report_id=%s", report_id)
+            return {"status": "failed", "pdf_path": None}
+
+        return {"status": "completed", "pdf_path": pdf_path}
+
+    def process_batch(self, batch_id: str, company: dict) -> dict[str, Any]:
+        batch_key = f"{self.input_prefix}:batch:{batch_id}:comparative"
+        batch_payload = self._load_json(batch_key)
+        if not batch_payload:
+            logger.error("Batch comparative payload not found for key=%s", batch_key)
+            return {"status": "not_found", "pdf_path": None}
+            
+        try:
+            from services.pdf_builder import PDFBuilder
+            builder = PDFBuilder()
+            pdf_path_str = str((self.output_dir / f"{batch_id}_comparative.pdf").resolve())
+            pdf_path = builder.build_comparative_report(pdf_path_str, batch_payload)
+        except Exception:
+            logger.exception("Batch PDF generation failed for batch_id=%s", batch_id)
             return {"status": "failed", "pdf_path": None}
 
         return {"status": "completed", "pdf_path": pdf_path}

@@ -2,15 +2,16 @@ const { WorkflowState } = require("./states");
 const { ApplicationError } = require("../utils/errors");
 
 class PipelineEngine {
-  constructor({ reportRepository, serviceClient, logger }) {
+  constructor({ reportRepository, serviceClient, logger, strictAllBackends = false }) {
     this.reportRepository = reportRepository;
     this.serviceClient = serviceClient;
     this.logger = logger;
+    this.strictAllBackends = strictAllBackends;
     this.requiredTimeoutMs = 300000;
     this.optionalTimeoutMs = 300000;
   }
 
-  async invokeOptional(serviceName, endpoint, payload) {
+  async invokeBestEffort(serviceName, endpoint, payload) {
     try {
       return await this.serviceClient.post(serviceName, endpoint, payload, {
         timeoutMs: this.optionalTimeoutMs
@@ -23,9 +24,9 @@ class PipelineEngine {
           error: error.message,
           reportId: payload?.report_id
         },
-        "Optional service failed; continuing pipeline"
+        "Best-effort service failed; continuing pipeline"
       );
-      return { status: "failed", optional: true, service: serviceName };
+      return { status: "failed", bestEffort: true, service: serviceName };
     }
   }
 
@@ -50,59 +51,69 @@ class PipelineEngine {
       if (parsed?.status !== "parsed") {
         throw new ApplicationError("Document parsing failed", 502, { reportId, parsedStatus: parsed?.status });
       }
-      await this.invokeOptional("structure_detector", "/detect-structure", {
+
+      const invokeParticipation = this.strictAllBackends
+        ? this.invokeRequired.bind(this)
+        : this.invokeBestEffort.bind(this);
+
+      await invokeParticipation("structure_detector", "/detect-structure", {
         report_id: reportId,
         file_path: filePath
       });
 
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.EXTRACTING);
 
-      const extractionResults = await Promise.allSettled([
-        this.invokeOptional("financial_statement_extractor", "/extract-financials", {
+      const extractionCalls = [
+        invokeParticipation("financial_statement_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("balance_sheet_extractor", "/extract-financials", {
+        invokeParticipation("balance_sheet_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("cashflow_extractor", "/extract-financials", {
+        invokeParticipation("cashflow_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("segment_extractor", "/extract-financials", {
+        invokeParticipation("segment_extractor", "/extract-financials", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("governance_extractor", "/extract-governance", {
+        invokeParticipation("governance_extractor", "/extract-governance", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("risk_extractor", "/extract-risk", {
+        invokeParticipation("risk_extractor", "/extract-risk", {
           report_id: reportId,
           file_path: filePath
         }),
-        this.invokeOptional("esg_extractor", "/extract-esg", {
+        invokeParticipation("esg_extractor", "/extract-esg", {
           report_id: reportId,
           file_path: filePath
         })
-      ]);
+      ];
 
-      const extractionSuccessCount = extractionResults.filter(
-        (result) => result.status === "fulfilled" && result.value?.status !== "failed"
-      ).length;
-      if (extractionSuccessCount === 0) {
-        this.logger.warn({ reportId }, "All extraction services failed; proceeding with partial pipeline data");
+      if (this.strictAllBackends) {
+        await Promise.all(extractionCalls);
+      } else {
+        await Promise.allSettled(extractionCalls);
       }
 
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.ANALYZING);
 
-      await Promise.allSettled([
-        this.invokeOptional("ratio_calculator", "/calculate-ratios", { report_id: reportId, file_path: filePath }),
-        this.invokeOptional("strategy_nlp", "/extract-strategy", { report_id: reportId, file_path: filePath }),
-        this.invokeOptional("kpi_sector_engine", "/sector-kpis", { report_id: reportId, sector: report.sector }),
-        this.invokeOptional("pattern_detection", "/detect-patterns", { report_id: reportId, file_path: filePath })
-      ]);
+      const analysisCalls = [
+        invokeParticipation("ratio_calculator", "/calculate-ratios", { report_id: reportId, file_path: filePath }),
+        invokeParticipation("strategy_nlp", "/extract-strategy", { report_id: reportId, file_path: filePath }),
+        invokeParticipation("kpi_sector_engine", "/sector-kpis", { report_id: reportId, sector: report.sector }),
+        invokeParticipation("pattern_detection", "/detect-patterns", { report_id: reportId, file_path: filePath })
+      ];
+
+      if (this.strictAllBackends) {
+        await Promise.all(analysisCalls);
+      } else {
+        await Promise.allSettled(analysisCalls);
+      }
 
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.GENERATING_REPORT);
 

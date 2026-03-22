@@ -19,7 +19,7 @@ export default async function CashFlowPage({ params }: Props) {
                     <MainNav />
                     <SecondaryNav />
                     <CashFlowSubNav />
-                    <CashFlow symbol={symbol} />
+                    <CashFlow />
                 </div>
             </main>
         </SymbolProvider>

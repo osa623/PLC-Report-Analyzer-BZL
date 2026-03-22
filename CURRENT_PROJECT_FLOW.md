@@ -1,39 +1,72 @@
-# Current Project Flow (As Implemented)
+# Current Project Flow (Completed, As Implemented)
 
-This document describes the *actual current runtime flow* of the PLC Report Analyzer stack based on the code in the repository.
+This document reflects the current implemented runtime flow in this repository, including single-report orchestration and batch comparative analysis.
 
-## 1. Entry Point
+## 1. Public API Entry Points (Node Orchestrator)
 
-Client uploads report to Node orchestrator:
+Routes source: `nodeBackend/src/routes/reportRoutes.js`
 
-- `POST /reports` (multipart form)
-- Fields:
-  - `report` (PDF file)
-  - `symbol`
-  - `name`
-  - `sector`
+1. `POST /reports`
+  - Multipart field: `report` (single PDF)
+  - Metadata fields: `symbol`, `name`, `sector`
+2. `POST /reports/batch`
+  - Multipart field: `reports` (multiple PDFs, max 10)
+  - Metadata fields: `symbol`, `name`, `sector`
+3. `GET /reports/:reportId`
+  - Returns report DB metadata + workflow state
+4. `GET /reports/batch/:batchId`
+  - Fetches comparative batch output from `comparative_analysis`
 
-Node endpoint:
-- `nodeBackend/src/routes/reportRoutes.js`
-- `nodeBackend/src/controllers/reportController.js`
-- `nodeBackend/src/services/reportService.js`
+Controller source: `nodeBackend/src/controllers/reportController.js`
 
-## 2. Upload + Metadata Persistence (Node)
+## 2. Single Report Flow (POST /reports)
 
-`ReportService.uploadAndAnalyze` does:
+Service source: `nodeBackend/src/services/reportService.js`
 
-1. Creates upload folder (if missing)
-2. Saves PDF to absolute path under `nodeBackend/uploads`
-3. Upserts company in Postgres (`companies` table)
-4. Inserts report row in Postgres (`reports` table) with `workflow_state = UPLOADED`
-5. Calls pipeline engine synchronously
+`uploadAndAnalyze` execution:
 
-Important:
-- PDF path is now absolute (`path.resolve(...)`) to avoid cross-service file path issues.
+1. Create upload directory if missing.
+2. Save uploaded PDF to `nodeBackend/uploads` using absolute path (`path.resolve`).
+3. Upsert company in Postgres (`companies`).
+4. Create report row in Postgres (`reports`) with initial state `UPLOADED`.
+5. Execute pipeline synchronously via `pipelineEngine.execute({ reportId, filePath })`.
+6. Return:
+  - `report` (DB row)
+  - `generatedReport` (response from `report_generator`)
 
-## 3. Workflow States (Postgres)
+## 3. Batch Flow with Comparative Analysis (POST /reports/batch)
 
-The report transitions through:
+Service source: `nodeBackend/src/services/reportService.js`
+
+`batchUploadAndAnalyze` execution:
+
+1. Validate upload list exists and is `<= 10` files.
+2. Upsert one company record for the batch metadata.
+3. For each uploaded file (sequentially):
+  - Save to disk
+  - Create report row in Postgres
+  - Run full pipeline
+  - Record success/failure per file in `reports[]`
+4. Collect successful `reportIds`.
+5. Call `comparative_analysis` endpoint `POST /analyze-comparative` with:
+  - `batch_id`
+  - `report_ids`
+  - `company: { symbol, name, sector }`
+6. Return batch response:
+  - `batchId`
+  - `totalFiles`
+  - `completedReports`
+  - `reports` (per-file status)
+  - `comparativeAnalysis` (status from comparative service)
+
+Batch result retrieval:
+
+- `GET /reports/batch/:batchId` internally calls `comparative_analysis` `POST /get-batch-result`.
+- If not present, Node returns `404` (`Batch result not found`).
+
+## 4. Workflow States (Per Report)
+
+State enum source: `nodeBackend/src/workflow/states.js`
 
 1. `UPLOADED`
 2. `PARSING`
@@ -41,17 +74,46 @@ The report transitions through:
 4. `ANALYZING`
 5. `GENERATING_REPORT`
 6. `COMPLETED`
-7. `FAILED` (on required-step failure)
+7. `FAILED`
 
-State enum source:
-- `nodeBackend/src/workflow/states.js`
+## 5. Pipeline Engine Behavior
 
-## 4. Service Registry (Ports)
+Source: `nodeBackend/src/workflow/pipelineEngine.js`
 
-Node calls services via:
-- `nodeBackend/src/config/serviceRegistry.js`
+### 5.1 Participating calls
 
-Default local endpoints:
+1. `document_parser` -> `POST /parse-document`
+  - Must return `status = parsed`
+2. `structure_detector` -> `POST /detect-structure`
+3. `financial_statement_extractor` -> `POST /extract-financials`
+4. `balance_sheet_extractor` -> `POST /extract-financials`
+5. `cashflow_extractor` -> `POST /extract-financials`
+6. `segment_extractor` -> `POST /extract-financials`
+7. `governance_extractor` -> `POST /extract-governance`
+8. `risk_extractor` -> `POST /extract-risk`
+9. `esg_extractor` -> `POST /extract-esg`
+10. `ratio_calculator` -> `POST /calculate-ratios`
+11. `strategy_nlp` -> `POST /extract-strategy`
+12. `kpi_sector_engine` -> `POST /sector-kpis`
+13. `pattern_detection` -> `POST /detect-patterns`
+14. `report_generator` -> `POST /generate-report`
+  - Must return `status = completed`
+
+### 5.2 Participation mode
+
+Pipeline supports two runtime modes via `PIPELINE_STRICT_ALL_BACKENDS`:
+
+1. `false` (default, resilient mode)
+  - Participating analysis/extraction services run as best-effort.
+  - Failures/timeouts are logged, but pipeline continues.
+  - `document_parser` and `report_generator` remain hard-required.
+2. `true` (strict mode)
+  - All participating services are fail-fast required.
+  - Any participating service failure moves report to `FAILED`.
+
+## 6. Service Registry (Local Defaults)
+
+Source: `nodeBackend/src/config/serviceRegistry.js`
 
 - `document_parser` -> `http://localhost:8001`
 - `structure_detector` -> `http://localhost:8002`
@@ -67,138 +129,81 @@ Default local endpoints:
 - `kpi_sector_engine` -> `http://localhost:8012`
 - `pattern_detection` -> `http://localhost:8013`
 - `report_generator` -> `http://localhost:8014`
+- `comparative_analysis` -> `http://localhost:8015`
 
-## 5. Orchestration Logic (Required vs Optional)
+## 7. Timeout and Retry Behavior
 
-Pipeline source:
+Sources:
+
 - `nodeBackend/src/workflow/pipelineEngine.js`
-
-### 5.1 Required steps
-
-If these fail, workflow becomes `FAILED`:
-
-1. `document_parser /parse-document`
-   - Must return `status = parsed`
-2. `report_generator /generate-report`
-   - Must return `status = completed`
-
-### 5.2 Optional steps
-
-These are invoked with tolerant behavior (`Promise.allSettled` + warning logs):
-
-- `structure_detector`
-- financial extractors (`income`, `balance`, `cashflow`, `segment`)
-- `governance_extractor`
-- `risk_extractor`
-- `esg_extractor`
-- `ratio_calculator`
-- `strategy_nlp`
-- `kpi_sector_engine`
-- `pattern_detection`
-
-If optional services fail/timeout, pipeline can continue and still produce a report if required stages succeed.
-
-## 6. Timeout and Retry Behavior
-
-Service client source:
 - `nodeBackend/src/clients/serviceClient.js`
 
-Current behavior:
+Current values:
 
-- Required timeout: `300000 ms`
-- Optional timeout: `300000 ms`
-- Retry attempts per service call: `3`
-- Retries for transient transport errors (`ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`)
+1. Required timeout: `300000 ms`
+2. Best-effort timeout: `300000 ms`
+3. Retry attempts per service request: `3`
+4. Retriable error codes: `ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`
+5. Retry delay: `1500 ms`
 
-## 7. Redis Data Model (Runtime Artifacts)
+## 8. Redis Runtime Data Layout
 
-Most Python services write/read Redis keys with prefix `report`.
+Primary key prefix is `report`.
 
-Common keys:
+Per-report keys commonly used:
 
-- `report:{report_id}` (base payload)
+- `report:{report_id}`
 - `report:{report_id}:ratios`
 - `report:{report_id}:patterns`
 - `report:{report_id}:final_report`
-- optional domain keys (`:risk`, `:strategy`, etc.)
 
-### 7.1 Final generated output location
+Batch comparative key:
 
-`report_generator` writes final JSON to:
+- `report:batch:{batch_id}:comparative`
 
-- `report:{report_id}:final_report`
+Comparative service stores batch output with TTL (`redis_ttl_seconds`, default `900`).
 
-This is Redis-backed ephemeral storage (TTL controlled by service config).
+## 9. Comparative Analysis Output (Batch)
 
-## 8. Report Generator Output Shape
+Comparative sources:
 
-`report_generator` builds and stores:
+- `comparative_analysis/api/routes.py`
+- `comparative_analysis/services/comparative_service.py`
+- `comparative_analysis/models/schemas.py`
 
-- `report_id`
-- `summary`
-- `ratios`
-- `patterns`
-- `segment_analysis`
-- `risk_flags`
-- `narrative_consistency`
+Generated structure includes:
 
-Source:
-- `report_generator/services/report_service.py`
+- `batch_id`
+- `company`
+- `status`
+- `metric_trends`
+- `growth_analysis`
+- `investment_signals`
+- `dupont_analysis`
+- `financial_health`
+- `cashflow_breakdown`
+- `ratio_comparison`
+- `risk_heatmap`
+- `years_analyzed`
+- `report_ids`
 
-## 9. Local Non-Docker Runtime Flow
+## 10. Local Non-Docker Startup Flow
 
-Launcher:
-- `start_all_backends_local.ps1`
+Launcher source: `start_all_backends_local.ps1`
 
-What it does:
+Current startup behavior:
 
-1. Resolves DB host/port
-2. Verifies DB reachability
-3. Checks Redis reachability (warning if unavailable)
-4. Starts Node orchestrator
-5. Starts all Python services on ports `8001..8014`
-6. Waits for each service port to become reachable
-7. Writes process metadata to `backend_pids.json`
+1. Resolve DB host/port and validate connectivity.
+2. Validate Redis connectivity (warn if unavailable).
+3. Start Node orchestrator on `:3000`.
+4. Start Python services on `:8001..:8015` (includes `comparative_analysis`).
+5. Wait for each service port.
+6. Persist process metadata to `backend_pids.json`.
 
-### 9.1 Local Redis in current setup
+## 11. Completed End-to-End Characteristics
 
-If native Redis is unavailable on Windows, current fallback script is:
-
-- `scripts/start_fake_redis.py`
-
-It starts a local Redis-compatible TCP server on:
-- `127.0.0.1:6379`
-
-## 10. Postgres vs Redis Responsibilities
-
-- Postgres:
-  - Company identity (`companies`)
-  - Report lifecycle (`reports` + `workflow_state`)
-- Redis:
-  - Inter-service extraction/analysis payloads
-  - Final generated report artifact (`:final_report`)
-
-## 11. API Outputs
-
-`POST /reports` returns:
-
-- `report` (DB report record)
-- `generatedReport` (status object from report_generator)
-
-`GET /reports/:reportId` returns:
-
-- report DB metadata and workflow state
-
-## 12. Known Characteristics of Current Flow
-
-1. Pipeline is synchronous from the API caller perspective.
-2. Optional services can fail without blocking completion.
-3. Final report is currently stored in Redis, not persisted as a file by default.
-4. Redis TTL means final output can expire unless copied to durable storage.
-
-## 13. Recommended Next Increment (Optional)
-
-If durable report retention is required, add a persistence sink after report generation:
-
-- Save `report:{id}:final_report` JSON to disk or Postgres (or both)
-- Keep Redis for fast pipeline handoff, not long-term storage
+1. Single report flow is synchronous and returns pipeline result directly.
+2. Batch flow executes report pipelines per file, then performs comparative aggregation.
+3. Per-report completion depends on successful completion of all participating backends.
+4. Comparative batch result is Redis-backed and retrievable by `batchId`.
+5. Redis-backed artifacts are time-bound (TTL), so durable storage should be added if long retention is required.
