@@ -365,3 +365,137 @@ export function mapDataToRows(
   });
 }
 
+// ── Batch Upload & Comparative Analysis types ───────────────────────────────
+
+export interface CompanyMeta {
+  symbol: string;
+  name: string;
+  sector: string;
+}
+
+export interface BatchReportItem {
+  report: Record<string, unknown>;
+  generatedReport: Record<string, unknown> | null;
+  status: "completed" | "failed";
+  fileName: string;
+  error?: string;
+}
+
+export interface BatchUploadResponse {
+  batchId: string;
+  totalFiles: number;
+  completedReports: number;
+  reports: BatchReportItem[];
+  comparativeAnalysis: ComparativeAnalysisResult | null;
+}
+
+export interface YearMetricPoint {
+  year: number;
+  value: number;
+}
+
+export interface MetricTrendData {
+  metric_name: string;
+  display_name: string;
+  values: YearMetricPoint[];
+  cagr: number | null;
+  latest_yoy_change: number | null;
+}
+
+export interface GrowthAnalysisData {
+  revenue_growth_rates: YearMetricPoint[];
+  profit_growth_rates: YearMetricPoint[];
+  asset_growth_rates: YearMetricPoint[];
+  margin_trends: YearMetricPoint[];
+}
+
+export interface InvestmentSignalData {
+  category: string;
+  signal: "BULLISH" | "BEARISH" | "NEUTRAL";
+  strength: number;
+  description: string;
+  supporting_data: Record<string, unknown>;
+}
+
+export interface DuPontDecomposition {
+  year: number;
+  net_margin: number | null;
+  asset_turnover: number | null;
+  equity_multiplier: number | null;
+  roe: number | null;
+}
+
+export interface FinancialHealthScore {
+  overall_score: number;
+  profitability_score: number;
+  liquidity_score: number;
+  growth_score: number;
+  efficiency_score: number;
+  stability_score: number;
+}
+
+export interface CashflowBreakdownItem {
+  year: number;
+  operating: number | null;
+  investing: number | null;
+  financing: number | null;
+  net: number | null;
+}
+
+export interface ComparativeAnalysisResult {
+  batch_id: string;
+  company: CompanyMeta;
+  status: string;
+  metric_trends: MetricTrendData[];
+  growth_analysis: GrowthAnalysisData;
+  investment_signals: InvestmentSignalData[];
+  dupont_analysis: DuPontDecomposition[];
+  financial_health: FinancialHealthScore;
+  cashflow_breakdown: CashflowBreakdownItem[];
+  ratio_comparison: Record<string, YearMetricPoint[]>;
+  risk_heatmap: Record<string, Record<number, number>>;
+  years_analyzed: number[];
+  report_ids: string[];
+}
+
+// ── Report / Batch API calls (Node backend on /api) ─────────────────────────
+
+const reportAPIClient = axios.create({
+  baseURL: API_REPORT_URL,
+});
+
+export const reportApi = {
+  /** Upload a single report */
+  upload: (file: File, company: CompanyMeta) => {
+    const formData = new FormData();
+    formData.append("report", file);
+    formData.append("symbol", company.symbol);
+    formData.append("name", company.name);
+    formData.append("sector", company.sector);
+    return reportAPIClient.post("/reports", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  /** Batch upload up to 10 PDFs for the same company */
+  batchUpload: (files: File[], company: CompanyMeta) => {
+    const formData = new FormData();
+    files.forEach((f) => formData.append("reports", f));
+    formData.append("symbol", company.symbol);
+    formData.append("name", company.name);
+    formData.append("sector", company.sector);
+    return reportAPIClient.post<BatchUploadResponse>("/reports/batch", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 600_000, // 10 min for large batches
+    });
+  },
+
+  /** Get comparative analysis result for a batch */
+  getComparativeAnalysis: (batchId: string) =>
+    reportAPIClient.get<ComparativeAnalysisResult>(`/reports/batch/${batchId}`),
+
+  /** Alias for getComparativeAnalysis */
+  getBatchStatus: (batchId: string) =>
+    reportAPIClient.get<ComparativeAnalysisResult>(`/reports/batch/${batchId}`),
+};
+

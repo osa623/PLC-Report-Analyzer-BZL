@@ -19,7 +19,7 @@ export default async function FinancialPositionPage({ params }: Props) {
                     <MainNav />
                     <SecondaryNav />
                     <FinancialPositionSubNav />
-                    <FinancialPosition symbol={symbol} />
+                    <FinancialPosition />
                 </div>
             </main>
         </SymbolProvider>

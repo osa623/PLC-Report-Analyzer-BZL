@@ -9,6 +9,6 @@ class ReportRepository(ReportRepositoryContract):
             redis_client=redis_client,
             key_prefix=key_prefix,
             ttl_seconds=ttl_seconds,
-            default_mode="set",
+            default_mode="merge",
             default_identifier="document_chunks",
         )

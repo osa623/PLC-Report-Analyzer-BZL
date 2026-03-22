@@ -1,4 +1,4 @@
-﻿from typing import Any, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,7 @@ class ProcessRequest(BaseModel):
 class ProcessResponse(BaseModel):
     report_id: str
     status: Literal["completed", "not_found", "failed"]
+    pdf_path: str | None = None
 
 
 class FinalPattern(BaseModel):
@@ -26,3 +27,14 @@ class FinalReport(BaseModel):
     segment_analysis: list[dict[str, Any]] = Field(default_factory=list)
     risk_flags: list[dict[str, Any]] = Field(default_factory=list)
     narrative_consistency: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class BatchProcessRequest(BaseModel):
+    batch_id: str
+    company: dict[str, str | None]
+
+
+class BatchProcessResponse(BaseModel):
+    batch_id: str
+    status: Literal["completed", "not_found", "failed"]
+    pdf_path: str | None = None

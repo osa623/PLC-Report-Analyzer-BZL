@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     redis_patterns_suffix: str = "patterns"
     redis_final_report_suffix: str = "final_report"
     redis_ttl_seconds: int = 900
+    report_output_dir: str = "generated_reports"
+    pattern_min_confidence: float = 0.35
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
