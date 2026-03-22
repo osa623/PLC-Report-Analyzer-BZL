@@ -13,7 +13,8 @@ const serviceRegistry = {
   strategy_nlp: process.env.STRATEGY_NLP_URL || "http://localhost:8011",
   kpi_sector_engine: process.env.KPI_SECTOR_ENGINE_URL || "http://localhost:8012",
   pattern_detection: process.env.PATTERN_DETECTION_URL || "http://localhost:8013",
-  report_generator: process.env.REPORT_GENERATOR_URL || "http://localhost:8014"
+  report_generator: process.env.REPORT_GENERATOR_URL || "http://localhost:8014",
+  comparative_analysis: process.env.COMPARATIVE_ANALYSIS_URL || "http://localhost:8015"
 };
 
 module.exports = { serviceRegistry };

@@ -15,4 +15,6 @@ def get_report_service(redis_client: Redis = Depends(get_redis)) -> ReportServic
         patterns_suffix=settings.redis_patterns_suffix,
         final_report_suffix=settings.redis_final_report_suffix,
         ttl_seconds=settings.redis_ttl_seconds,
+        output_dir=settings.report_output_dir,
+        pattern_min_confidence=settings.pattern_min_confidence,
     )

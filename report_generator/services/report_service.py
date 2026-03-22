@@ -1,8 +1,11 @@
 import json
 import logging
 from collections import defaultdict
+from pathlib import Path
+from textwrap import wrap
 from typing import Any
 
+from redis import Redis
 from redis import Redis
 
 logger = logging.getLogger(__name__)
@@ -18,6 +21,23 @@ class ReportService:
 
     _PROFITABILITY_RATIOS = {"gross_margin", "net_margin"}
     _LIQUIDITY_RATIOS = {"current_ratio", "operating_cashflow_ratio"}
+    _STATEMENT_SECTIONS = (
+        "income_statement",
+        "balance_sheet",
+        "cashflow",
+        "segments",
+        "segment",
+    )
+    _METRIC_ALIASES = {
+        "total_revenue": {"revenue", "total_revenue", "gross_income", "income"},
+        "net_profit": {"net_profit", "profit", "profit_after_tax", "profit_attributable"},
+        "operating_cashflow": {
+            "operating_cashflow",
+            "cash_flow_from_operating_activities",
+            "net_cash_from_operating_activities",
+        },
+        "total_assets": {"total_assets", "assets"},
+    }
 
     def __init__(
         self,
@@ -27,6 +47,8 @@ class ReportService:
         patterns_suffix: str,
         final_report_suffix: str,
         ttl_seconds: int,
+        output_dir: str,
+        pattern_min_confidence: float,
     ) -> None:
         self.redis_client = redis_client
         self.input_prefix = input_prefix
@@ -34,6 +56,9 @@ class ReportService:
         self.patterns_suffix = patterns_suffix
         self.final_report_suffix = final_report_suffix
         self.ttl_seconds = ttl_seconds
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.pattern_min_confidence = pattern_min_confidence
 
     def _key(self, report_id: str, suffix: str | None = None) -> str:
         if suffix:
@@ -83,7 +108,7 @@ class ReportService:
         return None
 
     @staticmethod
-    def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+    def _extract_rows_from_known_keys(payload: Any) -> list[dict[str, Any]]:
         if isinstance(payload, list):
             return [item for item in payload if isinstance(item, dict)]
 
@@ -98,6 +123,18 @@ class ReportService:
 
         if not rows and {"year", "entity_type", "semantic_type", "value"}.issubset(set(payload.keys())):
             rows.append(payload)
+
+        return rows
+
+    def _extract_rows(self, payload: Any) -> list[dict[str, Any]]:
+        rows = self._extract_rows_from_known_keys(payload)
+
+        if isinstance(payload, dict):
+            for section in self._STATEMENT_SECTIONS:
+                section_payload = payload.get(section)
+                section_rows = self._extract_rows_from_known_keys(section_payload)
+                if section_rows:
+                    rows.extend(section_rows)
 
         return rows
 
@@ -168,8 +205,7 @@ class ReportService:
             "efficiency": efficiency,
         }
 
-    @staticmethod
-    def _build_patterns(pattern_payload: Any) -> list[dict[str, Any]]:
+    def _build_patterns(self, pattern_payload: Any) -> list[dict[str, Any]]:
         if not isinstance(pattern_payload, dict):
             return []
 
@@ -186,7 +222,7 @@ class ReportService:
                 confidence_value = float(confidence)
             except (TypeError, ValueError):
                 continue
-            if confidence_value <= 0.6:
+            if confidence_value < self.pattern_min_confidence:
                 continue
 
             filtered.append(
@@ -262,10 +298,84 @@ class ReportService:
                 )
         return consistency
 
-    def process(self, report_id: str) -> str:
+    def _build_semantic_distribution(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        counts: dict[str, int] = defaultdict(int)
+        for row in rows:
+            semantic = str(row.get("semantic_type") or "unknown").strip().lower() or "unknown"
+            counts[semantic] += 1
+
+        top_items = sorted(counts.items(), key=lambda item: item[1], reverse=True)[:8]
+        return [{"semantic_type": semantic, "count": count} for semantic, count in top_items]
+
+    def _build_metric_trends(self, rows: list[dict[str, Any]]) -> dict[str, dict[int, float]]:
+        trends: dict[str, dict[int, float]] = {metric: {} for metric in self._METRIC_ALIASES}
+        for row in rows:
+            year = self._as_year(row.get("year"))
+            if year is None:
+                continue
+            semantic = str(row.get("semantic_type") or "").strip().lower()
+            value = self._to_float(row.get("value"))
+            if not semantic or value is None:
+                continue
+
+            for metric, aliases in self._METRIC_ALIASES.items():
+                if semantic in aliases:
+                    trends[metric][year] = value
+
+        return trends
+
+    def _build_top_line_items(self, rows: list[dict[str, Any]], limit: int = 12) -> list[dict[str, Any]]:
+        scored: list[tuple[float, dict[str, Any]]] = []
+        for row in rows:
+            value = self._to_float(row.get("value"))
+            if value is None:
+                continue
+            scored.append((abs(value), row))
+
+        top_rows = [row for _, row in sorted(scored, key=lambda item: item[0], reverse=True)[:limit]]
+        normalized: list[dict[str, Any]] = []
+        for row in top_rows:
+            normalized.append(
+                {
+                    "year": row.get("year"),
+                    "entity_type": row.get("entity_type"),
+                    "semantic_type": row.get("semantic_type"),
+                    "label": row.get("label"),
+                    "value": self._to_float(row.get("value")),
+                }
+            )
+        return normalized
+
+    def _build_extraction_overview(self, base_payload: Any, rows: list[dict[str, Any]]) -> list[str]:
+        lines: list[str] = []
+        if isinstance(base_payload, dict):
+            section_presence = []
+            for section in self._STATEMENT_SECTIONS:
+                if section in base_payload:
+                    section_presence.append(section)
+            if section_presence:
+                lines.append("Detected sections: " + ", ".join(section_presence))
+        lines.append(f"Extracted normalized row count: {len(rows)}")
+
+        sample_rows = rows[:8]
+        for idx, row in enumerate(sample_rows, start=1):
+            year = row.get("year")
+            label = row.get("label")
+            semantic = row.get("semantic_type")
+            value = row.get("value")
+            entity = row.get("entity_type")
+            lines.append(
+                f"Sample {idx}: year={year}, entity={entity}, semantic={semantic}, label={label}, value={value}"
+            )
+
+        return lines
+
+
+
+    def process(self, report_id: str) -> dict[str, Any]:
         base_payload = self._load_json(self._key(report_id))
         if base_payload is None:
-            return "not_found"
+            return {"status": "not_found", "pdf_path": None}
 
         ratio_payload = self._load_json(self._key(report_id, self.ratios_suffix)) or {}
         pattern_payload = self._load_json(self._key(report_id, self.patterns_suffix)) or {}
@@ -278,6 +388,10 @@ class ReportService:
         segment_analysis = self._build_segment_analysis(rows, latest_year)
         risk_flags = self._build_risk_flags(patterns)
         narrative_consistency = self._build_narrative_consistency(patterns)
+        extraction_overview = self._build_extraction_overview(base_payload, rows)
+        semantic_distribution = self._build_semantic_distribution(rows)
+        metric_trends = self._build_metric_trends(rows)
+        top_line_items = self._build_top_line_items(rows)
 
         final_report = {
             "report_id": report_id,
@@ -287,6 +401,10 @@ class ReportService:
             "segment_analysis": segment_analysis,
             "risk_flags": risk_flags,
             "narrative_consistency": narrative_consistency,
+            "extraction_overview": extraction_overview,
+            "semantic_distribution": semantic_distribution,
+            "metric_trends": metric_trends,
+            "top_line_items": top_line_items,
         }
 
         try:
@@ -297,6 +415,33 @@ class ReportService:
             )
         except Exception:
             logger.error("Redis unavailable while writing final report for report_id=%s", report_id)
-            return "failed"
+            return {"status": "failed", "pdf_path": None}
 
-        return "completed"
+        try:
+            from services.pdf_builder import PDFBuilder
+            builder = PDFBuilder()
+            pdf_path_str = str((self.output_dir / f"{report_id}.pdf").resolve())
+            pdf_path = builder.build_single_report(pdf_path_str, final_report)
+        except Exception:
+            logger.exception("PDF generation failed for report_id=%s", report_id)
+            return {"status": "failed", "pdf_path": None}
+
+        return {"status": "completed", "pdf_path": pdf_path}
+
+    def process_batch(self, batch_id: str, company: dict) -> dict[str, Any]:
+        batch_key = f"{self.input_prefix}:batch:{batch_id}:comparative"
+        batch_payload = self._load_json(batch_key)
+        if not batch_payload:
+            logger.error("Batch comparative payload not found for key=%s", batch_key)
+            return {"status": "not_found", "pdf_path": None}
+            
+        try:
+            from services.pdf_builder import PDFBuilder
+            builder = PDFBuilder()
+            pdf_path_str = str((self.output_dir / f"{batch_id}_comparative.pdf").resolve())
+            pdf_path = builder.build_comparative_report(pdf_path_str, batch_payload)
+        except Exception:
+            logger.exception("Batch PDF generation failed for batch_id=%s", batch_id)
+            return {"status": "failed", "pdf_path": None}
+
+        return {"status": "completed", "pdf_path": pdf_path}

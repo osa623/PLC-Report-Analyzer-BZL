@@ -19,7 +19,7 @@ export default async function IncomeStatementPage({ params }: Props) {
                     <MainNav />
                     <SecondaryNav />
                     <IncomeSubNav />
-                    <IncomeST symbol={symbol} />
+                    <IncomeST />
                 </div>
             </main>
         </SymbolProvider>

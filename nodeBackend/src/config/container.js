@@ -13,12 +13,18 @@ function createContainer() {
   const reportRepository = new ReportRepository(pool);
   const companyRepository = new CompanyRepository(pool);
   const serviceClient = new ServiceClient({ serviceRegistry, logger });
-  const pipelineEngine = new PipelineEngine({ reportRepository, serviceClient, logger });
+  const pipelineEngine = new PipelineEngine({
+    reportRepository,
+    serviceClient,
+    logger,
+    strictAllBackends: env.pipelineStrictAllBackends
+  });
   const reportService = new ReportService({
     reportRepository,
     companyRepository,
     pipelineEngine,
-    uploadDir: env.uploadDir
+    uploadDir: env.uploadDir,
+    serviceClient
   });
   const reportController = new ReportController({ reportService });
 
