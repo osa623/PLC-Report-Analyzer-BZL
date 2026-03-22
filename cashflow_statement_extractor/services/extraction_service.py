@@ -1,9 +1,10 @@
 import logging
-from pathlib import Path
-
+import json
+import concurrent.futures
 from repositories.report_repository import ReportRepository
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
+from models.schemas import DocumentChunk
 
 logger = logging.getLogger(__name__)
 
@@ -19,39 +20,92 @@ class ExtractionService:
         self.gemini_client = gemini_client
         self.transformation_service = transformation_service
 
-    def process(self, report_id: str, file_path: str) -> str:
-        status = "completed"
-        raw_payload: dict = {}
-        normalized_rows: list[dict] = []
-        error_code: str | None = None
+    def _fetch_from_redis(self, key: str) -> dict | None:
+        try:
+            data = self.repository.redis_client.get(key)
+            if data:
+                return json.loads(data)
+        except Exception as e:
+            logger.error(f"Error reading from Redis key '{key}': {e}")
+        return None
 
-        if not Path(file_path).is_file():
+    def _filter_chunks(self, chunks: list[dict]) -> list[DocumentChunk]:
+        filtered = []
+        # Keywords specifically indicating a cashflow statement presence
+        keywords = ["cash flow", "operating activities", "investing activities", "financing activities", "cash and cash equivalents"]
+        for chunk_data in chunks:
+            text = chunk_data.get("text_content", "").lower()
+            if any(kw in text for kw in keywords):
+                filtered.append(DocumentChunk(**chunk_data))
+        return filtered
+
+    def process(self, report_id: str, file_path: str = None) -> str:
+        status = "completed"
+        normalized_records: list[dict] = []
+        validation_errors: list[str] = []
+        error_code: str | None = None
+        
+        chunks_key = f"report:{report_id}:document_chunks"
+        chunks_data = self._fetch_from_redis(chunks_key)
+        
+        if not chunks_data or "chunks" not in chunks_data:
             status = "failed"
-            error_code = "file_not_found"
+            error_code = "missing_document_chunks_in_redis"
+            logger.error(f"Failed to find document chunks for {report_id} in Redis.")
         else:
-            try:
-                raw_payload = self.gemini_client.extract_cashflow_statement(file_path)
-                normalized_rows, is_partial = self.transformation_service.transform(report_id, raw_payload)
-                if is_partial:
-                    status = "partial"
-            except Exception as exc:
-                logger.error("Extraction failed for report_id=%s: %s", report_id, exc.__class__.__name__)
+            raw_chunks = chunks_data["chunks"]
+            relevant_chunks = self._filter_chunks(raw_chunks)
+            
+            if not relevant_chunks:
                 status = "failed"
-                error_code = "gemini_or_transform_error"
+                error_code = "no_relevant_cashflow_chunks"
+                logger.warning(f"No cashflow chunks found for {report_id}")
+            else:
+                chunk_results = []
+                try:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                        future_to_chunk = {
+                            executor.submit(self.gemini_client.extract_chunk, chunk.text_content): chunk 
+                            for chunk in relevant_chunks
+                        }
+                        for future in concurrent.futures.as_completed(future_to_chunk):
+                            chunk = future_to_chunk[future]
+                            try:
+                                payload = future.result()
+                                chunk_results.append((chunk.chunk_id, payload))
+                            except Exception as e:
+                                logger.error(f"Gemini chunk extraction failed for {chunk.chunk_id}: {e}")
+                                
+                    if not chunk_results:
+                        status = "failed"
+                        error_code = "all_chunk_extractions_failed"
+                    else:
+                        normalized_records, is_partial, validation_errors = self.transformation_service.merge_and_transform(
+                            report_id, chunk_results
+                        )
+                        if is_partial:
+                            status = "partial"
+                            
+                except Exception as exc:
+                    logger.error("Extraction failed for report_id=%s: %s", report_id, exc.__class__.__name__)
+                    status = "failed"
+                    error_code = "gemini_or_transform_error"
 
         payload = {
-            "report_id": report_id,
             "statement_type": "cashflow_statement",
             "status": status,
-            "normalized_rows": normalized_rows,
+            "normalized_rows": normalized_records,
             "metadata": {
-                "source_file": file_path,
-                "row_count": len(normalized_rows),
-                "has_raw_rows": bool(raw_payload.get("rows")) if isinstance(raw_payload, dict) else False,
-                "error_code": error_code,
-            },
+                "total_rows": len(normalized_records),
+                "validation_errors": validation_errors,
+                "processed_chunks": len(chunk_results) if 'chunk_results' in locals() else 0,
+            }
         }
+        if error_code:
+            payload["metadata"]["error_code"] = error_code
 
+        # Save to Redis correctly
         if not self.repository.persist_result(report_id=report_id, payload=payload):
             return "failed"
+            
         return status
