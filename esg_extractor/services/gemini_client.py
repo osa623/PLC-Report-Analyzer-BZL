@@ -1,17 +1,18 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-ESG_PROMPT = """
-You are extracting ESG disclosures from an annual report PDF.
+ESG_CHUNK_PROMPT = """
+You are extracting ESG disclosures from a text chunk of an annual report.
 
 Task:
-Extract ALL Environmental, Social, and Governance disclosures from both tables and narrative sections.
+Extract any Environmental, Social, and Governance disclosures found in this chunk.
+If there is no ESG content in the chunk, return an empty categories list.
+This is a PARTIAL extraction.
 
 Scope:
 - Environmental: emissions (CO2, Scope 1/2/3), energy consumption, sustainability initiatives
@@ -89,16 +90,18 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def extract_esg(self, file_path: str) -> dict[str, Any]:
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
+    def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
+        if not chunk_text.strip():
+            return {"categories": []}
 
         last_error: Exception | None = None
         for attempt in range(2):
             try:
-                uploaded_file = genai.upload_file(file_path, mime_type="application/pdf")
                 response = self.model.generate_content(
-                    [uploaded_file, ESG_PROMPT],
+                    [
+                        "Here is the text chunk:\n\n" + chunk_text,
+                        ESG_CHUNK_PROMPT,
+                    ],
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
                         temperature=0.0,
@@ -113,4 +116,4 @@ class GeminiExtractor:
                     exc.__class__.__name__,
                 )
 
-        raise RuntimeError("Gemini ESG extraction failed after retry") from last_error
+        raise RuntimeError("Gemini ESG chunk extraction failed after retry") from last_error

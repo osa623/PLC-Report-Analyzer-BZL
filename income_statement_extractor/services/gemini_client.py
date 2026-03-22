@@ -1,23 +1,24 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-INCOME_STATEMENT_PROMPT = """
-You are extracting data from an annual report PDF.
+INCOME_STATEMENT_CHUNK_PROMPT = """
+You are extracting data from a text chunk of an annual report.
 
 Task:
-Extract the complete Statement of Profit or Loss (Income Statement).
+Extract any Statement of Profit or Loss (Income Statement) line items found in this chunk.
+If the chunk contains no income statement data, return an empty rows list.
+This is a PARTIAL extraction.
 
 Hard constraints:
 - Return ONLY valid JSON. No markdown. No commentary.
 - Preserve exact column headers exactly as printed (e.g. "2024 (Group)", "2023 (Company)").
-- Include all rows without omission.
-- Maintain exact row order.
+- Include all identifiable rows from this chunk.
+- Maintain row order found in this chunk.
 - Preserve exact row labels; do not rename labels.
 - Preserve complete table hierarchy where detectable.
 - Values must remain as strings exactly as shown in the table (including commas and parentheses).
@@ -46,7 +47,7 @@ Return this schema only:
 
 
 class GeminiExtractor:
-    """Gemini API client for strict JSON extraction of income statements."""
+    """Gemini API client for strict JSON extraction of income statements from text chunks."""
 
     def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
         if not api_key:
@@ -83,16 +84,18 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def extract_income_statement(self, file_path: str) -> dict[str, Any]:
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
+    def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
+        if not chunk_text.strip():
+            return {"rows": []}
 
         last_error: Exception | None = None
         for attempt in range(2):
             try:
-                uploaded_file = genai.upload_file(file_path, mime_type="application/pdf")
                 response = self.model.generate_content(
-                    [uploaded_file, INCOME_STATEMENT_PROMPT],
+                    [
+                        "Here is the text chunk:\n\n" + chunk_text,
+                        INCOME_STATEMENT_CHUNK_PROMPT,
+                    ],
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
                         temperature=0.0,
@@ -107,4 +110,4 @@ class GeminiExtractor:
                     exc.__class__.__name__,
                 )
 
-        raise RuntimeError("Gemini extraction failed after retry") from last_error
+        raise RuntimeError("Gemini chunk extraction failed after retry") from last_error
