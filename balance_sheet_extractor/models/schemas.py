@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class ProcessRequest(BaseModel):
     report_id: str
-    file_path: str
+    file_path: str | None = None  # deprecated, but kept for compatibility
 
 
 class ProcessResponse(BaseModel):
@@ -13,28 +13,40 @@ class ProcessResponse(BaseModel):
     status: Literal["completed", "partial", "failed"]
 
 
+class DocumentChunk(BaseModel):
+    chunk_id: str
+    text_content: str
+    page_number: int | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class DocumentStructure(BaseModel):
+    sections: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class NormalizedBalanceRecord(BaseModel):
     report_id: str
     statement_type: Literal["balance"]
-    entity_type: Literal["company", "group"]
-    year: int
+
     label: str
     value: float | None
+    year: int
+    entity_type: str
+    semantic_type: str | None = None
+    depth: int = 0
+    parent: str | None = None
+    confidence_score: float = 1.0
+    source_chunk_id: str | None = None
+    page_number: int | None = None
 
-    section: Literal["Assets", "Liabilities", "Equity"]
+    # Fields kept for internal processing, but not strictly required by step 9
+    section: Literal["Assets", "Liabilities", "Equity"] | None = None
     subsection: str | None = None
-    parent_label: str | None = None
-    depth_level: int = 0
-    order_index: int
-
+    order_index: int = 0
     currency: str | None = None
     scale: str | None = None
     is_negative: bool = False
-
     note_reference: str | None = None
-    page_number: int | None = None
-
-    semantic_type: str | None = None
 
 
 class ExtractionStorePayload(BaseModel):

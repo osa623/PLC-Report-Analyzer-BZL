@@ -1,37 +1,25 @@
 import re
 from typing import Any
+import logging
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_SECTIONS = {"Assets", "Liabilities", "Equity"}
 
-
 class TransformationService:
-    _SEMANTIC_MAP: dict[str, tuple[str, ...]] = {
-        "current_asset": ("cash", "receivable", "inventory", "short-term", "current asset"),
-        "noncurrent_asset": ("property, plant", "equipment", "intangible", "investment property", "non-current asset", "right-of-use"),
-        "liability": ("liability", "borrowings", "payable", "debt", "provision", "lease"),
-        "equity": ("equity", "share capital", "retained earnings", "reserve", "other comprehensive"),
-    }
-
-    _META_KEYS = {
-        "label",
-        "values",
-        "section",
-        "subsection",
-        "parent_label",
-        "indent_level",
-        "depth_level",
-        "note_reference",
-        "page_number",
-    }
-
     @staticmethod
     def _parse_header(header: str) -> tuple[int | None, str]:
         year_match = re.search(r"(19|20)\d{2}", header)
         year = int(year_match.group(0)) if year_match else None
 
-        scope_match = re.search(r"\(([^)]+)\)", header)
-        scope = scope_match.group(1).strip().lower() if scope_match else "company"
-        entity_type = "group" if "group" in scope else "company"
+        lowered = header.lower()
+        if "bank" in lowered and "group" in lowered:
+            entity_type = "bank/group"
+        elif "group" in lowered:
+            entity_type = "group"
+        else:
+            entity_type = "company"
+            
         return year, entity_type
 
     @staticmethod
@@ -43,7 +31,7 @@ class TransformationService:
             return numeric, numeric < 0
 
         text = str(value).strip()
-        if not text or text in {"-", "--", "N/A", "n/a"}:
+        if not text or text in {"-", "--", "N/A", "n/a", ""}:
             return None, False
 
         is_negative = text.startswith("(") and text.endswith(")")
@@ -58,13 +46,13 @@ class TransformationService:
 
         if is_negative:
             numeric = -numeric
+            
+        # Detect unit inconsistencies (heuristic: if very small like 1.5, might be billions, but just store raw)
         return numeric, numeric < 0
 
-    def _semantic_type(self, label: str, section: str | None) -> str | None:
-        lowered = label.lower()
-        for semantic_type, markers in self._SEMANTIC_MAP.items():
-            if any(marker in lowered for marker in markers):
-                return semantic_type
+    def _semantic_type(self, parent: str | None, section: str | None) -> str | None:
+        if not section:
+            return None
         if section == "Assets":
             return "asset"
         if section == "Liabilities":
@@ -101,80 +89,148 @@ class TransformationService:
             return 0
         return max(1, leading_spaces // 2)
 
-    def transform(self, report_id: str, raw_payload: dict[str, Any]) -> tuple[list[dict[str, Any]], bool]:
-        rows = raw_payload.get("rows") or []
-        currency = raw_payload.get("currency")
-        scale = raw_payload.get("scale")
-
-        normalized_rows: list[dict[str, Any]] = []
+    def merge_and_transform(self, report_id: str, chunk_results: list[tuple[str, dict[str, Any]]]) -> tuple[list[dict[str, Any]], bool, list[str]]:
+        merged_rows = []
+        seen_keys = set()
+        
+        current_section = None
+        depth_stack = {}
+        
+        normalized_records = []
         partial = False
-
-        # Tracks most recent label at each depth to reconstruct parent-child links.
-        depth_stack: dict[int, str] = {}
-        current_section: str | None = None
-
-        for order_index, row in enumerate(rows):
-            if not isinstance(row, dict):
-                partial = True
-                continue
-
-            label = str(row.get("label") or "").strip()
-            if not label:
-                partial = True
-                continue
-
-            section = self._normalize_section(row.get("section")) or current_section
-            if section is None:
-                if label.lower() in {"assets", "liabilities", "equity"}:
-                    section = label.title()
-                else:
-                    partial = True
+        validation_errors = []
+        
+        for chunk_id, payload in chunk_results:
+            rows = payload.get("rows") or []
+            
+            for row in rows:
+                if not isinstance(row, dict):
                     continue
-            current_section = section
-
-            depth_level = self._depth_from_indent(row.get("indent_level"), label)
-            explicit_parent = row.get("parent_label")
-            parent_label = explicit_parent if explicit_parent else depth_stack.get(max(depth_level - 1, 0))
-            if depth_level == 0:
-                parent_label = None
-
-            depth_stack[depth_level] = label
-
-            values = row.get("values")
-            if not isinstance(values, dict):
-                values = {k: v for k, v in row.items() if k not in self._META_KEYS}
-
-            if not values:
-                partial = True
-                continue
-
-            for header, raw_value in values.items():
-                year, entity_type = self._parse_header(str(header))
-                if year is None:
-                    partial = True
+                label = str(row.get("label") or "").strip()
+                if not label:
                     continue
+                    
+                section = self._normalize_section(row.get("section")) or current_section
+                if section is None:
+                    if label.lower() in {"assets", "liabilities", "equity"}:
+                        section = label.title()
+                    else:
+                        continue
+                current_section = section
+                
+                depth = self._depth_from_indent(row.get("indent_level"), label)
+                explicit_parent = row.get("parent_label")
+                parent = explicit_parent if explicit_parent else depth_stack.get(max(depth - 1, 0))
+                if depth == 0:
+                    parent = None
+                
+                depth_stack[depth] = label
 
-                numeric_value, is_negative = self._to_number(raw_value)
-                normalized_rows.append(
-                    {
+                values = row.get("values")
+                if not isinstance(values, dict):
+                    values = {k: v for k, v in row.items() if k not in {"label", "section", "subsection", "parent_label", "indent_level", "note_reference", "page_number"}}
+                
+                if not values:
+                    continue
+                    
+                for header, raw_value in values.items():
+                    if "usd" in str(header).lower():
+                        continue
+                        
+                    year, entity_type = self._parse_header(str(header))
+                    if year is None:
+                        continue
+                        
+                    numeric_value, _ = self._to_number(raw_value)
+                    semantic_type = self._semantic_type(parent, section)
+                    
+                    # Deduplication key across chunks
+                    dedup_key = f"{year}-{entity_type}-{label.lower()}-{section}"
+                    if dedup_key in seen_keys:
+                        continue
+                    seen_keys.add(dedup_key)
+                    
+                    confidence = 1.0
+                    if numeric_value is None:
+                        confidence -= 0.2
+                    if not parent and depth > 0:
+                        confidence -= 0.1
+                        
+                    page_number = row.get("page_number")
+
+                    normalized_records.append({
                         "report_id": report_id,
                         "statement_type": "balance",
-                        "entity_type": entity_type,
-                        "year": year,
                         "label": label,
                         "value": numeric_value,
+                        "year": year,
+                        "entity_type": entity_type,
+                        "semantic_type": semantic_type,
+                        "depth": depth,
+                        "parent": parent,
+                        "confidence_score": max(0.0, round(confidence, 2)),
+                        "source_chunk_id": chunk_id,
+                        "page_number": page_number,
                         "section": section,
-                        "subsection": row.get("subsection"),
-                        "parent_label": parent_label,
-                        "depth_level": depth_level,
-                        "order_index": order_index,
-                        "currency": row.get("currency") or currency,
-                        "scale": row.get("scale") or scale,
-                        "is_negative": is_negative,
-                        "note_reference": row.get("note_reference"),
-                        "page_number": row.get("page_number"),
-                        "semantic_type": self._semantic_type(label, section),
-                    }
-                )
+                    })
 
-        return normalized_rows, partial
+        # Multi-Year Alignment
+        contexts = set((r["year"], r["entity_type"]) for r in normalized_records)
+        labels_by_section = set((r["label"], r["section"], r["depth"], r["parent"], r["semantic_type"], r["source_chunk_id"], r["page_number"]) for r in normalized_records)
+        
+        aligned_records = []
+        for year, entity in contexts:
+            existing = {(r["label"], r["section"]): r for r in normalized_records if r["year"] == year and r["entity_type"] == entity}
+            
+            for label, section, depth, parent, sem_type, chunk_id, page_num in labels_by_section:
+                key = (label, section)
+                if key in existing:
+                    aligned_records.append(existing[key])
+                else:
+                    aligned_records.append({
+                        "report_id": report_id,
+                        "statement_type": "balance",
+                        "label": label,
+                        "value": None,
+                        "year": year,
+                        "entity_type": entity,
+                        "semantic_type": sem_type,
+                        "depth": depth,
+                        "parent": parent,
+                        "confidence_score": 0.5,
+                        "source_chunk_id": chunk_id,
+                        "page_number": page_num,
+                        "section": section
+                    })
+
+        # Validation Layer
+        for year, entity in contexts:
+            total_assets = self._find_total(aligned_records, year, entity, "Assets")
+            total_liabilities = self._find_total(aligned_records, year, entity, "Liabilities")
+            total_equity = self._find_total(aligned_records, year, entity, "Equity")
+            
+            if total_assets is None or total_liabilities is None or total_equity is None:
+                validation_errors.append(f"Missing required total fields for {year} {entity}")
+                partial = True
+            else:
+                diff = abs(total_assets - (total_liabilities + total_equity))
+                if diff > 2.0:
+                    validation_errors.append(f"Balance mismatch for {year} {entity}: Assets({total_assets}) != Liab({total_liabilities}) + Eq({total_equity})")
+                    partial = True
+
+        return aligned_records, partial, validation_errors
+
+    def _find_total(self, records: list[dict], year: int, entity: str, section: str) -> float | None:
+        section_items = [r for r in records if r["year"] == year and r["entity_type"] == entity and r["section"] == section and r["value"] is not None]
+        if not section_items:
+            return None
+        
+        for r in section_items:
+            if "total" in r["label"].lower():
+                return r["value"]
+                
+        # If no explicit "total" label, return the sum of depth 0 items or the last item
+        totals = [r["value"] for r in section_items if r["depth"] == 0]
+        if totals:
+            return sum(totals)
+        return section_items[-1]["value"]

@@ -7,22 +7,21 @@ import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-CASHFLOW_PROMPT = """
-You are extracting data from an annual report PDF.
+CASHFLOW_CHUNK_PROMPT = """
+You are extracting financial data from a text chunk of an annual report.
 
 Task:
-Extract the complete Cash Flow Statement.
+Extract any Cash Flow Statement line items found in this text chunk.
+If the chunk contains NO cash flow data, return empty lists for rows.
+This is a PARTIAL extraction. Do not worry if totals or sections are missing.
 
 Hard constraints:
 - Return ONLY valid JSON. No markdown. No commentary.
+- IGNORE any tables or data denominated in USD (US Dollars). ONLY extract LKR (Sri Lankan Rupees) tables or tables where currency is unspecified.
 - Preserve exact column headers exactly as printed (e.g. "2024 (Group)", "2023 (Company)").
-- Include all rows without omission, including subtotals and totals.
-- Maintain exact row order.
-- Preserve exact row labels; do not rename labels.
-- Capture sections explicitly and correctly:
-  - Operating Activities
-  - Investing Activities
-  - Financing Activities
+- Preserve exact row order and labels.
+- Capture hierarchy using indent_level and/or parent_label when possible.
+- Include sections: Operating Activities, Investing Activities, Financing Activities if they can be inferred.
 - Values must remain as strings exactly as shown in the table (including commas and parentheses).
 
 Return this schema only:
@@ -39,9 +38,8 @@ Return this schema only:
       "section": "Operating Activities|Investing Activities|Financing Activities|null",
       "subsection": "string or null",
       "parent_label": "string or null",
-      "depth_level": 0,
-      "note_reference": "string or null",
-      "page_number": 1
+      "indent_level": 0,
+      "note_reference": "string or null"
     }
   ]
 }
@@ -49,7 +47,7 @@ Return this schema only:
 
 
 class GeminiExtractor:
-    """Gemini API client for strict JSON extraction of cash flow statements."""
+    """Gemini API client for strict JSON extraction of cash flow statements from text chunks."""
 
     def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
         if not api_key:
@@ -84,18 +82,21 @@ class GeminiExtractor:
 
         if not isinstance(parsed, dict):
             raise ValueError("Gemini response is not a JSON object")
+            
         return parsed
 
-    def extract_cashflow_statement(self, file_path: str) -> dict[str, Any]:
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
+    def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
+        if not chunk_text.strip():
+            return {"rows": []}
 
         last_error: Exception | None = None
         for attempt in range(2):
             try:
-                uploaded_file = genai.upload_file(file_path, mime_type="application/pdf")
                 response = self.model.generate_content(
-                    [uploaded_file, CASHFLOW_PROMPT],
+                    [
+                        "Here is the text chunk:\n\n" + chunk_text,
+                        CASHFLOW_CHUNK_PROMPT,
+                    ],
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
                         temperature=0.0,
@@ -111,3 +112,4 @@ class GeminiExtractor:
                 )
 
         raise RuntimeError("Gemini extraction failed after retry") from last_error
+
