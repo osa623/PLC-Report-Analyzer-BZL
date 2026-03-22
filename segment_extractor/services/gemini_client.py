@@ -1,17 +1,18 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-SEGMENT_PROMPT = """
-You are extracting data from an annual report PDF.
+SEGMENT_CHUNK_PROMPT = """
+You are extracting data from a text chunk of an annual report.
 
 Task:
-Extract ONLY segment-related disclosures and return complete structured data.
+Extract ONLY segment-related disclosures found in this chunk.
+If there is no segment-related data in the chunk, return an empty segments list.
+This is a PARTIAL extraction.
 
 Include:
 - Business segments (for example: Retail, Corporate, Digital)
@@ -100,16 +101,18 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def extract_segments(self, file_path: str) -> dict[str, Any]:
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
+    def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
+        if not chunk_text.strip():
+            return {"segments": []}
 
         last_error: Exception | None = None
         for attempt in range(2):
             try:
-                uploaded_file = genai.upload_file(file_path, mime_type="application/pdf")
                 response = self.model.generate_content(
-                    [uploaded_file, SEGMENT_PROMPT],
+                    [
+                        "Here is the text chunk:\n\n" + chunk_text,
+                        SEGMENT_CHUNK_PROMPT,
+                    ],
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
                         temperature=0.0,
@@ -124,4 +127,4 @@ class GeminiExtractor:
                     exc.__class__.__name__,
                 )
 
-        raise RuntimeError("Gemini extraction failed after retry") from last_error
+        raise RuntimeError("Gemini chunk extraction failed after retry") from last_error

@@ -1,17 +1,18 @@
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
 import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-GOVERNANCE_PROMPT = """
-You are extracting corporate governance disclosures from an annual report PDF.
+GOVERNANCE_CHUNK_PROMPT = """
+You are extracting corporate governance disclosures from a text chunk of an annual report.
 
 Task:
-Extract ALL governance-related disclosures.
+Extract any governance-related disclosures in this chunk.
+If this chunk contains no governance content, return empty lists for all schema arrays.
+This is a PARTIAL extraction.
 
 Scope:
 - Board of Directors
@@ -96,16 +97,23 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def extract_governance(self, file_path: str) -> dict[str, Any]:
-        if not Path(file_path).exists():
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
+    def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
+        if not chunk_text.strip():
+            return {
+                "board_members": [],
+                "committees": [],
+                "executive_leadership": [],
+                "governance_policies": [],
+            }
 
         last_error: Exception | None = None
         for attempt in range(2):
             try:
-                uploaded_file = genai.upload_file(file_path, mime_type="application/pdf")
                 response = self.model.generate_content(
-                    [uploaded_file, GOVERNANCE_PROMPT],
+                    [
+                        "Here is the text chunk:\n\n" + chunk_text,
+                        GOVERNANCE_CHUNK_PROMPT,
+                    ],
                     generation_config=genai.GenerationConfig(
                         response_mime_type="application/json",
                         temperature=0.0,
@@ -120,4 +128,4 @@ class GeminiExtractor:
                     exc.__class__.__name__,
                 )
 
-        raise RuntimeError("Gemini governance extraction failed after retry") from last_error
+        raise RuntimeError("Gemini governance chunk extraction failed after retry") from last_error
