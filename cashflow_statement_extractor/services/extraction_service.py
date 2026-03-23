@@ -8,6 +8,7 @@ from services.confidence_service import ConfidenceScorer
 from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
 from services.guardrails_service import ProcessingGuardrails
+from services.observability_service import ObservabilityService
 from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -52,6 +53,15 @@ class ExtractionService:
             per_user_reports_per_hour=settings.guardrails_per_user_reports_per_hour,
             per_ip_reports_per_hour=settings.guardrails_per_ip_reports_per_hour,
         )
+        self.observability = ObservabilityService(
+            repository=repository,
+            enabled=settings.observability_enabled,
+            tracing_enabled=settings.observability_tracing_enabled,
+            latency_alert_ms=settings.observability_latency_alert_ms,
+            queue_depth_alert_threshold=settings.observability_queue_depth_alert_threshold,
+            failure_rate_alert_threshold=settings.observability_failure_rate_alert_threshold,
+            low_confidence_alert_enabled=settings.observability_low_confidence_alert_enabled,
+        )
 
     def _fetch_from_redis(self, key: str) -> dict | None:
         try:
@@ -87,6 +97,7 @@ class ExtractionService:
             "guardrails_user_rate_limited": False,
             "guardrails_ip_rate_limited": False,
         }
+        observability_trace = self.observability.trace_context(report_id, "cashflow_statement")
         
         chunks_key = f"report:{report_id}:document_chunks"
         chunks_data = self._fetch_from_redis(chunks_key)
@@ -193,6 +204,16 @@ class ExtractionService:
             guardrail_state=guardrail_state,
             fallback_attempted=fallback_metadata["fallback_attempted"],
         )
+        observability_metadata = self.observability.capture(
+            report_id=report_id,
+            statement_type="cashflow_statement",
+            status=status,
+            processed_chunks=len(chunk_results) if 'chunk_results' in locals() else 0,
+            output_rows=len(normalized_records),
+            confidence_band=confidence_result["confidence_band"],
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+            started_at=started_at,
+        )
 
         payload = {
             "statement_type": "cashflow_statement",
@@ -217,6 +238,8 @@ class ExtractionService:
                 "confidence_routing_decision": routing_decision["decision"],
                 "confidence_routing_reason": routing_decision["reason"],
                 "processed_chunks": len(chunk_results) if 'chunk_results' in locals() else 0,
+                **observability_trace,
+                **observability_metadata,
                 **guardrail_state,
                 **usage_metadata,
             }

@@ -34,6 +34,12 @@ class Settings(BaseSettings):
     guardrails_usage_metering_enabled: bool = True
     guardrails_per_user_reports_per_hour: int = 200
     guardrails_per_ip_reports_per_hour: int = 400
+    observability_enabled: bool = True
+    observability_tracing_enabled: bool = True
+    observability_latency_alert_ms: int = 60000
+    observability_queue_depth_alert_threshold: int = 100
+    observability_failure_rate_alert_threshold: float = 20.0
+    observability_low_confidence_alert_enabled: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
