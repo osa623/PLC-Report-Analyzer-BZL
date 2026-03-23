@@ -21,6 +21,18 @@ Run a single step suite:
 python -m unittest discover -s tests/step_01 -p "test_*.py"
 ```
 
+Run Step 12 benchmark suite:
+
+```powershell
+python -m unittest discover -s tests/step_12 -p "test_*.py"
+```
+
+Generate the golden benchmark report (and fail build on regression):
+
+```powershell
+python scripts/run_golden_benchmark.py --metadata data/eval/golden_set_metadata.json --thresholds data/eval/thresholds.json --output data/eval/last_benchmark_report.json --fail-on-regression
+```
+
 ## Rules
 - Every roadmap step should include at least one automated test suite before moving to the next step.
 - Keep tests deterministic and independent of external services where possible.
