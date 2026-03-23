@@ -1,7 +1,7 @@
 # PLC Report Analyzer - Public Launch Roadmap
 
 ## 1. Purpose
-This roadmap is a practical implementation plan for a single developer to take the current extraction stack to a production-ready public platform (web and mobile), where many users can upload up to 10 PDFs in one request.
+This roadmap is a practical implementation plan for a single developer to take the current extraction stack to a production-ready public API platform, where many users or client apps can upload up to 10 PDFs in one request.
 
 The plan is designed to:
 - Improve extraction accuracy and reliability
@@ -29,9 +29,9 @@ Use this execution model:
 
 ## 4. Product and Technical Goals
 ### Product goals
-- Public users can upload up to 10 PDFs per request
-- Users can track progress per file and per job
-- Users receive structured outputs and status (completed, partial, failed)
+- Public API consumers can upload up to 10 PDFs per request
+- Clients can track progress per file and per job via API
+- Clients receive structured outputs and status (completed, partial, failed)
 
 ### Technical goals
 - Stable async processing under concurrent load
@@ -55,7 +55,7 @@ Use this execution model:
   - SQL for durable metadata, billing, and audit
 - Notifications:
   - polling endpoint first
-  - optional push/WebSocket next
+  - optional webhook callback next
 
 ### Model strategy
 - Primary extractor: Gemini
@@ -273,6 +273,18 @@ Use this cadence each week:
 Rule:
 - Never start a new extractor feature without tests, metrics, and rollback path
 
+## 9A. Step-Wise Testing Requirement
+Every implementation step in Section 10 must include matching automated tests before moving to the next step.
+
+Minimum requirement per step:
+- Unit tests for core logic changes
+- Contract tests for request/response shape if API behavior changes
+- Regression test for at least one critical failure case addressed in that step
+
+Execution convention:
+- Keep tests under `tests/step_XX/`
+- Run the current step suite and full suite before marking the step done
+
 ## 10. Implementation Order (Exact Suggested Sequence)
 1. Standardize config/logging/error codes
 2. Build async parent-child job model
@@ -321,10 +333,29 @@ Mitigation:
 - Enterprise tier: custom quota and support
 
 ### Go-to-market sequence
-- Closed beta with selected users
+- Closed beta with selected API consumers
 - Capture corrections and failure reports
 - Patch top accuracy gaps
-- Open public launch with guardrails
+- Open public API launch with guardrails
+
+## 13A. Backend-Only Launch Mode (No Frontend)
+Use this mode if you are not building web/mobile UI yet.
+
+Scope in this mode:
+- Build only API endpoints, job orchestration, workers, validation, and observability
+- Provide API docs and example client collections (Postman or similar)
+- Support polling and optional webhooks for status updates
+
+Deferred to later:
+- Web dashboard
+- Mobile app
+- Human review UI
+
+Recommended additions for API-first delivery:
+- Add versioned API path strategy (for example, /v1)
+- Add OpenAPI docs quality checks in CI
+- Add API key issuance, rotation, and revocation workflow
+- Add idempotency keys for submission endpoints
 
 ## 13. Decision Note for Fallback Provider
 Choose one provider first, not both.

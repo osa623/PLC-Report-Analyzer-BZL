@@ -3,9 +3,12 @@ import logging
 import concurrent.futures
 from typing import Any
 
+from common import error_codes
 from repositories.report_repository import ReportRepository
+from services.confidence_service import ConfidenceScorer
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
+from services.validation_service import ExtractionValidator
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +23,8 @@ class ExtractionService:
         self.repository = repository
         self.gemini_client = gemini_client
         self.transformation_service = transformation_service
+        self.validator = ExtractionValidator()
+        self.confidence = ConfidenceScorer()
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -69,7 +74,7 @@ class ExtractionService:
                 "normalized_rows": [],
                 "metadata": {
                     "total_rows": 0,
-                    "validation_errors": ["no_relevant_chunks"],
+                    "validation_errors": [error_codes.NO_RELEVANT_CHUNKS],
                     "processed_chunks": 0
                 }
             }
@@ -93,7 +98,7 @@ class ExtractionService:
         except Exception as e:
             logger.error("Extraction error %s", e)
             status = "failed"
-            error_code = "extraction_error"
+            error_code = error_codes.EXTRACTION_ERROR
 
         normalized_records = []
         if status != "failed":
@@ -105,7 +110,19 @@ class ExtractionService:
             except Exception as exc:
                 logger.error("Transformation failed: %s", exc)
                 status = "failed"
-                error_code = "transformation_error"
+                error_code = error_codes.TRANSFORMATION_ERROR
+
+        validation_result = self.validator.validate_records("balance_sheet", normalized_records)
+        validation_errors.extend(validation_result["errors"])
+        if validation_result["errors"] and status == "completed":
+            status = "partial"
+        confidence_result = self.confidence.score("balance_sheet", normalized_records, validation_result)
+        if status != "failed":
+            if confidence_result["confidence_band"] == "low":
+                status = "failed"
+                error_code = error_code or "low_confidence_output"
+            elif confidence_result["confidence_band"] == "medium" and status == "completed":
+                status = "partial"
 
         payload = {
             "statement_type": "balance_sheet",
@@ -114,6 +131,12 @@ class ExtractionService:
             "metadata": {
                 "total_rows": len(normalized_records),
                 "validation_errors": validation_errors,
+                "validation_warnings": validation_result["warnings"],
+                "validation_error_count": validation_result["error_count"],
+                "validation_warning_count": validation_result["warning_count"],
+                "confidence_score": confidence_result["confidence_score"],
+                "confidence_band": confidence_result["confidence_band"],
+                "confidence_reasons": confidence_result["confidence_reasons"],
                 "processed_chunks": len(chunk_results),
             }
         }

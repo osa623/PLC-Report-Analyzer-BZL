@@ -4,8 +4,10 @@ import logging
 from typing import Any
 
 from repositories.report_repository import ReportRepository
+from services.confidence_service import ConfidenceScorer
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
+from services.validation_service import ExtractionValidator
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,8 @@ class ExtractionService:
         self.repository = repository
         self.gemini_client = gemini_client
         self.transformation_service = transformation_service
+        self.validator = ExtractionValidator()
+        self.confidence = ConfidenceScorer()
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -140,6 +144,17 @@ class ExtractionService:
                     status = "failed"
                     error_code = "gemini_or_transform_error"
 
+        validation_result = self.validator.validate_records("segment", normalized_rows)
+        if validation_result["errors"] and status == "completed":
+            status = "partial"
+        confidence_result = self.confidence.score("segment", normalized_rows, validation_result)
+        if status != "failed":
+            if confidence_result["confidence_band"] == "low":
+                status = "failed"
+                error_code = error_code or "low_confidence_output"
+            elif confidence_result["confidence_band"] == "medium" and status == "completed":
+                status = "partial"
+
         payload = {
             "report_id": report_id,
             "statement_type": "segment",
@@ -150,6 +165,13 @@ class ExtractionService:
                 "row_count": len(normalized_rows),
                 "segment_count": segment_count,
                 "processed_chunks": len(chunk_results),
+                "validation_errors": validation_result["errors"],
+                "validation_warnings": validation_result["warnings"],
+                "validation_error_count": validation_result["error_count"],
+                "validation_warning_count": validation_result["warning_count"],
+                "confidence_score": confidence_result["confidence_score"],
+                "confidence_band": confidence_result["confidence_band"],
+                "confidence_reasons": confidence_result["confidence_reasons"],
                 "error_code": error_code,
             },
         }
