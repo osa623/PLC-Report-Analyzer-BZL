@@ -1,6 +1,16 @@
 /logs/
 /backend_pids.json
 /data/
+!/data/
+/data/*
+!/data/eval/
+/data/eval/*
+!/data/eval/cases/
+!/data/eval/cases/*.json
+!/data/eval/golden_set_metadata.json
+!/data/eval/thresholds.json
+!/data/eval/ops_snapshot.json
+!/data/eval/release_readiness_snapshot.json
 start_all_backends_local.ps1
 ROAD_MAP.md
 /.tmp_ci_env/
