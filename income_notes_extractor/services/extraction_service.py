@@ -142,6 +142,7 @@ class ExtractionService:
         if validation_result["errors"] and status == "completed":
             status = "partial"
         confidence_result = self.confidence.score("income_notes", normalized_rows, validation_result)
+        confidence_details = self.confidence.analyze_records(normalized_rows)
         if status != "failed":
             if confidence_result["confidence_band"] == "low":
                 status = "failed"
@@ -165,6 +166,9 @@ class ExtractionService:
                 "confidence_score": confidence_result["confidence_score"],
                 "confidence_band": confidence_result["confidence_band"],
                 "confidence_reasons": confidence_result["confidence_reasons"],
+                "confidence_distribution": confidence_details["confidence_distribution"],
+                "confidence_samples": confidence_details["confidence_samples"],
+                "confidence_section_summary": confidence_details["confidence_section_summary"],
                 "error_code": error_code,
             },
         }
