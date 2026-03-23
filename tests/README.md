@@ -45,6 +45,18 @@ Run beta readiness gate (and fail on blockers):
 python scripts/run_beta_readiness.py --benchmark-report data/eval/last_benchmark_report.json --ops-snapshot data/eval/ops_snapshot.json --output data/eval/last_beta_readiness_report.json --fail-on-blocker
 ```
 
+Run Step 14 release readiness suite:
+
+```powershell
+python -m unittest discover -s tests/step_14 -p "test_*.py"
+```
+
+Run public launch readiness gate:
+
+```powershell
+python scripts/run_release_readiness.py --benchmark-report data/eval/last_benchmark_report.json --beta-report data/eval/last_beta_readiness_report.json --readiness-snapshot data/eval/release_readiness_snapshot.json --output data/eval/last_release_readiness_report.json --fail-on-blocker
+```
+
 ## Rules
 - Every roadmap step should include at least one automated test suite before moving to the next step.
 - Keep tests deterministic and independent of external services where possible.

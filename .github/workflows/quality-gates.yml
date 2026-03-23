@@ -33,3 +33,11 @@ jobs:
           --ops-snapshot data/eval/ops_snapshot.json
           --output data/eval/last_beta_readiness_report.json
           --fail-on-blocker
+      - name: Run release readiness gate
+        run: >-
+          python scripts/run_release_readiness.py
+          --benchmark-report data/eval/last_benchmark_report.json
+          --beta-report data/eval/last_beta_readiness_report.json
+          --readiness-snapshot data/eval/release_readiness_snapshot.json
+          --output data/eval/last_release_readiness_report.json
+          --fail-on-blocker
