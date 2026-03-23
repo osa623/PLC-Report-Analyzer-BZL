@@ -58,12 +58,12 @@ class AsyncJobSubmitRequest(BaseModel):
 class ChildJobSummary(BaseModel):
     child_job_id: str
     report_id: str
-    status: Literal["queued", "running", "completed", "partial", "failed"]
+    status: Literal["queued", "running", "completed", "partial", "failed", "dead_letter"]
 
 
 class AsyncJobSubmitResponse(BaseModel):
     parent_job_id: str
-    status: Literal["queued", "running", "completed", "partial", "failed"]
+    status: Literal["queued", "running", "completed", "partial", "failed", "dead_letter"]
     total_children: int
     children: list[ChildJobSummary] = Field(default_factory=list)
 
@@ -72,7 +72,7 @@ class ChildJobStatus(BaseModel):
     child_job_id: str
     parent_job_id: str
     report_id: str
-    status: Literal["queued", "running", "completed", "partial", "failed"]
+    status: Literal["queued", "running", "completed", "partial", "failed", "dead_letter"]
     created_at: str
     started_at: str | None = None
     completed_at: str | None = None
@@ -81,9 +81,10 @@ class ChildJobStatus(BaseModel):
 
 class ParentJobStatusResponse(BaseModel):
     parent_job_id: str
-    status: Literal["queued", "running", "completed", "partial", "failed"]
+    status: Literal["queued", "running", "completed", "partial", "failed", "dead_letter"]
     created_at: str
     started_at: str | None = None
     completed_at: str | None = None
     total_children: int
     children: list[ChildJobStatus] = Field(default_factory=list)
+

@@ -7,15 +7,19 @@ from redis import Redis
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MAX_ATTEMPTS = 3
+DEAD_LETTER_STATUS = "dead_letter"
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
 class JobService:
-    def __init__(self, redis_client: Redis, ttl_seconds: int) -> None:
+    def __init__(self, redis_client: Redis, ttl_seconds: int, max_attempts: int = DEFAULT_MAX_ATTEMPTS) -> None:
         self.redis_client = redis_client
         self.ttl_seconds = ttl_seconds
+        self.max_attempts = max(1, max_attempts)
 
     def _parent_key(self, parent_job_id: str) -> str:
         return f"job:{parent_job_id}"
@@ -35,12 +39,19 @@ class JobService:
                 "parent_job_id": parent_job_id,
                 "report_id": report_id,
                 "status": "queued",
+                "attempts": 0,
+                "max_attempts": self.max_attempts,
                 "created_at": now,
                 "started_at": None,
                 "completed_at": None,
+                "dead_lettered_at": None,
                 "error_code": None,
             }
-            self.redis_client.set(self._child_key(child_job_id), json.dumps(child_payload), ex=self.ttl_seconds)
+            self.redis_client.set(
+                self._child_key(child_job_id),
+                json.dumps(child_payload),
+                ex=self.ttl_seconds,
+            )
             children.append(child_payload)
 
         parent_payload = {
@@ -50,9 +61,14 @@ class JobService:
             "started_at": None,
             "completed_at": None,
             "total_children": len(children),
+            "dead_letter_count": 0,
             "children": [{"child_job_id": c["child_job_id"], "report_id": c["report_id"]} for c in children],
         }
-        self.redis_client.set(self._parent_key(parent_job_id), json.dumps(parent_payload), ex=self.ttl_seconds)
+        self.redis_client.set(
+            self._parent_key(parent_job_id),
+            json.dumps(parent_payload),
+            ex=self.ttl_seconds,
+        )
 
         return {
             "parent_job_id": parent_job_id,
@@ -79,6 +95,12 @@ class JobService:
     def update_child(self, child_job_id: str, payload: dict) -> None:
         self.redis_client.set(self._child_key(child_job_id), json.dumps(payload), ex=self.ttl_seconds)
 
+    def _mark_child_dead_letter(self, child: dict, error_code: str) -> None:
+        child["status"] = DEAD_LETTER_STATUS
+        child["completed_at"] = _utc_now()
+        child["dead_lettered_at"] = _utc_now()
+        child["error_code"] = error_code
+
     def process_parent_job(self, parent_job_id: str, extraction_service) -> None:
         parent = self.get_parent_job(parent_job_id)
         if not parent:
@@ -95,26 +117,42 @@ class JobService:
             child_job_id = child_ref["child_job_id"]
             child = self.get_child_job(child_job_id)
             if not child:
-                child_results.append("failed")
+                child_results.append(DEAD_LETTER_STATUS)
                 continue
 
             child["status"] = "running"
-            child["started_at"] = _utc_now()
+            child["started_at"] = child.get("started_at") or _utc_now()
+            child["error_code"] = None
+            child["dead_lettered_at"] = None
             self.update_child(child_job_id, child)
 
-            try:
-                status = extraction_service.process(child["report_id"], None)
-                child["status"] = status
-                child["completed_at"] = _utc_now()
-                child["error_code"] = None if status in {"completed", "partial"} else "child_processing_failed"
-                child_results.append(status)
-            except Exception:
-                child["status"] = "failed"
-                child["completed_at"] = _utc_now()
-                child["error_code"] = "child_processing_exception"
-                child_results.append("failed")
-            finally:
+            final_child_status = "failed"
+            for _ in range(child.get("attempts", 0), child.get("max_attempts", self.max_attempts)):
+                child["attempts"] = child.get("attempts", 0) + 1
                 self.update_child(child_job_id, child)
+                try:
+                    status = extraction_service.process(child["report_id"], None)
+                    if status in {"completed", "partial"}:
+                        child["status"] = status
+                        child["completed_at"] = _utc_now()
+                        child["error_code"] = None
+                        final_child_status = status
+                        break
+
+                    child["status"] = "failed"
+                    child["error_code"] = "child_processing_failed"
+                    final_child_status = "failed"
+                except Exception:
+                    child["status"] = "failed"
+                    child["error_code"] = "child_processing_exception"
+                    final_child_status = "failed"
+
+            if final_child_status == "failed":
+                self._mark_child_dead_letter(child, child.get("error_code") or "child_processing_failed")
+                final_child_status = DEAD_LETTER_STATUS
+
+            self.update_child(child_job_id, child)
+            child_results.append(final_child_status)
 
         if child_results and all(status == "completed" for status in child_results):
             final_status = "completed"
@@ -125,6 +163,7 @@ class JobService:
 
         parent["status"] = final_status
         parent["completed_at"] = _utc_now()
+        parent["dead_letter_count"] = sum(1 for status in child_results if status == DEAD_LETTER_STATUS)
         self.update_parent(parent_job_id, parent)
 
     def get_parent_with_children(self, parent_job_id: str) -> dict | None:
@@ -139,4 +178,6 @@ class JobService:
                 children.append(child)
 
         parent["children"] = children
+        parent["dead_letter_count"] = sum(1 for child in children if child.get("status") == DEAD_LETTER_STATUS)
         return parent
+
