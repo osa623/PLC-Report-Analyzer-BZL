@@ -3,3 +3,4 @@
 /data/
 start_all_backends_local.ps1
 ROAD_MAP.md
+/.tmp_ci_env/
