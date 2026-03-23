@@ -6,6 +6,7 @@ from typing import Any
 from repositories.report_repository import ReportRepository
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
+from services.validation_service import ExtractionValidator
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class ExtractionService:
         self.repository = repository
         self.gemini_client = gemini_client
         self.transformation_service = transformation_service
+        self.validator = ExtractionValidator()
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -134,6 +136,10 @@ class ExtractionService:
                     status = "failed"
                     error_code = "gemini_or_transform_error"
 
+        validation_result = self.validator.validate_records("income_notes", normalized_rows)
+        if validation_result["errors"] and status == "completed":
+            status = "partial"
+
         payload = {
             "report_id": report_id,
             "statement_type": "income_notes",
@@ -143,6 +149,10 @@ class ExtractionService:
                 "source_file": file_path,
                 "row_count": len(normalized_rows),
                 "processed_chunks": len(chunk_results),
+                "validation_errors": validation_result["errors"],
+                "validation_warnings": validation_result["warnings"],
+                "validation_error_count": validation_result["error_count"],
+                "validation_warning_count": validation_result["warning_count"],
                 "error_code": error_code,
             },
         }
