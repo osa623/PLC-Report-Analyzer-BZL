@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     gemini_fallback_models: str = "gemini-2.0-flash,gemini-1.5-flash"
     gemini_temperature: float = 0.0
     gemini_max_retries: int = 2
+    fallback_provider: Literal["none", "document_ai", "azure_di"] = "none"
+    fallback_enabled: bool = False
+    fallback_kill_switch: bool = False
+    fallback_on_low_confidence: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

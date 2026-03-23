@@ -3,8 +3,10 @@ import json
 import logging
 from typing import Any
 
+from core.config import get_settings
 from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
+from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -24,6 +26,14 @@ class ExtractionService:
         self.transformation_service = transformation_service
         self.validator = ExtractionValidator()
         self.confidence = ConfidenceScorer()
+        settings = get_settings()
+        self.fallback_adapter = FallbackAdapter(
+            repository=repository,
+            provider=settings.fallback_provider,
+            enabled=settings.fallback_enabled,
+            kill_switch=settings.fallback_kill_switch,
+            run_on_low_confidence=settings.fallback_on_low_confidence,
+        )
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -143,10 +153,24 @@ class ExtractionService:
             status = "partial"
         confidence_result = self.confidence.score("income_statement", normalized_rows, validation_result)
         confidence_details = self.confidence.analyze_records(normalized_rows)
+        normalized_rows, fallback_metadata = self.fallback_adapter.apply(
+            report_id=report_id,
+            statement_type="income_statement",
+            primary_records=normalized_rows,
+            confidence_band=confidence_result["confidence_band"],
+        )
+        if fallback_metadata["fallback_applied"]:
+            validation_result = self.validator.validate_records("income_statement", normalized_rows)
+            confidence_result = self.confidence.score("income_statement", normalized_rows, validation_result)
+            confidence_details = self.confidence.analyze_records(normalized_rows)
+
         if status != "failed":
             if confidence_result["confidence_band"] == "low":
                 status = "failed"
-                error_code = error_code or "low_confidence_output"
+                if fallback_metadata["fallback_attempted"]:
+                    error_code = error_code or "low_confidence_after_fallback"
+                else:
+                    error_code = error_code or "low_confidence_output"
             elif confidence_result["confidence_band"] == "medium" and status == "completed":
                 status = "partial"
 
@@ -169,6 +193,10 @@ class ExtractionService:
                 "confidence_distribution": confidence_details["confidence_distribution"],
                 "confidence_samples": confidence_details["confidence_samples"],
                 "confidence_section_summary": confidence_details["confidence_section_summary"],
+                "fallback_provider": fallback_metadata["fallback_provider"],
+                "fallback_attempted": fallback_metadata["fallback_attempted"],
+                "fallback_applied": fallback_metadata["fallback_applied"],
+                "fallback_reason": fallback_metadata["fallback_reason"],
                 "error_code": error_code,
             },
         }
