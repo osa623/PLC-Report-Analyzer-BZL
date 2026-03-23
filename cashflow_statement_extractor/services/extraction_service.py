@@ -2,6 +2,7 @@ import logging
 import json
 import concurrent.futures
 from repositories.report_repository import ReportRepository
+from services.confidence_service import ConfidenceScorer
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -21,6 +22,7 @@ class ExtractionService:
         self.gemini_client = gemini_client
         self.transformation_service = transformation_service
         self.validator = ExtractionValidator()
+        self.confidence = ConfidenceScorer()
 
     def _fetch_from_redis(self, key: str) -> dict | None:
         try:
@@ -97,6 +99,13 @@ class ExtractionService:
         validation_errors.extend(validation_result["errors"])
         if validation_result["errors"] and status == "completed":
             status = "partial"
+        confidence_result = self.confidence.score("cashflow_statement", normalized_records, validation_result)
+        if status != "failed":
+            if confidence_result["confidence_band"] == "low":
+                status = "failed"
+                error_code = error_code or "low_confidence_output"
+            elif confidence_result["confidence_band"] == "medium" and status == "completed":
+                status = "partial"
 
         payload = {
             "statement_type": "cashflow_statement",
@@ -108,6 +117,9 @@ class ExtractionService:
                 "validation_warnings": validation_result["warnings"],
                 "validation_error_count": validation_result["error_count"],
                 "validation_warning_count": validation_result["warning_count"],
+                "confidence_score": confidence_result["confidence_score"],
+                "confidence_band": confidence_result["confidence_band"],
+                "confidence_reasons": confidence_result["confidence_reasons"],
                 "processed_chunks": len(chunk_results) if 'chunk_results' in locals() else 0,
             }
         }
