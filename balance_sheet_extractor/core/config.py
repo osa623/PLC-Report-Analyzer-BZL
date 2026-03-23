@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     fallback_enabled: bool = False
     fallback_kill_switch: bool = False
     fallback_on_low_confidence: bool = True
+    confidence_routing_enabled: bool = True
+    confidence_routing_fallback_on_medium: bool = False
+    confidence_routing_fail_on_low: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -6,6 +6,7 @@ from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
 from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
+from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
 from models.schemas import DocumentChunk
@@ -32,6 +33,11 @@ class ExtractionService:
             enabled=settings.fallback_enabled,
             kill_switch=settings.fallback_kill_switch,
             run_on_low_confidence=settings.fallback_on_low_confidence,
+        )
+        self.routing_policy = ConfidenceRoutingPolicy(
+            enabled=settings.confidence_routing_enabled,
+            fallback_on_medium=settings.confidence_routing_fallback_on_medium,
+            fail_on_low=settings.confidence_routing_fail_on_low,
         )
 
     def _fetch_from_redis(self, key: str) -> dict | None:
@@ -111,27 +117,34 @@ class ExtractionService:
             status = "partial"
         confidence_result = self.confidence.score("cashflow_statement", normalized_records, validation_result)
         confidence_details = self.confidence.analyze_records(normalized_records)
-        normalized_records, fallback_metadata = self.fallback_adapter.apply(
-            report_id=report_id,
-            statement_type="cashflow_statement",
-            primary_records=normalized_records,
+        routing_decision = self.routing_policy.route_before_fallback(
+            status=status,
             confidence_band=confidence_result["confidence_band"],
         )
+        fallback_metadata = self.routing_policy.default_fallback_metadata(
+            provider=self.fallback_adapter.provider,
+            reason=routing_decision["reason"],
+        )
+        if routing_decision["should_attempt_fallback"]:
+            normalized_records, fallback_metadata = self.fallback_adapter.apply(
+                report_id=report_id,
+                statement_type="cashflow_statement",
+                primary_records=normalized_records,
+                confidence_band=confidence_result["confidence_band"],
+            )
         if fallback_metadata["fallback_applied"]:
             validation_result = self.validator.validate_records("cashflow_statement", normalized_records)
             validation_errors.extend(validation_result["errors"])
             confidence_result = self.confidence.score("cashflow_statement", normalized_records, validation_result)
             confidence_details = self.confidence.analyze_records(normalized_records)
 
-        if status != "failed":
-            if confidence_result["confidence_band"] == "low":
-                status = "failed"
-                if fallback_metadata["fallback_attempted"]:
-                    error_code = error_code or "low_confidence_after_fallback"
-                else:
-                    error_code = error_code or "low_confidence_output"
-            elif confidence_result["confidence_band"] == "medium" and status == "completed":
-                status = "partial"
+        status, routed_error_code = self.routing_policy.resolve_after_extraction(
+            status=status,
+            confidence_band=confidence_result["confidence_band"],
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
+        if routed_error_code:
+            error_code = error_code or routed_error_code
 
         payload = {
             "statement_type": "cashflow_statement",
@@ -153,6 +166,8 @@ class ExtractionService:
                 "fallback_attempted": fallback_metadata["fallback_attempted"],
                 "fallback_applied": fallback_metadata["fallback_applied"],
                 "fallback_reason": fallback_metadata["fallback_reason"],
+                "confidence_routing_decision": routing_decision["decision"],
+                "confidence_routing_reason": routing_decision["reason"],
                 "processed_chunks": len(chunk_results) if 'chunk_results' in locals() else 0,
             }
         }

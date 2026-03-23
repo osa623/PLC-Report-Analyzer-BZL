@@ -32,7 +32,6 @@ class TestStep05RolloutContracts(unittest.TestCase):
             '"confidence_score"',
             '"confidence_band"',
             '"confidence_reasons"',
-            '"low_confidence_output"',
         ]
         for service in TARGET_SERVICES:
             with self.subTest(service=service):
@@ -41,6 +40,19 @@ class TestStep05RolloutContracts(unittest.TestCase):
                 content = path.read_text(encoding="utf-8-sig")
                 for snippet in required_snippets:
                     self.assertIn(snippet, content)
+
+                # Low-confidence failure mapping may be handled directly in extraction
+                # logic (Step 5) or delegated to routing policy (Step 9+).
+                routing_policy_path = REPO_ROOT / service / "services" / "routing_policy.py"
+                routing_content = (
+                    routing_policy_path.read_text(encoding="utf-8-sig")
+                    if routing_policy_path.exists()
+                    else ""
+                )
+                self.assertTrue(
+                    '"low_confidence_output"' in content or '"low_confidence_output"' in routing_content,
+                    f"Missing low confidence output mapping for service: {service}",
+                )
 
 
 if __name__ == "__main__":
