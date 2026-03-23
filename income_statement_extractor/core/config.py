@@ -1,4 +1,4 @@
-﻿from functools import lru_cache
+from functools import lru_cache
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -15,6 +15,10 @@ class Settings(BaseSettings):
 
     gemini_api_key: str = ""
     gemini_model_name: str = "gemini-2.0-flash"
+    gemini_model_alias: Literal["fast", "balanced", "quality"] = "fast"
+    gemini_fallback_models: str = "gemini-2.0-flash,gemini-1.5-flash"
+    gemini_temperature: float = 0.0
+    gemini_max_retries: int = 2
     gemini_timeout_seconds: int = 240
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
