@@ -1,0 +1,6 @@
+{
+  "window": "beta-week-01",
+  "p95_latency_ms": 2100,
+  "failure_rate": 0.018,
+  "queue_depth": 42
+}

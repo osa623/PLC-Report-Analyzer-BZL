@@ -28,6 +28,10 @@ def get_extraction_service(
         gemini_client=GeminiExtractor(
             api_key=settings.gemini_api_key,
             model_name=settings.gemini_model_name,
+            model_alias=settings.gemini_model_alias,
+            fallback_models=[m.strip() for m in settings.gemini_fallback_models.split(",") if m.strip()],
+            temperature=settings.gemini_temperature,
+            max_retries=settings.gemini_max_retries,
         ),
         transformation_service=TransformationService(),
     )
