@@ -4,7 +4,7 @@ This repository follows step-based test suites aligned to `ROAD_MAP.md`.
 
 ## Structure
 - `tests/step_01/` -> tests for roadmap Step 1 (config/logging/error code baseline)
-- `tests/step_02/` -> tests for async parent-child jobs (to be added)
+- `tests/step_02/` -> tests for async parent-child jobs
 - `tests/step_03/` -> tests for polling and retries (to be added)
 - Continue this pattern for each implementation step.
 

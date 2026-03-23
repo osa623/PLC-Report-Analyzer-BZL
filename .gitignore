@@ -2,3 +2,4 @@
 /backend_pids.json
 /data/
 start_all_backends_local.ps1
+/tests/
