@@ -33,6 +33,18 @@ Generate the golden benchmark report (and fail build on regression):
 python scripts/run_golden_benchmark.py --metadata data/eval/golden_set_metadata.json --thresholds data/eval/thresholds.json --output data/eval/last_benchmark_report.json --fail-on-regression
 ```
 
+Run Step 13 beta readiness suite:
+
+```powershell
+python -m unittest discover -s tests/step_13 -p "test_*.py"
+```
+
+Run beta readiness gate (and fail on blockers):
+
+```powershell
+python scripts/run_beta_readiness.py --benchmark-report data/eval/last_benchmark_report.json --ops-snapshot data/eval/ops_snapshot.json --output data/eval/last_beta_readiness_report.json --fail-on-blocker
+```
+
 ## Rules
 - Every roadmap step should include at least one automated test suite before moving to the next step.
 - Keep tests deterministic and independent of external services where possible.
