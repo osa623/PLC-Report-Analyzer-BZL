@@ -6,6 +6,7 @@ from core.database import get_redis
 from repositories.report_repository import ReportRepository
 from services.extraction_service import ExtractionService
 from services.gemini_client import GeminiExtractor
+from services.job_service import JobService
 from services.transformation_service import TransformationService
 
 
@@ -32,3 +33,8 @@ def get_extraction_service(
         gemini_client=gemini,
         transformation_service=transformer,
     )
+
+
+def get_job_service(redis_client: Redis = Depends(get_redis)) -> JobService:
+    settings = get_settings()
+    return JobService(redis_client=redis_client, ttl_seconds=settings.redis_ttl_seconds)
