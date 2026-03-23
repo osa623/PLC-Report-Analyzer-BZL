@@ -1,6 +1,7 @@
 import json
 import logging
 import concurrent.futures
+import time
 from typing import Any
 
 from core.config import get_settings
@@ -9,6 +10,7 @@ from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
 from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
+from services.guardrails_service import ProcessingGuardrails
 from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -41,6 +43,17 @@ class ExtractionService:
             fallback_on_medium=settings.confidence_routing_fallback_on_medium,
             fail_on_low=settings.confidence_routing_fail_on_low,
         )
+        self.guardrails = ProcessingGuardrails(
+            repository=repository,
+            enabled=settings.guardrails_enabled,
+            max_chunks_per_report=settings.guardrails_max_chunks_per_report,
+            max_total_input_chars=settings.guardrails_max_total_input_chars,
+            processing_timeout_seconds=settings.guardrails_processing_timeout_seconds,
+            fallback_max_attempts_per_report=settings.guardrails_fallback_max_attempts_per_report,
+            usage_metering_enabled=settings.guardrails_usage_metering_enabled,
+            per_user_reports_per_hour=settings.guardrails_per_user_reports_per_hour,
+            per_ip_reports_per_hour=settings.guardrails_per_ip_reports_per_hour,
+        )
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -65,6 +78,16 @@ class ExtractionService:
         status = "completed"
         error_code = None
         validation_errors = []
+        started_at = time.monotonic()
+        guardrail_state = {
+            "guardrails_enabled": self.guardrails.enabled,
+            "guardrails_rejected": False,
+            "guardrails_rejection_code": None,
+            "guardrails_input_chunk_count": 0,
+            "guardrails_input_total_chars": 0,
+            "guardrails_user_rate_limited": False,
+            "guardrails_ip_rate_limited": False,
+        }
 
         chunks_key = f"report:{report_id}:document_chunks"
         structure_key = f"report:{report_id}:structure"
@@ -79,9 +102,14 @@ class ExtractionService:
         else:
             chunks = []
 
+        allowed, guardrail_state = self.guardrails.check_input_limits(report_id, chunks if isinstance(chunks, list) else [])
+        if not allowed:
+            status = "failed"
+            error_code = guardrail_state.get("guardrails_rejection_code") or "guardrails_rejected"
+
         filtered_chunks = self._filter_chunks(chunks, structure_data)
 
-        if not filtered_chunks:
+        if status != "failed" and not filtered_chunks:
             logger.warning("No relevant chunks found for report_id=%s", report_id)
             payload = {
                 "report_id": report_id,
@@ -91,30 +119,32 @@ class ExtractionService:
                 "metadata": {
                     "total_rows": 0,
                     "validation_errors": [error_codes.NO_RELEVANT_CHUNKS],
-                    "processed_chunks": 0
+                    "processed_chunks": 0,
+                    **guardrail_state,
                 }
             }
             self.repository.persist_result(report_id, payload)
             return "failed"
 
         chunk_results = []
-        try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-                futures = {
-                    executor.submit(self.gemini_client.extract_chunk, ch.get("text_content", "")): ch.get("chunk_id", str(i))
-                    for i, ch in enumerate(filtered_chunks)
-                }
-                for future in concurrent.futures.as_completed(futures):
-                    chunk_id = futures[future]
-                    try:
-                        res = future.result()
-                        chunk_results.append((chunk_id, res))
-                    except Exception as e:
-                        logger.error("Chunk extraction failed for %s: %s", chunk_id, e)
-        except Exception as e:
-            logger.error("Extraction error %s", e)
-            status = "failed"
-            error_code = error_codes.EXTRACTION_ERROR
+        if status != "failed":
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                    futures = {
+                        executor.submit(self.gemini_client.extract_chunk, ch.get("text_content", "")): ch.get("chunk_id", str(i))
+                        for i, ch in enumerate(filtered_chunks)
+                    }
+                    for future in concurrent.futures.as_completed(futures):
+                        chunk_id = futures[future]
+                        try:
+                            res = future.result()
+                            chunk_results.append((chunk_id, res))
+                        except Exception as e:
+                            logger.error("Chunk extraction failed for %s: %s", chunk_id, e)
+            except Exception as e:
+                logger.error("Extraction error %s", e)
+                status = "failed"
+                error_code = error_codes.EXTRACTION_ERROR
 
         normalized_records = []
         if status != "failed":
@@ -143,17 +173,28 @@ class ExtractionService:
             reason=routing_decision["reason"],
         )
         if routing_decision["should_attempt_fallback"]:
-            normalized_records, fallback_metadata = self.fallback_adapter.apply(
-                report_id=report_id,
-                statement_type="balance_sheet",
-                primary_records=normalized_records,
-                confidence_band=confidence_result["confidence_band"],
-            )
+            allow_fallback, fallback_budget_reason = self.guardrails.allow_fallback_attempt(report_id)
+            if allow_fallback:
+                normalized_records, fallback_metadata = self.fallback_adapter.apply(
+                    report_id=report_id,
+                    statement_type="balance_sheet",
+                    primary_records=normalized_records,
+                    confidence_band=confidence_result["confidence_band"],
+                )
+            else:
+                fallback_metadata = self.routing_policy.default_fallback_metadata(
+                    provider=self.fallback_adapter.provider,
+                    reason=fallback_budget_reason,
+                )
         if fallback_metadata["fallback_applied"]:
             validation_result = self.validator.validate_records("balance_sheet", normalized_records)
             validation_errors.extend(validation_result["errors"])
             confidence_result = self.confidence.score("balance_sheet", normalized_records, validation_result)
             confidence_details = self.confidence.analyze_records(normalized_records)
+
+        if self.guardrails.exceeded_timeout(started_at):
+            status = "failed"
+            error_code = error_code or "processing_timeout_exceeded"
 
         status, routed_error_code = self.routing_policy.resolve_after_extraction(
             status=status,
@@ -162,6 +203,15 @@ class ExtractionService:
         )
         if routed_error_code:
             error_code = error_code or routed_error_code
+
+        usage_metadata = self.guardrails.usage_metadata(
+            report_id=report_id,
+            statement_type="balance_sheet",
+            status=status,
+            output_rows=len(normalized_records),
+            guardrail_state=guardrail_state,
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
 
         payload = {
             "statement_type": "balance_sheet",
@@ -186,6 +236,8 @@ class ExtractionService:
                 "confidence_routing_decision": routing_decision["decision"],
                 "confidence_routing_reason": routing_decision["reason"],
                 "processed_chunks": len(chunk_results),
+                **guardrail_state,
+                **usage_metadata,
             }
         }
         if error_code:

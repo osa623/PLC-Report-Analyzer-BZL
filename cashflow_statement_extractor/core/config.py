@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     confidence_routing_enabled: bool = True
     confidence_routing_fallback_on_medium: bool = False
     confidence_routing_fail_on_low: bool = True
+    guardrails_enabled: bool = True
+    guardrails_max_chunks_per_report: int = 250
+    guardrails_max_total_input_chars: int = 1500000
+    guardrails_processing_timeout_seconds: int = 300
+    guardrails_fallback_max_attempts_per_report: int = 20
+    guardrails_usage_metering_enabled: bool = True
+    guardrails_per_user_reports_per_hour: int = 200
+    guardrails_per_ip_reports_per_hour: int = 400
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

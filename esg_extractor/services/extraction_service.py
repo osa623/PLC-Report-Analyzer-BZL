@@ -1,6 +1,7 @@
 import concurrent.futures
 import json
 import logging
+import time
 from typing import Any
 
 from core.config import get_settings
@@ -8,6 +9,7 @@ from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
 from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
+from services.guardrails_service import ProcessingGuardrails
 from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -39,6 +41,17 @@ class ExtractionService:
             enabled=settings.confidence_routing_enabled,
             fallback_on_medium=settings.confidence_routing_fallback_on_medium,
             fail_on_low=settings.confidence_routing_fail_on_low,
+        )
+        self.guardrails = ProcessingGuardrails(
+            repository=repository,
+            enabled=settings.guardrails_enabled,
+            max_chunks_per_report=settings.guardrails_max_chunks_per_report,
+            max_total_input_chars=settings.guardrails_max_total_input_chars,
+            processing_timeout_seconds=settings.guardrails_processing_timeout_seconds,
+            fallback_max_attempts_per_report=settings.guardrails_fallback_max_attempts_per_report,
+            usage_metering_enabled=settings.guardrails_usage_metering_enabled,
+            per_user_reports_per_hour=settings.guardrails_per_user_reports_per_hour,
+            per_ip_reports_per_hour=settings.guardrails_per_ip_reports_per_hour,
         )
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
@@ -100,6 +113,16 @@ class ExtractionService:
         error_code: str | None = None
         category_count = 0
         chunk_results: list[dict[str, Any]] = []
+        started_at = time.monotonic()
+        guardrail_state = {
+            "guardrails_enabled": self.guardrails.enabled,
+            "guardrails_rejected": False,
+            "guardrails_rejection_code": None,
+            "guardrails_input_chunk_count": 0,
+            "guardrails_input_total_chars": 0,
+            "guardrails_user_rate_limited": False,
+            "guardrails_ip_rate_limited": False,
+        }
 
         chunks_key = f"report:{report_id}:document_chunks"
         chunks_data = self._fetch_from_redis(chunks_key)
@@ -111,11 +134,16 @@ class ExtractionService:
         else:
             chunks = []
 
-        if not chunks:
+        allowed, guardrail_state = self.guardrails.check_input_limits(report_id, chunks if isinstance(chunks, list) else [])
+        if not allowed:
+            status = "failed"
+            error_code = guardrail_state.get("guardrails_rejection_code") or "guardrails_rejected"
+
+        if status != "failed" and not chunks:
             status = "failed"
             error_code = "missing_document_chunks_in_redis"
             logger.error("No document chunks found in Redis for report_id=%s", report_id)
-        else:
+        elif status != "failed":
             relevant_chunks = self._filter_chunks(chunks)
             if not relevant_chunks:
                 status = "failed"
@@ -177,16 +205,27 @@ class ExtractionService:
             reason=routing_decision["reason"],
         )
         if routing_decision["should_attempt_fallback"]:
-            records, fallback_metadata = self.fallback_adapter.apply(
-                report_id=report_id,
-                statement_type="esg",
-                primary_records=records,
-                confidence_band=confidence_result["confidence_band"],
-            )
+            allow_fallback, fallback_budget_reason = self.guardrails.allow_fallback_attempt(report_id)
+            if allow_fallback:
+                records, fallback_metadata = self.fallback_adapter.apply(
+                    report_id=report_id,
+                    statement_type="esg",
+                    primary_records=records,
+                    confidence_band=confidence_result["confidence_band"],
+                )
+            else:
+                fallback_metadata = self.routing_policy.default_fallback_metadata(
+                    provider=self.fallback_adapter.provider,
+                    reason=fallback_budget_reason,
+                )
         if fallback_metadata["fallback_applied"]:
             validation_result = self.validator.validate_records("esg", records)
             confidence_result = self.confidence.score("esg", records, validation_result)
             confidence_details = self.confidence.analyze_records(records)
+
+        if self.guardrails.exceeded_timeout(started_at):
+            status = "failed"
+            error_code = error_code or "processing_timeout_exceeded"
 
         status, routed_error_code = self.routing_policy.resolve_after_extraction(
             status=status,
@@ -195,6 +234,15 @@ class ExtractionService:
         )
         if routed_error_code:
             error_code = error_code or routed_error_code
+
+        usage_metadata = self.guardrails.usage_metadata(
+            report_id=report_id,
+            statement_type="esg",
+            status=status,
+            output_rows=len(records),
+            guardrail_state=guardrail_state,
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
 
         payload = {
             "report_id": report_id,
@@ -222,6 +270,8 @@ class ExtractionService:
                 "fallback_reason": fallback_metadata["fallback_reason"],
                 "confidence_routing_decision": routing_decision["decision"],
                 "confidence_routing_reason": routing_decision["reason"],
+                **guardrail_state,
+                **usage_metadata,
                 "error_code": error_code,
             },
         }

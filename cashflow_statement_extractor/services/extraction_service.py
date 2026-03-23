@@ -1,11 +1,13 @@
 import logging
 import json
 import concurrent.futures
+import time
 from core.config import get_settings
 from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
 from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
+from services.guardrails_service import ProcessingGuardrails
 from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
@@ -39,6 +41,17 @@ class ExtractionService:
             fallback_on_medium=settings.confidence_routing_fallback_on_medium,
             fail_on_low=settings.confidence_routing_fail_on_low,
         )
+        self.guardrails = ProcessingGuardrails(
+            repository=repository,
+            enabled=settings.guardrails_enabled,
+            max_chunks_per_report=settings.guardrails_max_chunks_per_report,
+            max_total_input_chars=settings.guardrails_max_total_input_chars,
+            processing_timeout_seconds=settings.guardrails_processing_timeout_seconds,
+            fallback_max_attempts_per_report=settings.guardrails_fallback_max_attempts_per_report,
+            usage_metering_enabled=settings.guardrails_usage_metering_enabled,
+            per_user_reports_per_hour=settings.guardrails_per_user_reports_per_hour,
+            per_ip_reports_per_hour=settings.guardrails_per_ip_reports_per_hour,
+        )
 
     def _fetch_from_redis(self, key: str) -> dict | None:
         try:
@@ -64,6 +77,16 @@ class ExtractionService:
         normalized_records: list[dict] = []
         validation_errors: list[str] = []
         error_code: str | None = None
+        started_at = time.monotonic()
+        guardrail_state = {
+            "guardrails_enabled": self.guardrails.enabled,
+            "guardrails_rejected": False,
+            "guardrails_rejection_code": None,
+            "guardrails_input_chunk_count": 0,
+            "guardrails_input_total_chars": 0,
+            "guardrails_user_rate_limited": False,
+            "guardrails_ip_rate_limited": False,
+        }
         
         chunks_key = f"report:{report_id}:document_chunks"
         chunks_data = self._fetch_from_redis(chunks_key)
@@ -74,13 +97,18 @@ class ExtractionService:
             logger.error(f"Failed to find document chunks for {report_id} in Redis.")
         else:
             raw_chunks = chunks_data["chunks"]
+            allowed, guardrail_state = self.guardrails.check_input_limits(report_id, raw_chunks if isinstance(raw_chunks, list) else [])
+            if not allowed:
+                status = "failed"
+                error_code = guardrail_state.get("guardrails_rejection_code") or "guardrails_rejected"
+
             relevant_chunks = self._filter_chunks(raw_chunks)
             
-            if not relevant_chunks:
+            if status != "failed" and not relevant_chunks:
                 status = "failed"
                 error_code = "no_relevant_cashflow_chunks"
                 logger.warning(f"No cashflow chunks found for {report_id}")
-            else:
+            elif status != "failed":
                 chunk_results = []
                 try:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -126,17 +154,28 @@ class ExtractionService:
             reason=routing_decision["reason"],
         )
         if routing_decision["should_attempt_fallback"]:
-            normalized_records, fallback_metadata = self.fallback_adapter.apply(
-                report_id=report_id,
-                statement_type="cashflow_statement",
-                primary_records=normalized_records,
-                confidence_band=confidence_result["confidence_band"],
-            )
+            allow_fallback, fallback_budget_reason = self.guardrails.allow_fallback_attempt(report_id)
+            if allow_fallback:
+                normalized_records, fallback_metadata = self.fallback_adapter.apply(
+                    report_id=report_id,
+                    statement_type="cashflow_statement",
+                    primary_records=normalized_records,
+                    confidence_band=confidence_result["confidence_band"],
+                )
+            else:
+                fallback_metadata = self.routing_policy.default_fallback_metadata(
+                    provider=self.fallback_adapter.provider,
+                    reason=fallback_budget_reason,
+                )
         if fallback_metadata["fallback_applied"]:
             validation_result = self.validator.validate_records("cashflow_statement", normalized_records)
             validation_errors.extend(validation_result["errors"])
             confidence_result = self.confidence.score("cashflow_statement", normalized_records, validation_result)
             confidence_details = self.confidence.analyze_records(normalized_records)
+
+        if self.guardrails.exceeded_timeout(started_at):
+            status = "failed"
+            error_code = error_code or "processing_timeout_exceeded"
 
         status, routed_error_code = self.routing_policy.resolve_after_extraction(
             status=status,
@@ -145,6 +184,15 @@ class ExtractionService:
         )
         if routed_error_code:
             error_code = error_code or routed_error_code
+
+        usage_metadata = self.guardrails.usage_metadata(
+            report_id=report_id,
+            statement_type="cashflow_statement",
+            status=status,
+            output_rows=len(normalized_records),
+            guardrail_state=guardrail_state,
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
 
         payload = {
             "statement_type": "cashflow_statement",
@@ -169,6 +217,8 @@ class ExtractionService:
                 "confidence_routing_decision": routing_decision["decision"],
                 "confidence_routing_reason": routing_decision["reason"],
                 "processed_chunks": len(chunk_results) if 'chunk_results' in locals() else 0,
+                **guardrail_state,
+                **usage_metadata,
             }
         }
         if error_code:
