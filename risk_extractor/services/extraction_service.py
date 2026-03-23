@@ -1,11 +1,17 @@
 import concurrent.futures
 import json
 import logging
+import time
 from typing import Any
 
+from core.config import get_settings
 from repositories.report_repository import ReportRepository
 from services.confidence_service import ConfidenceScorer
+from services.fallback_adapter import FallbackAdapter
 from services.gemini_client import GeminiExtractor
+from services.guardrails_service import ProcessingGuardrails
+from services.observability_service import ObservabilityService
+from services.routing_policy import ConfidenceRoutingPolicy
 from services.transformation_service import TransformationService
 from services.validation_service import ExtractionValidator
 
@@ -24,6 +30,39 @@ class ExtractionService:
         self.transformation_service = transformation_service
         self.validator = ExtractionValidator()
         self.confidence = ConfidenceScorer()
+        settings = get_settings()
+        self.fallback_adapter = FallbackAdapter(
+            repository=repository,
+            provider=settings.fallback_provider,
+            enabled=settings.fallback_enabled,
+            kill_switch=settings.fallback_kill_switch,
+            run_on_low_confidence=settings.fallback_on_low_confidence,
+        )
+        self.routing_policy = ConfidenceRoutingPolicy(
+            enabled=settings.confidence_routing_enabled,
+            fallback_on_medium=settings.confidence_routing_fallback_on_medium,
+            fail_on_low=settings.confidence_routing_fail_on_low,
+        )
+        self.guardrails = ProcessingGuardrails(
+            repository=repository,
+            enabled=settings.guardrails_enabled,
+            max_chunks_per_report=settings.guardrails_max_chunks_per_report,
+            max_total_input_chars=settings.guardrails_max_total_input_chars,
+            processing_timeout_seconds=settings.guardrails_processing_timeout_seconds,
+            fallback_max_attempts_per_report=settings.guardrails_fallback_max_attempts_per_report,
+            usage_metering_enabled=settings.guardrails_usage_metering_enabled,
+            per_user_reports_per_hour=settings.guardrails_per_user_reports_per_hour,
+            per_ip_reports_per_hour=settings.guardrails_per_ip_reports_per_hour,
+        )
+        self.observability = ObservabilityService(
+            repository=repository,
+            enabled=settings.observability_enabled,
+            tracing_enabled=settings.observability_tracing_enabled,
+            latency_alert_ms=settings.observability_latency_alert_ms,
+            queue_depth_alert_threshold=settings.observability_queue_depth_alert_threshold,
+            failure_rate_alert_threshold=settings.observability_failure_rate_alert_threshold,
+            low_confidence_alert_enabled=settings.observability_low_confidence_alert_enabled,
+        )
 
     def _fetch_from_redis(self, key: str, default: Any = None) -> Any:
         try:
@@ -69,6 +108,17 @@ class ExtractionService:
         error_code: str | None = None
         risk_count = 0
         chunk_results: list[dict[str, Any]] = []
+        started_at = time.monotonic()
+        guardrail_state = {
+            "guardrails_enabled": self.guardrails.enabled,
+            "guardrails_rejected": False,
+            "guardrails_rejection_code": None,
+            "guardrails_input_chunk_count": 0,
+            "guardrails_input_total_chars": 0,
+            "guardrails_user_rate_limited": False,
+            "guardrails_ip_rate_limited": False,
+        }
+        observability_trace = self.observability.trace_context(report_id, "risk")
 
         chunks_key = f"report:{report_id}:document_chunks"
         chunks_data = self._fetch_from_redis(chunks_key)
@@ -80,11 +130,16 @@ class ExtractionService:
         else:
             chunks = []
 
-        if not chunks:
+        allowed, guardrail_state = self.guardrails.check_input_limits(report_id, chunks if isinstance(chunks, list) else [])
+        if not allowed:
+            status = "failed"
+            error_code = guardrail_state.get("guardrails_rejection_code") or "guardrails_rejected"
+
+        if status != "failed" and not chunks:
             status = "failed"
             error_code = "missing_document_chunks_in_redis"
             logger.error("No document chunks found in Redis for report_id=%s", report_id)
-        else:
+        elif status != "failed":
             relevant_chunks = self._filter_chunks(chunks)
             if not relevant_chunks:
                 status = "failed"
@@ -136,12 +191,64 @@ class ExtractionService:
         if validation_result["errors"] and status == "completed":
             status = "partial"
         confidence_result = self.confidence.score("risk", records, validation_result)
-        if status != "failed":
-            if confidence_result["confidence_band"] == "low":
-                status = "failed"
-                error_code = error_code or "low_confidence_output"
-            elif confidence_result["confidence_band"] == "medium" and status == "completed":
-                status = "partial"
+        confidence_details = self.confidence.analyze_records(records)
+        routing_decision = self.routing_policy.route_before_fallback(
+            status=status,
+            confidence_band=confidence_result["confidence_band"],
+        )
+        fallback_metadata = self.routing_policy.default_fallback_metadata(
+            provider=self.fallback_adapter.provider,
+            reason=routing_decision["reason"],
+        )
+        if routing_decision["should_attempt_fallback"]:
+            allow_fallback, fallback_budget_reason = self.guardrails.allow_fallback_attempt(report_id)
+            if allow_fallback:
+                records, fallback_metadata = self.fallback_adapter.apply(
+                    report_id=report_id,
+                    statement_type="risk",
+                    primary_records=records,
+                    confidence_band=confidence_result["confidence_band"],
+                )
+            else:
+                fallback_metadata = self.routing_policy.default_fallback_metadata(
+                    provider=self.fallback_adapter.provider,
+                    reason=fallback_budget_reason,
+                )
+        if fallback_metadata["fallback_applied"]:
+            validation_result = self.validator.validate_records("risk", records)
+            confidence_result = self.confidence.score("risk", records, validation_result)
+            confidence_details = self.confidence.analyze_records(records)
+
+        if self.guardrails.exceeded_timeout(started_at):
+            status = "failed"
+            error_code = error_code or "processing_timeout_exceeded"
+
+        status, routed_error_code = self.routing_policy.resolve_after_extraction(
+            status=status,
+            confidence_band=confidence_result["confidence_band"],
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
+        if routed_error_code:
+            error_code = error_code or routed_error_code
+
+        usage_metadata = self.guardrails.usage_metadata(
+            report_id=report_id,
+            statement_type="risk",
+            status=status,
+            output_rows=len(records),
+            guardrail_state=guardrail_state,
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+        )
+        observability_metadata = self.observability.capture(
+            report_id=report_id,
+            statement_type="risk",
+            status=status,
+            processed_chunks=len(chunk_results),
+            output_rows=len(records),
+            confidence_band=confidence_result["confidence_band"],
+            fallback_attempted=fallback_metadata["fallback_attempted"],
+            started_at=started_at,
+        )
 
         payload = {
             "report_id": report_id,
@@ -160,6 +267,19 @@ class ExtractionService:
                 "confidence_score": confidence_result["confidence_score"],
                 "confidence_band": confidence_result["confidence_band"],
                 "confidence_reasons": confidence_result["confidence_reasons"],
+                "confidence_distribution": confidence_details["confidence_distribution"],
+                "confidence_samples": confidence_details["confidence_samples"],
+                "confidence_section_summary": confidence_details["confidence_section_summary"],
+                "fallback_provider": fallback_metadata["fallback_provider"],
+                "fallback_attempted": fallback_metadata["fallback_attempted"],
+                "fallback_applied": fallback_metadata["fallback_applied"],
+                "fallback_reason": fallback_metadata["fallback_reason"],
+                "confidence_routing_decision": routing_decision["decision"],
+                "confidence_routing_reason": routing_decision["reason"],
+                **observability_trace,
+                **observability_metadata,
+                **guardrail_state,
+                **usage_metadata,
                 "error_code": error_code,
             },
         }

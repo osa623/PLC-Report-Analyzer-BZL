@@ -1,0 +1,43 @@
+name: quality-gates
+
+on:
+  push:
+    branches: [main, dev-int]
+  pull_request:
+
+jobs:
+  tests-and-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pydantic-settings redis
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Run golden benchmark gate
+        run: >-
+          python scripts/run_golden_benchmark.py
+          --metadata data/eval/golden_set_metadata.json
+          --thresholds data/eval/thresholds.json
+          --output data/eval/last_benchmark_report.json
+          --fail-on-regression
+      - name: Run beta readiness gate
+        run: >-
+          python scripts/run_beta_readiness.py
+          --benchmark-report data/eval/last_benchmark_report.json
+          --ops-snapshot data/eval/ops_snapshot.json
+          --output data/eval/last_beta_readiness_report.json
+          --fail-on-blocker
+      - name: Run release readiness gate
+        run: >-
+          python scripts/run_release_readiness.py
+          --benchmark-report data/eval/last_benchmark_report.json
+          --beta-report data/eval/last_beta_readiness_report.json
+          --readiness-snapshot data/eval/release_readiness_snapshot.json
+          --output data/eval/last_release_readiness_report.json
+          --fail-on-blocker
