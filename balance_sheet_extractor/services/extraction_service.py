@@ -3,6 +3,7 @@ import logging
 import concurrent.futures
 from typing import Any
 
+from common import error_codes
 from repositories.report_repository import ReportRepository
 from services.gemini_client import GeminiExtractor
 from services.transformation_service import TransformationService
@@ -69,7 +70,7 @@ class ExtractionService:
                 "normalized_rows": [],
                 "metadata": {
                     "total_rows": 0,
-                    "validation_errors": ["no_relevant_chunks"],
+                    "validation_errors": [error_codes.NO_RELEVANT_CHUNKS],
                     "processed_chunks": 0
                 }
             }
@@ -93,7 +94,7 @@ class ExtractionService:
         except Exception as e:
             logger.error("Extraction error %s", e)
             status = "failed"
-            error_code = "extraction_error"
+            error_code = error_codes.EXTRACTION_ERROR
 
         normalized_records = []
         if status != "failed":
@@ -105,7 +106,7 @@ class ExtractionService:
             except Exception as exc:
                 logger.error("Transformation failed: %s", exc)
                 status = "failed"
-                error_code = "transformation_error"
+                error_code = error_codes.TRANSFORMATION_ERROR
 
         payload = {
             "statement_type": "balance_sheet",
