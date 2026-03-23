@@ -275,6 +275,27 @@ class PDFBuilder:
         elements.append(Paragraph(f"Batch ID: {data.get('batch_id')}", self.body_style))
         elements.append(Paragraph(f"Sector: {comp.get('sector', 'N/A')}", self.body_style))
         elements.append(Spacer(1, 20))
+
+        snapshots = data.get("report_snapshots", [])
+        if snapshots:
+            elements.append(Paragraph("Report Coverage", self.h2_style))
+            snap_table = [["Report ID", "Revenue", "Net Profit", "Assets", "Ratios", "Patterns"]]
+            for snapshot in snapshots:
+                summary = snapshot.get("summary") or {}
+                revenue = summary.get("total_revenue")
+                net_profit = summary.get("net_profit")
+                total_assets = summary.get("total_assets")
+
+                snap_table.append([
+                    str(snapshot.get("report_id", ""))[:12] + "...",
+                    f"{float(revenue):,.2f}" if isinstance(revenue, (int, float)) else "N/A",
+                    f"{float(net_profit):,.2f}" if isinstance(net_profit, (int, float)) else "N/A",
+                    f"{float(total_assets):,.2f}" if isinstance(total_assets, (int, float)) else "N/A",
+                    str(snapshot.get("ratio_count", 0)),
+                    str(snapshot.get("pattern_count", 0)),
+                ])
+            elements.append(self._create_table(snap_table))
+            elements.append(Spacer(1, 20))
         
         # 1. Executive Summary - Financial Health & Investment Signals
         elements.append(Paragraph("Executive Summary", self.h1_style))
@@ -336,6 +357,22 @@ class PDFBuilder:
                 ])
             elements.append(self._create_table(t_data))
             elements.append(PageBreak())
+        elif snapshots:
+            elements.append(Paragraph("Trend lines are limited for current extraction depth; snapshot comparison is shown instead.", self.body_style))
+            rev_categories = []
+            rev_values = []
+            for idx, snapshot in enumerate(snapshots, start=1):
+                summary = snapshot.get("summary") or {}
+                revenue = summary.get("total_revenue")
+                if isinstance(revenue, (int, float)):
+                    rev_categories.append(f"Report {idx}")
+                    rev_values.append(float(revenue))
+
+            if rev_values:
+                elements.append(self._create_bar_chart("Revenue Snapshot Across Uploaded Reports", rev_categories, rev_values))
+            else:
+                elements.append(Paragraph("No numeric revenue snapshots available for charting.", self.body_style))
+            elements.append(PageBreak())
 
         # 3. Growth & Cashflow Analysis
         elements.append(Paragraph("Growth & Cashflow Analysis", self.h1_style))
@@ -386,6 +423,16 @@ class PDFBuilder:
             elements.append(self._create_heatmap_table(heatmap))
         else:
             elements.append(Paragraph("No significant risks detected.", self.body_style))
+
+        if snapshots:
+            elements.append(Spacer(1, 16))
+            elements.append(Paragraph("Pattern Highlights By Uploaded Report", self.h2_style))
+            highlight_rows = [["Report", "Top Patterns"]]
+            for idx, snapshot in enumerate(snapshots, start=1):
+                top_patterns = snapshot.get("top_patterns") or []
+                top_patterns_text = ", ".join(top_patterns[:4]) if top_patterns else "No high-confidence patterns"
+                highlight_rows.append([f"Report {idx}", top_patterns_text])
+            elements.append(self._create_table(highlight_rows))
 
         doc.build(elements)
         return pdf_path

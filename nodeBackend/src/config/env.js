@@ -7,7 +7,7 @@ const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   databaseUrl: process.env.DATABASE_URL,
   uploadDir: process.env.UPLOAD_DIR || "./uploads",
-  pipelineStrictAllBackends: String(process.env.PIPELINE_STRICT_ALL_BACKENDS || "true").toLowerCase() === "true"
+  pipelineStrictAllBackends: String(process.env.PIPELINE_STRICT_ALL_BACKENDS || "false").toLowerCase() === "true"
 };
 
 module.exports = { env };

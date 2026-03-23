@@ -218,6 +218,42 @@ class ComparativeService:
                         all_patterns.append(p)
         return all_patterns
 
+    def _build_report_snapshots(self, report_ids: list[str]) -> list[dict[str, Any]]:
+        """Collect summary/ratio/pattern highlights per report for richer comparative output."""
+        snapshots: list[dict[str, Any]] = []
+        for report_id in report_ids:
+            payload = self._load_json(self._key(report_id, self.final_report_suffix))
+            if not isinstance(payload, dict):
+                continue
+
+            summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+            ratios = payload.get("ratios") if isinstance(payload.get("ratios"), dict) else {}
+            patterns = payload.get("patterns") if isinstance(payload.get("patterns"), list) else []
+
+            ratio_count = 0
+            for _, bucket in ratios.items():
+                if isinstance(bucket, dict):
+                    ratio_count += len(bucket)
+
+            top_patterns: list[str] = []
+            for pattern in patterns[:5]:
+                if isinstance(pattern, dict):
+                    p_type = str(pattern.get("pattern_type") or "").strip()
+                    if p_type:
+                        top_patterns.append(p_type)
+
+            snapshots.append(
+                {
+                    "report_id": report_id,
+                    "summary": summary,
+                    "ratio_count": ratio_count,
+                    "pattern_count": len(patterns),
+                    "top_patterns": top_patterns,
+                }
+            )
+
+        return snapshots
+
     # ── Metric trends (for charts) ───────────────────────────────────────────
 
     def _build_metric_trends(self, year_metrics: dict[int, dict[str, float]]) -> list[dict]:
@@ -628,6 +664,7 @@ class ComparativeService:
             year_metrics = self._build_year_metrics(report_ids)
             ratio_history = self._build_ratio_history(report_ids)
             patterns = self._build_pattern_history(report_ids)
+            report_snapshots = self._build_report_snapshots(report_ids)
 
             metric_trends = self._build_metric_trends(year_metrics)
             growth_analysis = self._build_growth_analysis(year_metrics)
@@ -651,6 +688,7 @@ class ComparativeService:
                 "ratio_comparison": ratio_comparison,
                 "risk_heatmap": risk_heatmap,
                 "years_analyzed": sorted(year_metrics.keys()),
+                "report_snapshots": report_snapshots,
                 "report_ids": report_ids,
             }
 

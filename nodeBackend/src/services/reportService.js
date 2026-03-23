@@ -11,6 +11,36 @@ class ReportService {
     this.serviceClient = serviceClient;
   }
 
+  async buildBatchPdf({ batchId, company }) {
+    try {
+      const pdfResult = await this.serviceClient.post(
+        "report_generator",
+        "/generate-batch-report",
+        { batch_id: batchId, company },
+        { timeoutMs: 300000 }
+      );
+      return pdfResult?.pdf_path || null;
+    } catch (error) {
+      console.error("Batch PDF generation failed:", error.message);
+      return null;
+    }
+  }
+
+  cleanupSingleReportPdf(generatedReport) {
+    const pdfPath = generatedReport?.pdf_path;
+    if (!pdfPath) {
+      return;
+    }
+
+    try {
+      if (fs.existsSync(pdfPath)) {
+        fs.unlinkSync(pdfPath);
+      }
+    } catch (error) {
+      console.warn("Unable to remove single-report PDF during batch cleanup:", error.message);
+    }
+  }
+
   async uploadAndAnalyze({ file, company }) {
     fs.mkdirSync(this.uploadDir, { recursive: true });
 
@@ -61,8 +91,12 @@ class ReportService {
       try {
         const result = await this.pipelineEngine.execute({
           reportId: report.id,
-          filePath: targetPath
+          filePath: targetPath,
+          strictAllBackends: false
         });
+
+        // Batch mode should produce one consolidated multi-year PDF, not per-file PDFs.
+        this.cleanupSingleReportPdf(result);
 
         reportResults.push({
           report,
@@ -82,8 +116,17 @@ class ReportService {
       }
     }
 
-    // Run comparative analysis across all completed reports
+    // Run comparative analysis across all completed reports and create one consolidated output.
     let comparativeResult = null;
+    let consolidatedReport = {
+      status: "failed",
+      reportType: "multi_year_company_report",
+      batchId,
+      reportIds,
+      pdfPath: null,
+      message: "Comparative analysis not available"
+    };
+
     if (reportIds.length >= 1) {
       try {
         comparativeResult = await this.serviceClient.post(
@@ -102,30 +145,60 @@ class ReportService {
         );
 
         if (comparativeResult && comparativeResult.status === "completed") {
-          try {
-            const pdfResult = await this.serviceClient.post(
-              "report_generator",
-              "/generate-batch-report",
-              { batch_id: batchId, company },
-              { timeoutMs: 300000 }
-            );
-            comparativeResult.pdf_path = pdfResult.pdf_path;
-          } catch (error) {
-            console.error("Batch PDF generation failed:", error.message);
-          }
+          comparativeResult.pdf_path = await this.buildBatchPdf({
+            batchId,
+            company
+          });
+
+          consolidatedReport = {
+            status: "completed",
+            reportType: "multi_year_company_report",
+            batchId,
+            reportIds,
+            pdfPath: comparativeResult.pdf_path || null,
+            message: "Consolidated multi-year report generated"
+          };
+        } else {
+          consolidatedReport = {
+            status: "failed",
+            reportType: "multi_year_company_report",
+            batchId,
+            reportIds,
+            pdfPath: null,
+            message: "Comparative analysis did not complete"
+          };
         }
       } catch (error) {
         comparativeResult = {
           status: "failed",
           error: error.message
         };
+
+        consolidatedReport = {
+          status: "failed",
+          reportType: "multi_year_company_report",
+          batchId,
+          reportIds,
+          pdfPath: null,
+          message: error.message
+        };
       }
+    } else {
+      consolidatedReport = {
+        status: "failed",
+        reportType: "multi_year_company_report",
+        batchId,
+        reportIds,
+        pdfPath: null,
+        message: "No report completed in batch"
+      };
     }
 
     return {
       batchId,
       totalFiles: files.length,
       completedReports: reportIds.length,
+      consolidatedReport,
       reports: reportResults,
       comparativeAnalysis: comparativeResult
     };
@@ -141,6 +214,20 @@ class ReportService {
         { batch_id: batchId },
         { timeoutMs: 30000 }
       );
+
+      if (!result || result.status === "not_found") {
+        return null;
+      }
+
+      // Ensure batch PDF path is available when fetching batch results later.
+      if (!result.pdf_path) {
+        const company = result.company || {};
+        result.pdf_path = await this.buildBatchPdf({
+          batchId,
+          company
+        });
+      }
+
       return result;
     } catch {
       return null;

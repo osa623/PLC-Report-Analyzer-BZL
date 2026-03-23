@@ -36,12 +36,15 @@ class PipelineEngine {
     });
   }
 
-  async execute({ reportId, filePath }) {
+  async execute({ reportId, filePath, strictAllBackends }) {
     try {
       const report = await this.reportRepository.getById(reportId);
       if (!report?.sector) {
         throw new ApplicationError("Missing sector for report", 400, { reportId });
       }
+
+      const strictMode =
+        typeof strictAllBackends === "boolean" ? strictAllBackends : this.strictAllBackends;
 
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.PARSING);
       const parsed = await this.invokeRequired("document_parser", "/parse-document", {
@@ -52,7 +55,7 @@ class PipelineEngine {
         throw new ApplicationError("Document parsing failed", 502, { reportId, parsedStatus: parsed?.status });
       }
 
-      const invokeParticipation = this.strictAllBackends
+      const invokeParticipation = strictMode
         ? this.invokeRequired.bind(this)
         : this.invokeBestEffort.bind(this);
 
@@ -94,7 +97,7 @@ class PipelineEngine {
         })
       ];
 
-      if (this.strictAllBackends) {
+      if (strictMode) {
         await Promise.all(extractionCalls);
       } else {
         await Promise.allSettled(extractionCalls);
@@ -109,7 +112,7 @@ class PipelineEngine {
         invokeParticipation("pattern_detection", "/detect-patterns", { report_id: reportId, file_path: filePath })
       ];
 
-      if (this.strictAllBackends) {
+      if (strictMode) {
         await Promise.all(analysisCalls);
       } else {
         await Promise.allSettled(analysisCalls);
