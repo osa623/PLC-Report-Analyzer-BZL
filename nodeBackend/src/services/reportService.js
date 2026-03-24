@@ -3,12 +3,20 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 class ReportService {
-  constructor({ reportRepository, companyRepository, pipelineEngine, uploadDir, serviceClient }) {
+  constructor({
+    reportRepository,
+    companyRepository,
+    pipelineEngine,
+    uploadDir,
+    serviceClient,
+    batchPipelineConcurrency = 3
+  }) {
     this.reportRepository = reportRepository;
     this.companyRepository = companyRepository;
     this.pipelineEngine = pipelineEngine;
     this.uploadDir = uploadDir;
     this.serviceClient = serviceClient;
+    this.batchPipelineConcurrency = Math.max(1, Number(batchPipelineConcurrency) || 1);
   }
 
   async buildBatchPdf({ batchId, company }) {
@@ -72,23 +80,26 @@ class ReportService {
     fs.mkdirSync(this.uploadDir, { recursive: true });
 
     const companyRecord = await this.companyRepository.upsertCompany(company);
-    const reportResults = [];
-    const reportIds = [];
+    const reportResults = new Array(files.length);
+    const completedReportIds = new Array(files.length).fill(null);
+    const workerCount = Math.min(this.batchPipelineConcurrency, files.length || 1);
+    let nextFileIndex = 0;
 
-    // Process each PDF through the existing pipeline sequentially
-    for (const file of files) {
-      const extension = path.extname(file.originalname) || ".pdf";
-      const fileName = `${uuidv4()}${extension}`;
-      const targetPath = path.resolve(this.uploadDir, fileName);
-
-      fs.writeFileSync(targetPath, file.buffer);
-
-      const report = await this.reportRepository.createReport({
-        companyId: companyRecord.id,
-        filePath: targetPath
-      });
+    const processFile = async (file, index) => {
+      let report = null;
 
       try {
+        const extension = path.extname(file.originalname) || ".pdf";
+        const fileName = `${uuidv4()}${extension}`;
+        const targetPath = path.resolve(this.uploadDir, fileName);
+
+        fs.writeFileSync(targetPath, file.buffer);
+
+        report = await this.reportRepository.createReport({
+          companyId: companyRecord.id,
+          filePath: targetPath
+        });
+
         const result = await this.pipelineEngine.execute({
           reportId: report.id,
           filePath: targetPath,
@@ -98,23 +109,39 @@ class ReportService {
         // Batch mode should produce one consolidated multi-year PDF, not per-file PDFs.
         this.cleanupSingleReportPdf(result);
 
-        reportResults.push({
+        reportResults[index] = {
           report,
           generatedReport: result,
           status: "completed",
           fileName: file.originalname
-        });
-        reportIds.push(report.id);
+        };
+        completedReportIds[index] = report.id;
       } catch (error) {
-        reportResults.push({
+        reportResults[index] = {
           report,
           generatedReport: null,
           status: "failed",
           fileName: file.originalname,
           error: error.message
-        });
+        };
       }
-    }
+    };
+
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (true) {
+        const currentIndex = nextFileIndex;
+        if (currentIndex >= files.length) {
+          return;
+        }
+
+        nextFileIndex += 1;
+        await processFile(files[currentIndex], currentIndex);
+      }
+    });
+
+    await Promise.all(workers);
+
+    const reportIds = completedReportIds.filter(Boolean);
 
     // Run comparative analysis across all completed reports and create one consolidated output.
     let comparativeResult = null;
@@ -159,13 +186,18 @@ class ReportService {
             message: "Consolidated multi-year report generated"
           };
         } else {
+          const gateErrors = comparativeResult?.quality_gate?.errors;
+          const failureReason = Array.isArray(gateErrors) && gateErrors.length
+            ? `Comparative quality gate failed: ${gateErrors.join(", ")}`
+            : "Comparative analysis did not complete";
+
           consolidatedReport = {
             status: "failed",
             reportType: "multi_year_company_report",
             batchId,
             reportIds,
             pdfPath: null,
-            message: "Comparative analysis did not complete"
+            message: failureReason
           };
         }
       } catch (error) {

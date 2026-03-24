@@ -24,7 +24,8 @@ function createContainer() {
     companyRepository,
     pipelineEngine,
     uploadDir: env.uploadDir,
-    serviceClient
+    serviceClient,
+    batchPipelineConcurrency: env.batchPipelineConcurrency
   });
   const reportController = new ReportController({ reportService });
 

@@ -254,6 +254,108 @@ class ComparativeService:
 
         return snapshots
 
+    @staticmethod
+    def _is_numeric(value: Any) -> bool:
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+    def _evaluate_snapshot_readiness(
+        self,
+        report_id: str,
+        snapshot: dict[str, Any],
+    ) -> tuple[bool, list[str]]:
+        reasons: list[str] = []
+        summary = snapshot.get("summary") if isinstance(snapshot.get("summary"), dict) else {}
+        ratio_count = int(snapshot.get("ratio_count") or 0)
+        base_payload = self._load_json(self._key(report_id))
+        base_rows = self._extract_rows(base_payload)
+        has_base_rows = len(base_rows) > 0
+
+        if not summary:
+            reasons.append("missing_summary")
+
+        has_numeric_summary_metric = any(
+            self._is_numeric(summary.get(metric_name))
+            for metric_name in ("total_revenue", "net_profit", "total_assets")
+        )
+        if not has_numeric_summary_metric:
+            reasons.append("missing_numeric_summary_metrics")
+
+        if ratio_count <= 0:
+            reasons.append("missing_ratio_data")
+
+        if has_base_rows:
+            return True, reasons
+
+        return has_numeric_summary_metric or ratio_count > 0, reasons
+
+    def _filter_eligible_reports(
+        self,
+        requested_report_ids: list[str],
+        report_snapshots: list[dict[str, Any]],
+    ) -> tuple[list[str], list[dict[str, Any]]]:
+        snapshots_by_report_id = {
+            str(snapshot.get("report_id")): snapshot
+            for snapshot in report_snapshots
+            if snapshot.get("report_id") is not None
+        }
+
+        eligible_report_ids: list[str] = []
+        readiness: list[dict[str, Any]] = []
+
+        for report_id in requested_report_ids:
+            snapshot = snapshots_by_report_id.get(str(report_id))
+            if snapshot is None:
+                readiness.append(
+                    {
+                        "report_id": report_id,
+                        "ready": False,
+                        "reasons": ["missing_final_report_payload"],
+                    }
+                )
+                continue
+
+            ready, reasons = self._evaluate_snapshot_readiness(report_id=report_id, snapshot=snapshot)
+            readiness.append(
+                {
+                    "report_id": report_id,
+                    "ready": ready,
+                    "reasons": reasons,
+                }
+            )
+            if ready:
+                eligible_report_ids.append(report_id)
+
+        return eligible_report_ids, readiness
+
+    def _build_quality_gate(
+        self,
+        requested_report_ids: list[str],
+        eligible_report_ids: list[str],
+        years_analyzed: list[int],
+        metric_trends: list[dict[str, Any]],
+        ratio_comparison: dict[str, Any],
+    ) -> dict[str, Any]:
+        requested_count = len(requested_report_ids)
+        eligible_count = len(eligible_report_ids)
+        coverage = (eligible_count / requested_count) if requested_count else 0.0
+
+        errors: list[str] = []
+        if eligible_count == 0:
+            errors.append("no_eligible_reports")
+        if not years_analyzed:
+            errors.append("missing_year_metrics")
+        if not metric_trends and not ratio_comparison:
+            errors.append("missing_metric_trends_and_ratios")
+
+        passed = len(errors) == 0
+        return {
+            "passed": passed,
+            "coverage": round(coverage, 4),
+            "requested_reports": requested_count,
+            "eligible_reports": eligible_count,
+            "errors": errors,
+        }
+
     # ── Metric trends (for charts) ───────────────────────────────────────────
 
     def _build_metric_trends(self, year_metrics: dict[int, dict[str, float]]) -> list[dict]:
@@ -661,10 +763,13 @@ class ComparativeService:
 
     def process(self, batch_id: str, report_ids: list[str], company_info: dict) -> str:
         try:
-            year_metrics = self._build_year_metrics(report_ids)
-            ratio_history = self._build_ratio_history(report_ids)
-            patterns = self._build_pattern_history(report_ids)
-            report_snapshots = self._build_report_snapshots(report_ids)
+            requested_report_ids = list(dict.fromkeys(report_ids))
+            report_snapshots = self._build_report_snapshots(requested_report_ids)
+            eligible_report_ids, readiness = self._filter_eligible_reports(requested_report_ids, report_snapshots)
+
+            year_metrics = self._build_year_metrics(eligible_report_ids)
+            ratio_history = self._build_ratio_history(eligible_report_ids)
+            patterns = self._build_pattern_history(eligible_report_ids)
 
             metric_trends = self._build_metric_trends(year_metrics)
             growth_analysis = self._build_growth_analysis(year_metrics)
@@ -674,11 +779,20 @@ class ComparativeService:
             cashflow_breakdown = self._build_cashflow_breakdown(year_metrics)
             ratio_comparison = self._build_ratio_comparison(ratio_history)
             risk_heatmap = self._build_risk_heatmap(patterns)
+            years_analyzed = sorted(year_metrics.keys())
+            quality_gate = self._build_quality_gate(
+                requested_report_ids=requested_report_ids,
+                eligible_report_ids=eligible_report_ids,
+                years_analyzed=years_analyzed,
+                metric_trends=metric_trends,
+                ratio_comparison=ratio_comparison,
+            )
+            status = "completed" if quality_gate["passed"] else "failed"
 
             result = {
                 "batch_id": batch_id,
                 "company": company_info,
-                "status": "completed",
+                "status": status,
                 "metric_trends": metric_trends,
                 "growth_analysis": growth_analysis,
                 "investment_signals": investment_signals,
@@ -687,9 +801,15 @@ class ComparativeService:
                 "cashflow_breakdown": cashflow_breakdown,
                 "ratio_comparison": ratio_comparison,
                 "risk_heatmap": risk_heatmap,
-                "years_analyzed": sorted(year_metrics.keys()),
+                "years_analyzed": years_analyzed,
                 "report_snapshots": report_snapshots,
-                "report_ids": report_ids,
+                "report_ids": eligible_report_ids,
+                "requested_report_ids": requested_report_ids,
+                "skipped_report_ids": [
+                    item["report_id"] for item in readiness if not item.get("ready")
+                ],
+                "report_readiness": readiness,
+                "quality_gate": quality_gate,
             }
 
             self.redis_client.set(
@@ -698,7 +818,7 @@ class ComparativeService:
                 ex=self.ttl_seconds,
             )
 
-            return "completed"
+            return status
 
         except Exception:
             logger.exception("Comparative analysis failed for batch_id=%s", batch_id)

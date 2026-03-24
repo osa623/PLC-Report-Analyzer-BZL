@@ -434,6 +434,29 @@ class ReportService:
         if not batch_payload:
             logger.error("Batch comparative payload not found for key=%s", batch_key)
             return {"status": "not_found", "pdf_path": None}
+
+        if batch_payload.get("status") != "completed":
+            logger.error(
+                "Batch comparative payload failed quality gate for key=%s status=%s",
+                batch_key,
+                batch_payload.get("status"),
+            )
+            return {"status": "failed", "pdf_path": None}
+
+        years_analyzed = batch_payload.get("years_analyzed")
+        metric_trends = batch_payload.get("metric_trends")
+        ratio_comparison = batch_payload.get("ratio_comparison")
+        report_snapshots = batch_payload.get("report_snapshots")
+
+        has_years = isinstance(years_analyzed, list) and len(years_analyzed) > 0
+        has_metric_trends = isinstance(metric_trends, list) and len(metric_trends) > 0
+        has_ratio_comparison = isinstance(ratio_comparison, dict) and len(ratio_comparison) > 0
+        has_snapshots = isinstance(report_snapshots, list) and len(report_snapshots) > 0
+        has_substantive_data = has_years and (has_metric_trends or has_ratio_comparison or has_snapshots)
+
+        if not has_substantive_data:
+            logger.error("Batch comparative payload is too sparse for PDF generation key=%s", batch_key)
+            return {"status": "failed", "pdf_path": None}
             
         try:
             from services.pdf_builder import PDFBuilder
