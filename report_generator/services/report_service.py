@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ReportService:
     _SUMMARY_FIELDS = {
-        "total_revenue": "revenue",
+        "total_revenue": "total_revenue",
         "net_profit": "net_profit",
         "operating_cashflow": "operating_cashflow",
         "total_assets": "total_assets",
@@ -159,8 +159,14 @@ class ReportService:
         semantic_values = by_year_semantic[latest_year]
 
         summary: dict[str, float | None] = {}
-        for out_field, semantic in self._SUMMARY_FIELDS.items():
-            summary[out_field] = semantic_values.get(semantic)
+        for out_field, canonical_metric in self._SUMMARY_FIELDS.items():
+            aliases = self._METRIC_ALIASES.get(canonical_metric, {canonical_metric})
+            resolved_value = None
+            for alias in aliases:
+                if alias in semantic_values:
+                    resolved_value = semantic_values[alias]
+                    break
+            summary[out_field] = resolved_value
 
         return summary, latest_year
 

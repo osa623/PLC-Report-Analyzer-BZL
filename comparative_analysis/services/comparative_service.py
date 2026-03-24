@@ -218,17 +218,81 @@ class ComparativeService:
                         all_patterns.append(p)
         return all_patterns
 
+    def _build_snapshot_summary_from_base(self, report_id: str) -> dict[str, float | None]:
+        payload = self._load_json(self._key(report_id))
+        rows = self._extract_rows(payload)
+        by_year_metric: dict[int, dict[str, float]] = defaultdict(dict)
+
+        for row in rows:
+            year = self._as_year(row.get("year"))
+            if year is None:
+                continue
+            semantic = str(row.get("semantic_type") or "").strip().lower()
+            value = self._to_float(row.get("value"))
+            if not semantic or value is None:
+                continue
+            for metric, aliases in _METRIC_ALIASES.items():
+                if semantic in aliases:
+                    by_year_metric[year][metric] = value
+
+        if not by_year_metric:
+            return {
+                "total_revenue": None,
+                "net_profit": None,
+                "operating_cashflow": None,
+                "total_assets": None,
+            }
+
+        latest_year = max(by_year_metric.keys())
+        latest_metrics = by_year_metric[latest_year]
+        return {
+            "total_revenue": latest_metrics.get("revenue"),
+            "net_profit": latest_metrics.get("net_profit"),
+            "operating_cashflow": latest_metrics.get("operating_cashflow"),
+            "total_assets": latest_metrics.get("total_assets"),
+        }
+
     def _build_report_snapshots(self, report_ids: list[str]) -> list[dict[str, Any]]:
         """Collect summary/ratio/pattern highlights per report for richer comparative output."""
         snapshots: list[dict[str, Any]] = []
         for report_id in report_ids:
             payload = self._load_json(self._key(report_id, self.final_report_suffix))
             if not isinstance(payload, dict):
+                summary = self._build_snapshot_summary_from_base(report_id)
+                ratio_count = 0
+                pattern_count = 0
+                top_patterns: list[str] = []
+
+                ratio_payload = self._load_json(self._key(report_id, self.ratios_suffix))
+                if isinstance(ratio_payload, dict) and isinstance(ratio_payload.get("ratios"), list):
+                    ratio_count = len([item for item in ratio_payload.get("ratios", []) if isinstance(item, dict)])
+
+                pattern_payload = self._load_json(self._key(report_id, self.patterns_suffix))
+                if isinstance(pattern_payload, dict) and isinstance(pattern_payload.get("patterns"), list):
+                    valid_patterns = [item for item in pattern_payload.get("patterns", []) if isinstance(item, dict)]
+                    pattern_count = len(valid_patterns)
+                    for pattern in valid_patterns[:5]:
+                        p_type = str(pattern.get("pattern_type") or "").strip()
+                        if p_type:
+                            top_patterns.append(p_type)
+
+                snapshots.append(
+                    {
+                        "report_id": report_id,
+                        "summary": summary,
+                        "ratio_count": ratio_count,
+                        "pattern_count": pattern_count,
+                        "top_patterns": top_patterns,
+                    }
+                )
                 continue
 
             summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
             ratios = payload.get("ratios") if isinstance(payload.get("ratios"), dict) else {}
             patterns = payload.get("patterns") if isinstance(payload.get("patterns"), list) else []
+
+            if not any(isinstance(summary.get(metric), (int, float)) for metric in ("total_revenue", "net_profit", "operating_cashflow", "total_assets")):
+                summary = self._build_snapshot_summary_from_base(report_id)
 
             ratio_count = 0
             for _, bucket in ratios.items():
