@@ -542,38 +542,46 @@ class PDFBuilder:
         period = f"{min(years)} - {max(years)}" if years else "Unknown Period"
 
         elements.extend(self._create_header(title, period))
-        elements.extend(self._create_banner("Comparative Financial Intelligence", "Multi-year diagnostics, ratio triangulation, and risk interpretation."))
-        elements.append(Paragraph("COMPARATIVE ANALYTICS DOSSIER", self.section_kicker_style))
+        elements.extend(self._create_banner("Evidence-Based Comparative Analysis", "Strictly document-derived metrics with explicit integrity and validation diagnostics."))
+        elements.append(Paragraph("STRICT FORENSIC ANALYTICS DOSSIER", self.section_kicker_style))
         elements.append(Spacer(1, 4))
         elements.append(Paragraph(f"Batch ID: {data.get('batch_id')}", self.meta_style))
         elements.append(Paragraph(f"Sector: {comp.get('sector', 'N/A')}", self.meta_style))
         elements.append(Paragraph(f"Status: {str(data.get('status', 'unknown')).upper()}", self.meta_style))
+        years_in_scope = data.get("years_analyzed", []) if isinstance(data.get("years_analyzed"), list) else []
+        if years_in_scope:
+            elements.append(Paragraph(f"Years Included: {', '.join([str(y) for y in sorted(years_in_scope)])}", self.meta_style))
 
         requested_report_ids = data.get("requested_report_ids", []) if isinstance(data.get("requested_report_ids"), list) else []
         eligible_report_ids = data.get("report_ids", []) if isinstance(data.get("report_ids"), list) else []
         skipped_report_ids = data.get("skipped_report_ids", []) if isinstance(data.get("skipped_report_ids"), list) else []
-        quality_gate = data.get("quality_gate", {}) if isinstance(data.get("quality_gate"), dict) else {}
-        gate_coverage = quality_gate.get("coverage")
+        data_integrity = data.get("data_integrity", {}) if isinstance(data.get("data_integrity"), dict) else {}
+        coverage_pct = data_integrity.get("coverage_percent")
+
+        def fmt_number_or_dna(value: Any) -> str:
+            if isinstance(value, (int, float)):
+                return self._format_number(value)
+            return "DATA NOT AVAILABLE"
+
+        def fmt_percent_or_dna(value: Any) -> str:
+            if isinstance(value, (int, float)):
+                return f"{float(value) * 100:.2f}%"
+            return "DATA NOT AVAILABLE"
 
         scope_data = [["Requested Reports", "Eligible Reports", "Skipped", "Coverage"]]
         scope_data.append([
             str(len(requested_report_ids) if requested_report_ids else len(data.get("report_snapshots", []))),
             str(len(eligible_report_ids)),
             str(len(skipped_report_ids)),
-            f"{float(gate_coverage) * 100:.1f}%" if isinstance(gate_coverage, (int, float)) else "N/A",
+            f"{float(coverage_pct):.2f}%" if isinstance(coverage_pct, (int, float)) else "DATA NOT AVAILABLE",
         ])
         elements.append(Spacer(1, 12))
         elements.append(self._create_table(scope_data, col_widths=[130, 130, 90, 110]))
         elements.append(Spacer(1, 16))
 
-        elements.extend(self._create_section_header("Analyst Highlights", "Narrative-ready observations synthesized from health scores, trends, and investment signals."))
-        highlight_lines = self._build_comparative_key_findings(data)
-        elements.extend(self._create_bullet_list(highlight_lines))
-        elements.append(Spacer(1, 12))
-
         snapshots = data.get("report_snapshots", [])
         if snapshots:
-            elements.extend(self._create_section_header("Report-Level Coverage Snapshot", "Cross-report detail to verify depth and consistency of extracted accounting data."))
+            elements.extend(self._create_section_header("Report-Level Coverage Snapshot", "Validation view of each uploaded report to confirm none were silently ignored."))
             snap_table = [["Report ID", "Revenue", "Net Profit", "Operating CF", "Assets", "Ratios", "Patterns"]]
             for snapshot in snapshots:
                 summary = snapshot.get("summary") or {}
@@ -584,10 +592,10 @@ class PDFBuilder:
 
                 snap_table.append([
                     str(snapshot.get("report_id", ""))[:12] + "...",
-                    self._format_number(revenue),
-                    self._format_number(net_profit),
-                    self._format_number(operating_cf),
-                    self._format_number(total_assets),
+                    fmt_number_or_dna(revenue),
+                    fmt_number_or_dna(net_profit),
+                    fmt_number_or_dna(operating_cf),
+                    fmt_number_or_dna(total_assets),
                     str(snapshot.get("ratio_count", 0)),
                     str(snapshot.get("pattern_count", 0)),
                 ])
@@ -620,155 +628,64 @@ class PDFBuilder:
                 elements.append(readiness_table)
                 elements.append(Spacer(1, 16))
 
-        elements.extend(self._create_section_header("Executive Summary", "High-level scoring and investment direction synthesized from multi-year trends."))
-        health = data.get("financial_health", {})
-        if health:
-            elements.append(Paragraph("Scorecard At A Glance", self.h2_style))
-            elements.append(self._create_score_tiles([
-                ("Overall", health.get("overall_score")),
-                ("Profitability", health.get("profitability_score")),
-                ("Liquidity", health.get("liquidity_score")),
-                ("Growth", health.get("growth_score")),
-                ("Efficiency", health.get("efficiency_score")),
-                ("Stability", health.get("stability_score")),
-            ]))
+        elements.extend(self._create_section_header("A. Verified Financial Summary", "Year-wise values strictly from extracted documents; missing entries are marked as DATA NOT AVAILABLE."))
+        verified_summary = data.get("verified_financial_summary", []) if isinstance(data.get("verified_financial_summary"), list) else []
+        summary_rows = [["Year", "Revenue", "Net Profit", "Total Assets", "Total Equity", "Operating CF"]]
+        for item in verified_summary:
+            if not isinstance(item, dict):
+                continue
+            summary_rows.append([
+                str(item.get("year") or ""),
+                fmt_number_or_dna(item.get("revenue")),
+                fmt_number_or_dna(item.get("net_profit")),
+                fmt_number_or_dna(item.get("total_assets")),
+                fmt_number_or_dna(item.get("total_equity")),
+                fmt_number_or_dna(item.get("operating_cashflow")),
+            ])
+        if len(summary_rows) > 1:
+            elements.append(self._create_table(summary_rows, col_widths=[60, 90, 90, 90, 90, 95]))
+        else:
+            elements.append(Paragraph("DATA NOT AVAILABLE", self.body_style))
+
+        metric_trends = data.get("metric_trends", []) if isinstance(data.get("metric_trends"), list) else []
+        chart_trends: list[dict[str, Any]] = []
+        target_metric_order = ["revenue", "net_profit", "total_assets", "total_equity"]
+        metric_by_name = {}
+        for trend in metric_trends:
+            if isinstance(trend, dict):
+                metric_by_name[str(trend.get("metric_name") or "")] = trend
+        for metric_name in target_metric_order:
+            trend = metric_by_name.get(metric_name)
+            if isinstance(trend, dict) and isinstance(trend.get("values"), list) and trend.get("values"):
+                chart_trends.append(trend)
+        if chart_trends:
             elements.append(Spacer(1, 10))
+            elements.append(Paragraph("Core Financial Trend Chart", self.h2_style))
+            elements.append(self._create_trend_chart(chart_trends[:4]))
 
-            elements.append(Paragraph("Financial Health Scores (Out of 100)", self.h2_style))
-            health_data = [
-                ["Overall", "Profitability", "Liquidity", "Growth", "Efficiency", "Stability"],
-                [str(health.get("overall_score", 0)), str(health.get("profitability_score", 0)), 
-                 str(health.get("liquidity_score", 0)), str(health.get("growth_score", 0)), 
-                 str(health.get("efficiency_score", 0)), str(health.get("stability_score", 0))]
-            ]
-            elements.append(self._create_table(health_data))
-            elements.append(Spacer(1, 14))
+        ratio_comparison = data.get("ratio_comparison", {})
+        if isinstance(ratio_comparison, dict) and ratio_comparison:
+            elements.append(Spacer(1, 10))
+            elements.append(Paragraph("Key Ratios (Only Where Inputs Were Available)", self.h2_style))
+            ratio_rows = [["Ratio", "Year", "Value"]]
+            for ratio_name, points in sorted(ratio_comparison.items()):
+                if not isinstance(points, list):
+                    continue
+                for point in points:
+                    if isinstance(point, dict):
+                        ratio_rows.append([
+                            str(ratio_name).replace("_", " ").title(),
+                            str(point.get("year") or ""),
+                            fmt_number_or_dna(point.get("value")),
+                        ])
+            if len(ratio_rows) > 1:
+                elements.append(self._create_table(ratio_rows, col_widths=[220, 95, 200]))
 
-            ratios_for_radar = {
-                "Overall": health.get("overall_score", 0),
-                "Profitability": health.get("profitability_score", 0),
-                "Liquidity": health.get("liquidity_score", 0),
-                "Growth": health.get("growth_score", 0),
-                "Efficiency": health.get("efficiency_score", 0),
-                "Stability": health.get("stability_score", 0)
-            }
-            elements.append(self._create_radar_chart(ratios_for_radar))
-            elements.append(Spacer(1, 16))
-
-        sigs = data.get("investment_signals", [])
-        if sigs:
-            elements.append(Paragraph("Investment Signals", self.h2_style))
-            elements.append(self._create_signal_table(sigs))
-            signal_briefs = []
-            for signal in sigs[:6]:
-                if isinstance(signal, dict):
-                    category = str(signal.get("category") or "Signal")
-                    description = str(signal.get("description") or "")
-                    signal_briefs.append(f"{category}: {description}")
-            if signal_briefs:
-                elements.append(Spacer(1, 8))
-                elements.extend(self._create_bullet_list(signal_briefs, self.meta_style))
-            elements.append(Spacer(1, 16))
-
-        quality_errors = quality_gate.get("errors") if isinstance(quality_gate.get("errors"), list) else []
-        quality_rows = [["Quality Gate", "Value"]]
-        quality_rows.append(["Passed", "YES" if quality_gate.get("passed") else "NO"])
-        quality_rows.append(["Coverage", f"{float(gate_coverage) * 100:.1f}%" if isinstance(gate_coverage, (int, float)) else "N/A"])
-        quality_rows.append(["Requested Reports", str(quality_gate.get("requested_reports", len(requested_report_ids)))])
-        quality_rows.append(["Eligible Reports", str(quality_gate.get("eligible_reports", len(eligible_report_ids)))])
-        quality_rows.append(["Validation Errors", "None" if not quality_errors else ", ".join([str(err) for err in quality_errors])])
-        elements.append(Paragraph("Data Quality Gate", self.h2_style))
-        elements.append(self._create_table(quality_rows, col_widths=[130, 385]))
         elements.append(PageBreak())
 
-        elements.extend(self._create_section_header("Multi-Year Financial Trend Analysis", "Trend curves and growth indicators across all available years in scope."))
-        trends = data.get("metric_trends", [])
-        if trends:
-            elements.append(self._create_trend_chart(trends))
-            elements.append(Spacer(1, 12))
-
-            t_data = [["Metric", "CAGR", "Latest YoY", "Details"]]
-            for t in trends:
-                cagr = t.get("cagr")
-                yoy = t.get("latest_yoy_change")
-                t_data.append([
-                    t.get("display_name", ""),
-                    f"{cagr*100:.2f}%" if cagr is not None else "N/A",
-                    f"{yoy*100:.2f}%" if yoy is not None else "N/A",
-                    f"{len(t.get('values', []))} years"
-                ])
-            elements.append(self._create_table(t_data, col_widths=[170, 85, 85, 175]))
-
-            trend_detail_rows = [["Metric", "First Year", "Last Year", "Absolute Change", "Direction"]]
-            for trend in trends:
-                if not isinstance(trend, dict):
-                    continue
-                values = trend.get("values") if isinstance(trend.get("values"), list) else []
-                if len(values) < 2:
-                    continue
-                first = values[0] if isinstance(values[0], dict) else {}
-                last = values[-1] if isinstance(values[-1], dict) else {}
-                first_value = self._safe_float(first.get("value"))
-                last_value = self._safe_float(last.get("value"))
-                if first_value is None or last_value is None:
-                    continue
-                delta = last_value - first_value
-                direction = "Improved" if delta >= 0 else "Deteriorated"
-                trend_detail_rows.append([
-                    str(trend.get("display_name") or trend.get("metric_name") or "Metric"),
-                    str(first.get("year") or ""),
-                    str(last.get("year") or ""),
-                    self._format_number(delta),
-                    direction,
-                ])
-
-            if len(trend_detail_rows) > 1:
-                elements.append(Spacer(1, 10))
-                elements.append(Paragraph("Metric Change Diagnostics", self.h2_style))
-                elements.append(self._create_table(trend_detail_rows, col_widths=[170, 70, 70, 120, 85]))
-
-            matrix_years, metrics_matrix = self._prepare_metric_matrix(trends)
-            if matrix_years and metrics_matrix:
-                elements.append(Spacer(1, 14))
-                elements.append(Paragraph("Yearly Financial Matrix", self.h2_style))
-                matrix_header = ["Metric"] + [str(year) for year in matrix_years]
-                matrix_rows = [matrix_header]
-                for metric_name in sorted(metrics_matrix.keys()):
-                    row = [metric_name]
-                    for year in matrix_years:
-                        row.append(self._format_number(metrics_matrix[metric_name].get(year)))
-                    matrix_rows.append(row)
-                dynamic_width = 515 / max(2, len(matrix_header))
-                col_widths = [160] + [dynamic_width for _ in matrix_years]
-                elements.append(self._create_table(matrix_rows, col_widths=col_widths))
-            elements.append(PageBreak())
-        elif snapshots:
-            elements.append(Paragraph("Trend lines are limited for current extraction depth; snapshot comparison is shown instead.", self.body_style))
-            rev_categories = []
-            rev_values = []
-            for idx, snapshot in enumerate(snapshots, start=1):
-                summary = snapshot.get("summary") or {}
-                revenue = summary.get("total_revenue")
-                if isinstance(revenue, (int, float)):
-                    rev_categories.append(f"Report {idx}")
-                    rev_values.append(float(revenue))
-
-            if rev_values:
-                elements.append(self._create_bar_chart("Revenue Snapshot Across Uploaded Reports", rev_categories, rev_values))
-            else:
-                elements.append(Paragraph("No numeric revenue snapshots available for charting.", self.body_style))
-            elements.append(PageBreak())
-
-        elements.extend(self._create_section_header("Growth, Cashflow, and Balance Movement", "Year-on-year momentum and cash generation patterns."))
+        elements.extend(self._create_section_header("B. Growth Analysis", "Computed only where prior-year and current-year values are both present."))
         growth = data.get("growth_analysis", {})
         if growth:
-            rev_g = growth.get("revenue_growth_rates", [])
-            if rev_g:
-                categories = [str(item["year"]) for item in rev_g]
-                values = [float(item["value"]) * 100 for item in rev_g]
-                elements.append(self._create_bar_chart("Revenue Growth %", categories, values))
-                elements.append(Spacer(1, 10))
-
             growth_rows = [["Growth Metric", "Year", "Rate"]]
             for name, series in (
                 ("Revenue", growth.get("revenue_growth_rates", [])),
@@ -780,99 +697,132 @@ class PDFBuilder:
                     continue
                 for item in series:
                     if isinstance(item, dict):
+                        growth_value = item.get("value")
+                        direction = "Increase" if isinstance(growth_value, (int, float)) and float(growth_value) >= 0 else "Decrease"
                         growth_rows.append([
                             name,
                             str(item.get("year", "")),
-                            self._format_percent(item.get("value")),
+                            fmt_percent_or_dna(growth_value) + (f" ({direction})" if isinstance(growth_value, (int, float)) else ""),
                         ])
             if len(growth_rows) > 1:
                 elements.append(self._create_table(growth_rows, col_widths=[110, 90, 315]))
-                elements.append(Spacer(1, 14))
+            else:
+                elements.append(Paragraph("DATA NOT AVAILABLE", self.body_style))
 
+            rev_growth = growth.get("revenue_growth_rates", []) if isinstance(growth.get("revenue_growth_rates"), list) else []
+            if rev_growth:
+                growth_categories = []
+                growth_values = []
+                for point in rev_growth:
+                    if isinstance(point, dict) and isinstance(point.get("value"), (int, float)):
+                        growth_categories.append(str(point.get("year") or ""))
+                        growth_values.append(float(point.get("value")) * 100)
+                if growth_values:
+                    elements.append(Spacer(1, 8))
+                    elements.append(self._create_bar_chart("Revenue YoY Growth (%)", growth_categories, growth_values))
+
+        elements.append(Spacer(1, 12))
         cf = data.get("cashflow_breakdown", [])
-        if cf:
-            elements.append(Paragraph("Cashflow Breakdown", self.h2_style))
+        if isinstance(cf, list) and cf:
+            elements.append(Paragraph("Cashflow Movement", self.h2_style))
             cf_data = [["Year", "Operating", "Investing", "Financing", "Net"]]
             for c in cf:
-                cf_data.append([
-                    str(c.get("year", "")),
-                    self._format_number(c.get("operating")),
-                    self._format_number(c.get("investing")),
-                    self._format_number(c.get("financing")),
-                    self._format_number(c.get("net")),
-                ])
-            elements.append(self._create_table(cf_data))
-            elements.append(PageBreak())
-
-        elements.extend(self._create_section_header("Capital Efficiency and Ratio Benchmarks", "DuPont decomposition and year-wise ratio movement for analytical validation."))
-        elements.append(Paragraph("DuPont Analysis", self.h2_style))
-        dupont = data.get("dupont_analysis", [])
-        if dupont:
-            d_data = [["Year", "Net Margin", "Asset Turnover", "Equity Multiplier", "ROE"]]
-            for d in dupont:
-                d_data.append([
-                    str(d.get("year", "")),
-                    f"{float(d.get('net_margin')):.4f}" if isinstance(d.get("net_margin"), (int, float)) else "N/A",
-                    f"{float(d.get('asset_turnover')):.4f}" if isinstance(d.get("asset_turnover"), (int, float)) else "N/A",
-                    f"{float(d.get('equity_multiplier')):.4f}" if isinstance(d.get("equity_multiplier"), (int, float)) else "N/A",
-                    f"{float(d.get('roe')):.4f}" if isinstance(d.get("roe"), (int, float)) else "N/A",
-                ])
-            elements.append(self._create_table(d_data))
-            elements.append(Spacer(1, 12))
-
-        ratio_comparison = data.get("ratio_comparison", {})
-        if isinstance(ratio_comparison, dict) and ratio_comparison:
-            elements.append(Paragraph("Ratio Comparison Across Years", self.h2_style))
-            ratio_rows = [["Ratio", "Year", "Value"]]
-            latest_ratio_values: dict[str, float] = {}
-            latest_ratio_years: dict[str, int] = {}
-            for ratio_name, points in sorted(ratio_comparison.items()):
-                if not isinstance(points, list):
-                    continue
-                for point in points:
-                    if not isinstance(point, dict):
-                        continue
-                    year = point.get("year")
-                    value = self._safe_float(point.get("value"))
-                    ratio_rows.append([
-                        str(ratio_name).replace("_", " ").title(),
-                        str(year if year is not None else ""),
-                        f"{value:.4f}" if value is not None else "N/A",
+                if isinstance(c, dict):
+                    cf_data.append([
+                        str(c.get("year", "")),
+                        fmt_number_or_dna(c.get("operating")),
+                        fmt_number_or_dna(c.get("investing")),
+                        fmt_number_or_dna(c.get("financing")),
+                        fmt_number_or_dna(c.get("net")),
                     ])
-                    if isinstance(year, int) and value is not None:
-                        latest_year = latest_ratio_years.get(ratio_name)
-                        if latest_year is None or year >= latest_year:
-                            latest_ratio_years[ratio_name] = year
-                            latest_ratio_values[ratio_name] = value
-
-            if len(ratio_rows) > 1:
-                elements.append(self._create_table(ratio_rows, col_widths=[180, 90, 245]))
-                elements.append(Spacer(1, 10))
-
-            ratio_names = [name.replace("_", " ").title() for name in list(latest_ratio_values.keys())[:8]]
-            ratio_vals = [latest_ratio_values[name] for name in list(latest_ratio_values.keys())[:8]]
-            if ratio_vals:
-                elements.append(self._create_bar_chart("Latest Ratio Profile", ratio_names, ratio_vals))
+            if len(cf_data) > 1:
+                elements.append(self._create_table(cf_data, col_widths=[70, 110, 110, 110, 115]))
+            else:
+                elements.append(Paragraph("DATA NOT AVAILABLE", self.body_style))
 
         elements.append(PageBreak())
 
-        elements.extend(self._create_section_header("Risk Landscape and Pattern Intelligence", "Confidence-weighted risk signals and pattern concentration across years."))
-        elements.append(Paragraph("Risk Landscape Heatmap", self.h2_style))
-        heatmap = data.get("risk_heatmap", {})
-        if heatmap:
-            elements.append(self._create_heatmap_table(heatmap))
+        elements.extend(self._create_section_header("C. Risk and Stability Indicators", "Capital and liquidity indicators computed only when required fields exist."))
+        risk_rows = [["Year", "Debt/Equity", "Equity/Assets", "Current Ratio", "NPL Ratio", "Stage 3 Ratio"]]
+        risk_stability = data.get("risk_stability_indicators", []) if isinstance(data.get("risk_stability_indicators"), list) else []
+        for item in risk_stability:
+            if not isinstance(item, dict):
+                continue
+            risk_rows.append([
+                str(item.get("year") or ""),
+                fmt_number_or_dna(item.get("debt_to_equity")),
+                fmt_number_or_dna(item.get("equity_to_assets")),
+                fmt_number_or_dna(item.get("current_ratio")),
+                fmt_number_or_dna(item.get("npl_ratio")),
+                fmt_number_or_dna(item.get("stage_3_ratio")),
+            ])
+        if len(risk_rows) > 1:
+            elements.append(self._create_table(risk_rows, col_widths=[60, 90, 90, 90, 90, 95]))
         else:
-            elements.append(Paragraph("No significant risks detected.", self.body_style))
+            elements.append(Paragraph("DATA NOT AVAILABLE", self.body_style))
 
-        if snapshots:
-            elements.append(Spacer(1, 16))
-            elements.append(Paragraph("Pattern Highlights By Uploaded Report", self.h2_style))
-            highlight_rows = [["Report", "Top Patterns"]]
-            for idx, snapshot in enumerate(snapshots, start=1):
-                top_patterns = snapshot.get("top_patterns") or []
-                top_patterns_text = ", ".join(top_patterns[:4]) if top_patterns else "No high-confidence patterns"
-                highlight_rows.append([f"Report {idx}", top_patterns_text])
-            elements.append(self._create_table(highlight_rows))
+        current_ratio_categories = []
+        current_ratio_values = []
+        for item in risk_stability:
+            if isinstance(item, dict) and isinstance(item.get("current_ratio"), (int, float)):
+                current_ratio_categories.append(str(item.get("year") or ""))
+                current_ratio_values.append(float(item.get("current_ratio")))
+        if current_ratio_values:
+            elements.append(Spacer(1, 8))
+            elements.append(self._create_bar_chart("Current Ratio by Year", current_ratio_categories, current_ratio_values))
+
+        elements.append(Spacer(1, 14))
+        elements.extend(self._create_section_header("D. Data Integrity Report", "Missing fields, conflicts, and coverage computed from usable extracted values only."))
+        integrity_rows = [["Integrity Metric", "Value"]]
+        integrity_rows.append(["Coverage", f"{float(coverage_pct):.2f}%" if isinstance(coverage_pct, (int, float)) else "DATA NOT AVAILABLE"])
+        integrity_rows.append(["Requested Reports", str(data_integrity.get("requested_reports", len(requested_report_ids)))])
+        integrity_rows.append(["Eligible Reports", str(data_integrity.get("eligible_reports", len(eligible_report_ids)))])
+        integrity_rows.append(["Years Covered", ", ".join([str(y) for y in data_integrity.get("years_covered", [])]) if data_integrity.get("years_covered") else "DATA NOT AVAILABLE"])
+        elements.append(self._create_table(integrity_rows, col_widths=[180, 335]))
+
+        missing_fields = data_integrity.get("missing_fields", []) if isinstance(data_integrity.get("missing_fields"), list) else []
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Missing Fields", self.h2_style))
+        if missing_fields:
+            missing_rows = [["Year", "Metric", "Status"]]
+            for item in missing_fields[:40]:
+                if isinstance(item, dict):
+                    missing_rows.append([
+                        str(item.get("year") or ""),
+                        str(item.get("metric") or "").replace("_", " ").title(),
+                        "DATA NOT AVAILABLE",
+                    ])
+            elements.append(self._create_table(missing_rows, col_widths=[80, 240, 195]))
+        else:
+            elements.append(Paragraph("No missing required fields detected.", self.body_style))
+
+        conflicts = data_integrity.get("conflicting_values", []) if isinstance(data_integrity.get("conflicting_values"), list) else []
+        elements.append(Spacer(1, 10))
+        elements.append(Paragraph("Conflicting Values", self.h2_style))
+        if conflicts:
+            conflict_rows = [["Year", "Metric", "Selected Source", "Selected Value", "Candidate Values"]]
+            for conflict in conflicts[:25]:
+                if isinstance(conflict, dict):
+                    candidates = conflict.get("candidate_values")
+                    candidate_text = ", ".join([self._format_number(v) for v in candidates]) if isinstance(candidates, list) else ""
+                    conflict_rows.append([
+                        str(conflict.get("year") or ""),
+                        str(conflict.get("metric") or "").replace("_", " ").title(),
+                        str(conflict.get("selected_source") or "unknown"),
+                        fmt_number_or_dna(conflict.get("selected_value")),
+                        candidate_text or "DATA NOT AVAILABLE",
+                    ])
+            elements.append(self._create_table(conflict_rows, col_widths=[55, 120, 95, 95, 150]))
+        else:
+            elements.append(Paragraph("No conflicts detected for resolved metrics.", self.body_style))
+
+        elements.append(PageBreak())
+        elements.extend(self._create_section_header("E. Analyst Commentary", "Maximum six evidence-backed statements; any uncertain statement is excluded."))
+        commentary = data.get("analyst_commentary", []) if isinstance(data.get("analyst_commentary"), list) else []
+        if commentary:
+            elements.extend(self._create_bullet_list([str(item) for item in commentary[:6]], self.body_style))
+        else:
+            elements.append(Paragraph("DATA NOT AVAILABLE", self.body_style))
 
         elements.append(Spacer(1, 16))
         elements.append(Paragraph("End of Analytical Report", self.meta_style))

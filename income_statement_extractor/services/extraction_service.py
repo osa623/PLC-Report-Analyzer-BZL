@@ -120,8 +120,9 @@ class ExtractionService:
     @staticmethod
     def _merge_chunk_payloads(chunk_payloads: list[dict[str, Any]]) -> dict[str, Any]:
         merged_rows: list[dict[str, Any]] = []
+        # Support legacy "currency"/"scale" or new "detected_currency"/"scale_multiplier"
         currency: str | None = None
-        scale: str | None = None
+        scale_multiplier: float = 1.0
 
         for payload in chunk_payloads:
             if not isinstance(payload, dict):
@@ -129,15 +130,26 @@ class ExtractionService:
             rows = payload.get("rows")
             if isinstance(rows, list):
                 merged_rows.extend(row for row in rows if isinstance(row, dict))
-            if currency is None and payload.get("currency") is not None:
-                currency = payload.get("currency")
-            if scale is None and payload.get("scale") is not None:
-                scale = payload.get("scale")
+            
+            # Prefer new keys
+            if currency is None:
+                currency = payload.get("detected_currency") or payload.get("currency")
+            
+            # Prefer logic for multiplier
+            payload_mult = payload.get("scale_multiplier")
+            if payload_mult is not None and isinstance(payload_mult, (int, float)):
+                # If found valid multiplier, use it (assuming consistency across chunks for same table)
+                scale_multiplier = float(payload_mult)
+            elif scale_multiplier == 1.0:
+                 # Fallback to legacy scale if not yet set
+                 legacy_scale = payload.get("scale")
+                 if legacy_scale and "mn" in str(legacy_scale).lower():
+                     scale_multiplier = 1000.0
 
         return {
             "statement_type": "income_statement",
             "currency": currency,
-            "scale": scale,
+            "scale_multiplier": scale_multiplier,
             "rows": merged_rows,
         }
 

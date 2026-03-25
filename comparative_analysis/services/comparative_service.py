@@ -1,6 +1,8 @@
 import json
 import logging
 import math
+import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections import defaultdict
 from typing import Any
 
@@ -38,6 +40,16 @@ _METRIC_ALIASES: dict[str, set[str]] = {
     "current_assets": {"current_assets"},
     "current_liabilities": {"current_liabilities"},
 }
+
+_CORE_SUMMARY_METRICS = ("revenue", "net_profit", "total_assets", "total_equity")
+
+_VALIDATION_REQUIRED_METRICS = (
+    "revenue",
+    "net_profit",
+    "total_assets",
+    "total_equity",
+    "operating_cashflow",
+)
 
 
 class ComparativeService:
@@ -106,9 +118,24 @@ class ComparativeService:
     def _as_year(value: Any) -> int | None:
         if isinstance(value, int):
             return value
-        if isinstance(value, str) and value.strip().isdigit():
-            return int(value.strip())
+        if isinstance(value, str):
+            text = value.strip()
+            if text.isdigit():
+                return int(text)
+            matches = re.findall(r"(?:19|20)\d{2}", text)
+            if matches:
+                # Prefer the latest year when range formats like "2023/2024" appear.
+                return max(int(match) for match in matches)
         return None
+
+    @staticmethod
+    def _entity_priority(entity_type: Any) -> int:
+        normalized = str(entity_type or "").strip().lower()
+        if "consolidated" in normalized:
+            return 1
+        if normalized:
+            return 2
+        return 3
 
     @staticmethod
     def _safe_div(a: float | None, b: float | None) -> float | None:
@@ -140,48 +167,388 @@ class ComparativeService:
         if not isinstance(payload, dict):
             return []
         rows: list[dict[str, Any]] = []
+
+        def _with_section(raw_rows: list[Any], section_name: str) -> list[dict[str, Any]]:
+            normalized: list[dict[str, Any]] = []
+            for item in raw_rows:
+                if not isinstance(item, dict):
+                    continue
+                row = dict(item)
+                row.setdefault("_source_section", section_name)
+                normalized.append(row)
+            return normalized
+
         for key in ("normalized_rows", "records", "rows", "data"):
             value = payload.get(key)
             if isinstance(value, list):
-                rows.extend([item for item in value if isinstance(item, dict)])
+                rows.extend(_with_section(value, "financial_highlights"))
         for section in ("income_statement", "balance_sheet", "cashflow", "segments", "segment"):
             section_payload = payload.get(section)
             if isinstance(section_payload, dict):
                 for key in ("normalized_rows", "records", "rows", "data"):
                     value = section_payload.get(key)
                     if isinstance(value, list):
-                        rows.extend([item for item in value if isinstance(item, dict)])
+                        rows.extend(_with_section(value, section))
             elif isinstance(section_payload, list):
-                rows.extend([item for item in section_payload if isinstance(item, dict)])
+                rows.extend(_with_section(section_payload, section))
         if not rows and {"year", "entity_type", "semantic_type", "value"}.issubset(set(payload.keys())):
-            rows.append(payload)
+            row = dict(payload)
+            row.setdefault("_source_section", "unknown")
+            rows.append(row)
         return rows
 
-    def _build_year_metrics(self, report_ids: list[str]) -> dict[int, dict[str, float]]:
-        """Collect all year→metric→value from multiple reports."""
-        by_year: dict[int, dict[str, float]] = defaultdict(dict)
+    @staticmethod
+    def _source_priority(source_section: str) -> int:
+        section = str(source_section or "").strip().lower()
+        if section in {"income_statement", "balance_sheet", "cashflow"}:
+            return 1
+        if section in {"financial_highlights", "highlights"}:
+            return 2
+        if section in {"chairman_commentary", "ceo_commentary", "management_commentary", "commentary"}:
+            return 3
+        return 4
 
-        for report_id in report_ids:
-            payload = self._load_json(self._key(report_id))
-            if payload is None:
-                continue
-            rows = self._extract_rows(payload)
-            for row in rows:
-                year = self._as_year(row.get("year"))
-                if year is None:
+    @staticmethod
+    def _normalize_metric_name(metric: str) -> str:
+        return str(metric or "").strip().lower()
+
+    def _metric_for_semantic(self, semantic: str) -> str | None:
+        normalized = self._normalize_metric_name(semantic)
+        if not normalized:
+            return None
+        for metric, aliases in _METRIC_ALIASES.items():
+            if normalized in aliases:
+                return metric
+        return None
+
+    def _load_rows_for_report(self, report_id: str) -> list[dict[str, Any]]:
+        payload = self._load_json(self._key(report_id))
+        if payload is None:
+            return []
+        rows = self._extract_rows(payload)
+        for row in rows:
+            row.setdefault("_report_id", report_id)
+        return rows
+
+    def _build_report_anchor_years(self, report_ids: list[str]) -> dict[str, int]:
+        """Pick one dominant year per report to avoid including extra comparative years from the same PDF."""
+        anchor_years: dict[str, int] = {}
+        workers = min(8, max(1, len(report_ids)))
+
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            future_map = {executor.submit(self._load_rows_for_report, report_id): report_id for report_id in report_ids}
+            for future in as_completed(future_map):
+                report_id = future_map[future]
+                try:
+                    rows = future.result()
+                except Exception:
+                    logger.exception("Failed loading rows for anchor-year detection report_id=%s", report_id)
                     continue
-                semantic = str(row.get("semantic_type") or "").strip().lower()
-                value = self._to_float(row.get("value"))
-                if not semantic or value is None:
+
+                year_score: dict[int, int] = defaultdict(int)
+                for row in rows:
+                    year = self._as_year(row.get("year"))
+                    if year is None:
+                        continue
+                    semantic = str(row.get("semantic_type") or "").strip().lower()
+                    metric = self._metric_for_semantic(semantic)
+
+                    if metric in _CORE_SUMMARY_METRICS:
+                        year_score[year] += 3
+                    elif metric is not None:
+                        year_score[year] += 1
+
+                if not year_score:
                     continue
-                # Map to canonical metric name
-                for metric, aliases in _METRIC_ALIASES.items():
-                    if semantic in aliases:
-                        by_year[year][metric] = value
 
-        return dict(sorted(by_year.items()))
+                best_year = max(year_score.keys(), key=lambda year: (year_score[year], year))
+                anchor_years[str(report_id)] = int(best_year)
 
-    def _build_ratio_history(self, report_ids: list[str]) -> dict[int, dict[str, float]]:
+        return anchor_years
+
+    def _build_year_metrics(
+        self,
+        report_ids: list[str],
+        report_anchor_years: dict[str, int] | None = None,
+    ) -> tuple[
+        dict[int, dict[str, float]],
+        dict[int, dict[str, dict[str, Any]]],
+        list[dict[str, Any]],
+        list[dict[str, Any]],
+    ]:
+        """Collect year->metric values with source traceability and conflict detection."""
+        evidence_by_year_report: dict[int, dict[str, dict[str, list[dict[str, Any]]]]] = defaultdict(
+            lambda: defaultdict(lambda: defaultdict(list))
+        )
+
+        workers = min(8, max(1, len(report_ids)))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            future_map = {executor.submit(self._load_rows_for_report, report_id): report_id for report_id in report_ids}
+            for future in as_completed(future_map):
+                report_id = future_map[future]
+                try:
+                    rows = future.result()
+                except Exception:
+                    logger.exception("Failed to load rows for report_id=%s", report_id)
+                    continue
+
+                for row in rows:
+                    year = self._as_year(row.get("year"))
+                    if year is None:
+                        continue
+                    row_report_id = str(row.get("_report_id") or report_id)
+                    anchor_year = report_anchor_years.get(row_report_id) if isinstance(report_anchor_years, dict) else None
+                    if isinstance(anchor_year, int) and year != anchor_year:
+                        continue
+                    semantic = str(row.get("semantic_type") or "").strip().lower()
+                    value = self._to_float(row.get("value"))
+                    if not semantic or value is None:
+                        continue
+                    metric = self._metric_for_semantic(semantic)
+                    if metric is None:
+                        continue
+
+                    evidence_by_year_report[year][metric][row_report_id].append(
+                        {
+                            "value": value,
+                            "semantic_type": semantic,
+                            "source_section": str(row.get("_source_section") or "unknown"),
+                            "report_id": row_report_id,
+                            "entity_type": str(row.get("entity_type") or ""),
+                            "label": str(row.get("label") or ""),
+                        }
+                    )
+
+        resolved_by_year: dict[int, dict[str, float]] = defaultdict(dict)
+        traceability: dict[int, dict[str, dict[str, Any]]] = defaultdict(dict)
+        conflicts: list[dict[str, Any]] = []
+
+        for year in sorted(evidence_by_year_report.keys()):
+            metric_map = evidence_by_year_report[year]
+            for metric, report_candidates in metric_map.items():
+                per_report_selected: list[dict[str, Any]] = []
+                for _, evidences in report_candidates.items():
+                    if not evidences:
+                        continue
+                    ranked = sorted(
+                        evidences,
+                        key=lambda item: (
+                            self._source_priority(str(item.get("source_section"))),
+                            self._entity_priority(item.get("entity_type")),
+                        ),
+                    )
+                    per_report_selected.append(ranked[0])
+
+                if not per_report_selected:
+                    continue
+
+                # Reconcile across reports using consensus first; fallback to median-like robust center.
+                value_groups: dict[float, list[dict[str, Any]]] = defaultdict(list)
+                for selected in per_report_selected:
+                    bucket_key = round(float(selected.get("value", 0.0)), 2)
+                    value_groups[bucket_key].append(selected)
+
+                best_bucket_key = max(
+                    value_groups.keys(),
+                    key=lambda key: (
+                        len(value_groups[key]),
+                        -min(self._source_priority(str(item.get("source_section"))) for item in value_groups[key]),
+                    ),
+                )
+
+                bucket_items = value_groups[best_bucket_key]
+                bucket_items_sorted = sorted(
+                    bucket_items,
+                    key=lambda item: (
+                        self._source_priority(str(item.get("source_section"))),
+                        self._entity_priority(item.get("entity_type")),
+                    ),
+                )
+                selected = bucket_items_sorted[0]
+                resolved_by_year[year][metric] = float(selected["value"])
+                traceability[year][metric] = {
+                    "source_section": selected.get("source_section"),
+                    "report_id": selected.get("report_id"),
+                    "semantic_type": selected.get("semantic_type"),
+                    "entity_type": selected.get("entity_type"),
+                    "label": selected.get("label"),
+                    "supporting_reports": sorted({str(item.get("report_id") or "") for item in bucket_items}),
+                }
+
+                unique_values = sorted({round(float(item["value"]), 6) for item in per_report_selected})
+                if len(unique_values) > 1:
+                    conflicts.append(
+                        {
+                            "year": year,
+                            "metric": metric,
+                            "selected_value": float(selected["value"]),
+                            "selected_source": selected.get("source_section"),
+                            "candidate_values": unique_values,
+                            "candidate_reports": sorted({str(item.get("report_id") or "") for item in per_report_selected}),
+                        }
+                    )
+
+        missing_fields: list[dict[str, Any]] = []
+        for year in sorted(resolved_by_year.keys()):
+            year_values = resolved_by_year[year]
+            for metric in _VALIDATION_REQUIRED_METRICS:
+                if metric not in year_values:
+                    missing_fields.append({"year": year, "metric": metric})
+
+        return (
+            dict(sorted(resolved_by_year.items())),
+            dict(sorted(traceability.items())),
+            conflicts,
+            missing_fields,
+        )
+
+    def _build_verified_financial_summary(self, year_metrics: dict[int, dict[str, float]]) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for year in sorted(year_metrics.keys()):
+            values = year_metrics[year]
+            rows.append(
+                {
+                    "year": year,
+                    "revenue": values.get("revenue"),
+                    "net_profit": values.get("net_profit"),
+                    "total_assets": values.get("total_assets"),
+                    "total_equity": values.get("total_equity"),
+                    "operating_cashflow": values.get("operating_cashflow"),
+                }
+            )
+        return rows
+
+    def _build_risk_stability_indicators(
+        self,
+        year_metrics: dict[int, dict[str, float]],
+        ratio_history: dict[int, dict[str, float]],
+    ) -> list[dict[str, Any]]:
+        indicators: list[dict[str, Any]] = []
+        for year in sorted(year_metrics.keys()):
+            metrics = year_metrics[year]
+            liabilities = metrics.get("total_liabilities")
+            equity = metrics.get("total_equity")
+            assets = metrics.get("total_assets")
+            current_assets = metrics.get("current_assets")
+            current_liabilities = metrics.get("current_liabilities")
+            ratios = ratio_history.get(year, {}) if isinstance(ratio_history, dict) else {}
+
+            debt_to_equity = self._safe_div(liabilities, equity)
+            equity_to_assets = self._safe_div(equity, assets)
+            current_ratio = ratios.get("current_ratio")
+            if current_ratio is None:
+                current_ratio = self._safe_div(current_assets, current_liabilities)
+
+            npl_ratio = ratios.get("npl_ratio")
+            stage3_ratio = ratios.get("stage_3_ratio")
+
+            indicators.append(
+                {
+                    "year": year,
+                    "debt_to_equity": round(debt_to_equity, 4) if debt_to_equity is not None else None,
+                    "equity_to_assets": round(equity_to_assets, 4) if equity_to_assets is not None else None,
+                    "current_ratio": round(current_ratio, 4) if current_ratio is not None else None,
+                    "npl_ratio": round(float(npl_ratio), 4) if isinstance(npl_ratio, (int, float)) else None,
+                    "stage_3_ratio": round(float(stage3_ratio), 4) if isinstance(stage3_ratio, (int, float)) else None,
+                }
+            )
+        return indicators
+
+    def _build_data_integrity_report(
+        self,
+        requested_report_ids: list[str],
+        eligible_report_ids: list[str],
+        year_metrics: dict[int, dict[str, float]],
+        missing_fields: list[dict[str, Any]],
+        conflicts: list[dict[str, Any]],
+        traceability: dict[int, dict[str, dict[str, Any]]],
+    ) -> dict[str, Any]:
+        years = sorted(year_metrics.keys())
+        expected_cells = len(years) * len(_VALIDATION_REQUIRED_METRICS)
+        available_cells = 0
+        for year in years:
+            for metric in _VALIDATION_REQUIRED_METRICS:
+                if year_metrics.get(year, {}).get(metric) is not None:
+                    available_cells += 1
+        coverage_pct = round((available_cells / expected_cells) * 100, 2) if expected_cells else 0.0
+
+        return {
+            "requested_reports": len(requested_report_ids),
+            "eligible_reports": len(eligible_report_ids),
+            "years_covered": years,
+            "coverage_percent": coverage_pct,
+            "missing_fields": missing_fields,
+            "conflicting_values": conflicts,
+            "traceability": traceability,
+        }
+
+    def _build_analyst_commentary(
+        self,
+        year_metrics: dict[int, dict[str, float]],
+        growth_analysis: dict[str, Any],
+        risk_stability_indicators: list[dict[str, Any]],
+    ) -> list[str]:
+        notes: list[str] = []
+        years = sorted(year_metrics.keys())
+        if len(years) >= 2:
+            first_year = years[0]
+            last_year = years[-1]
+            first_revenue = year_metrics[first_year].get("revenue")
+            last_revenue = year_metrics[last_year].get("revenue")
+            if first_revenue is not None and last_revenue is not None:
+                delta = last_revenue - first_revenue
+                pct = self._yoy_change(last_revenue, first_revenue)
+                if pct is not None:
+                    notes.append(
+                        f"Revenue moved from {first_revenue:,.2f} in {first_year} to {last_revenue:,.2f} in {last_year} ({pct * 100:.2f}% change; absolute change {delta:,.2f})."
+                    )
+
+            first_profit = year_metrics[first_year].get("net_profit")
+            last_profit = year_metrics[last_year].get("net_profit")
+            if first_profit is not None and last_profit is not None:
+                pct = self._yoy_change(last_profit, first_profit)
+                if pct is not None:
+                    notes.append(
+                        f"Net profit changed from {first_profit:,.2f} in {first_year} to {last_profit:,.2f} in {last_year} ({pct * 100:.2f}%)."
+                    )
+
+        revenue_growth = growth_analysis.get("revenue_growth_rates") if isinstance(growth_analysis, dict) else []
+        if isinstance(revenue_growth, list) and revenue_growth:
+            latest = revenue_growth[-1]
+            if isinstance(latest, dict) and isinstance(latest.get("value"), (int, float)):
+                notes.append(
+                    f"Latest year-on-year revenue change for {latest.get('year')} is {float(latest.get('value')) * 100:.2f}%."
+                )
+
+        if len(years) >= 3:
+            yoy_values = [
+                item.get("value")
+                for item in revenue_growth
+                if isinstance(item, dict) and isinstance(item.get("value"), (int, float))
+            ]
+            if len(yoy_values) >= 2:
+                volatility = max(yoy_values) - min(yoy_values)
+                if volatility >= 0.30:
+                    notes.append("Trend unstable due to macroeconomic disruption risk indicated by high year-on-year volatility.")
+
+        if risk_stability_indicators:
+            latest_indicator = risk_stability_indicators[-1]
+            if isinstance(latest_indicator.get("debt_to_equity"), (int, float)):
+                notes.append(
+                    f"Debt-to-equity in {latest_indicator.get('year')} is {float(latest_indicator.get('debt_to_equity')):.2f}x based on reported liabilities and equity."
+                )
+            if isinstance(latest_indicator.get("current_ratio"), (int, float)):
+                notes.append(
+                    f"Current ratio in {latest_indicator.get('year')} is {float(latest_indicator.get('current_ratio')):.2f}x."
+                )
+
+        return notes[:6]
+
+    def _build_ratio_history(
+        self,
+        report_ids: list[str],
+        report_anchor_years: dict[str, int] | None = None,
+    ) -> dict[int, dict[str, float]]:
         """Collect ratio data across all reports."""
         by_year: dict[int, dict[str, float]] = defaultdict(dict)
 
@@ -199,6 +566,9 @@ class ComparativeService:
                 year = self._as_year(ratio.get("year"))
                 value = self._to_float(ratio.get("value"))
                 if not name or year is None or value is None:
+                    continue
+                anchor_year = report_anchor_years.get(str(report_id)) if isinstance(report_anchor_years, dict) else None
+                if isinstance(anchor_year, int) and year != anchor_year:
                     continue
                 by_year[year][name] = value
 
@@ -830,20 +1200,44 @@ class ComparativeService:
             requested_report_ids = list(dict.fromkeys(report_ids))
             report_snapshots = self._build_report_snapshots(requested_report_ids)
             eligible_report_ids, readiness = self._filter_eligible_reports(requested_report_ids, report_snapshots)
+            aggregation_report_ids = requested_report_ids
+            report_anchor_years = self._build_report_anchor_years(aggregation_report_ids)
 
-            year_metrics = self._build_year_metrics(eligible_report_ids)
-            ratio_history = self._build_ratio_history(eligible_report_ids)
-            patterns = self._build_pattern_history(eligible_report_ids)
+            year_metrics, traceability, conflicts, missing_fields = self._build_year_metrics(
+                aggregation_report_ids,
+                report_anchor_years=report_anchor_years,
+            )
+            ratio_history = self._build_ratio_history(
+                aggregation_report_ids,
+                report_anchor_years=report_anchor_years,
+            )
+            patterns = self._build_pattern_history(aggregation_report_ids)
 
+            verified_financial_summary = self._build_verified_financial_summary(year_metrics)
             metric_trends = self._build_metric_trends(year_metrics)
             growth_analysis = self._build_growth_analysis(year_metrics)
-            investment_signals = self._build_investment_signals(year_metrics, ratio_history, patterns)
             dupont_analysis = self._build_dupont(year_metrics)
-            financial_health = self._build_health_score(year_metrics, ratio_history)
             cashflow_breakdown = self._build_cashflow_breakdown(year_metrics)
             ratio_comparison = self._build_ratio_comparison(ratio_history)
             risk_heatmap = self._build_risk_heatmap(patterns)
+            risk_stability_indicators = self._build_risk_stability_indicators(year_metrics, ratio_history)
             years_analyzed = sorted(year_metrics.keys())
+
+            data_integrity = self._build_data_integrity_report(
+                requested_report_ids=requested_report_ids,
+                eligible_report_ids=eligible_report_ids,
+                year_metrics=year_metrics,
+                missing_fields=missing_fields,
+                conflicts=conflicts,
+                traceability=traceability,
+            )
+
+            analyst_commentary = self._build_analyst_commentary(
+                year_metrics=year_metrics,
+                growth_analysis=growth_analysis,
+                risk_stability_indicators=risk_stability_indicators,
+            )
+
             quality_gate = self._build_quality_gate(
                 requested_report_ids=requested_report_ids,
                 eligible_report_ids=eligible_report_ids,
@@ -857,14 +1251,17 @@ class ComparativeService:
                 "batch_id": batch_id,
                 "company": company_info,
                 "status": status,
+                "verified_financial_summary": verified_financial_summary,
                 "metric_trends": metric_trends,
                 "growth_analysis": growth_analysis,
-                "investment_signals": investment_signals,
                 "dupont_analysis": dupont_analysis,
-                "financial_health": financial_health,
                 "cashflow_breakdown": cashflow_breakdown,
                 "ratio_comparison": ratio_comparison,
                 "risk_heatmap": risk_heatmap,
+                "risk_stability_indicators": risk_stability_indicators,
+                "data_integrity": data_integrity,
+                "analyst_commentary": analyst_commentary,
+                "report_anchor_years": report_anchor_years,
                 "years_analyzed": years_analyzed,
                 "report_snapshots": report_snapshots,
                 "report_ids": eligible_report_ids,
