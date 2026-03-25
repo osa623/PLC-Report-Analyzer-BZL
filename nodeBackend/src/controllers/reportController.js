@@ -56,6 +56,17 @@ class ReportController {
 
     return res.status(200).json(report);
   }
+
+  async download(req, res) {
+    const report = await this.reportService.getReport(req.params.reportId);
+
+    if (!report || !report.pdf_path) {
+      return res.status(404).json({ error: "Report PDF not generated or not found" });
+    }
+
+    // Serve the file
+    res.download(report.pdf_path, `Analysis_Report_${report.symbol}_${req.params.reportId.slice(0, 8)}.pdf`);
+  }
 }
 
 module.exports = { ReportController };
