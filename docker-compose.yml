@@ -187,6 +187,30 @@ services:
     ports:
       - "8018:8018"
 
+  aggregation_service:
+    <<: *common-python-service
+    build: ./aggregation_service
+    container_name: cse-aggregation-service
+    ports:
+      - "8019:8019"
+
+  validation_engine:
+    <<: *common-python-service
+    build: ./validation_engine
+    container_name: cse-validation-engine
+    ports:
+      - "8020:8020"
+
+  frontend:
+    build: ./frontend
+    container_name: cse-frontend
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./frontend/src:/app/src
+    networks:
+      - cse-network
+
 volumes:
   postgres_data:
   report_uploads:

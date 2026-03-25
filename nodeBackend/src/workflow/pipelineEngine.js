@@ -2,13 +2,33 @@ const { WorkflowState } = require("./states");
 const { ApplicationError } = require("../utils/errors");
 
 class PipelineEngine {
-  constructor({ reportRepository, serviceClient, logger, strictAllBackends = false }) {
+  constructor({
+    reportRepository,
+    serviceClient,
+    logger,
+    strictAllBackends = false,
+    analyticsQualityThreshold = 0.65
+  }) {
     this.reportRepository = reportRepository;
     this.serviceClient = serviceClient;
     this.logger = logger;
     this.strictAllBackends = strictAllBackends;
+    this.analyticsQualityThreshold = Number(analyticsQualityThreshold) || 0.65;
     this.requiredTimeoutMs = 300000;
     this.optionalTimeoutMs = 300000;
+  }
+
+  resolveQualityScore(validationPayload) {
+    const direct = validationPayload?.overall_data_quality_score;
+    if (typeof direct === "number") return direct;
+
+    const nested = validationPayload?.quality_gate?.overall_data_quality_score;
+    if (typeof nested === "number") return nested;
+
+    const fallback = validationPayload?.metadata?.overall_data_quality_score;
+    if (typeof fallback === "number") return fallback;
+
+    return null;
   }
 
   async invokeBestEffort(serviceName, endpoint, payload) {
@@ -64,6 +84,8 @@ class PipelineEngine {
         file_path: filePath
       });
 
+      await this.reportRepository.updateWorkflowState(reportId, WorkflowState.STRUCTURE_DETECTED);
+
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.EXTRACTING);
 
       const extractionCalls = [
@@ -94,6 +116,10 @@ class PipelineEngine {
         invokeParticipation("esg_extractor", "/extract-esg", {
           report_id: reportId,
           file_path: filePath
+        }),
+        invokeParticipation("strategy_nlp", "/extract-strategy", {
+          report_id: reportId,
+          file_path: filePath
         })
       ];
 
@@ -103,11 +129,34 @@ class PipelineEngine {
         await Promise.allSettled(extractionCalls);
       }
 
+      await this.reportRepository.updateWorkflowState(reportId, WorkflowState.AGGREGATING);
+
+      await this.invokeRequired("aggregation_service", "/aggregate-report", {
+        report_id: reportId
+      });
+
+      await this.reportRepository.updateWorkflowState(reportId, WorkflowState.VALIDATING);
+
+      const validationResult = await this.invokeRequired("validation_engine", "/validate-report", {
+        report_id: reportId
+      });
+
+      const overallDataQualityScore = this.resolveQualityScore(validationResult);
+      if (
+        typeof overallDataQualityScore === "number" &&
+        overallDataQualityScore < this.analyticsQualityThreshold
+      ) {
+        const msg = `Low confidence: overall_data_quality_score=${overallDataQualityScore.toFixed(
+          3
+        )} threshold=${this.analyticsQualityThreshold.toFixed(3)}`;
+
+        this.logger.warn({ reportId, overallDataQualityScore, threshold: this.analyticsQualityThreshold }, msg);
+      }
+
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.ANALYZING);
 
       const analysisCalls = [
         invokeParticipation("ratio_calculator", "/calculate-ratios", { report_id: reportId, file_path: filePath }),
-        invokeParticipation("strategy_nlp", "/extract-strategy", { report_id: reportId, file_path: filePath }),
         invokeParticipation("kpi_sector_engine", "/sector-kpis", { report_id: reportId, sector: report.sector }),
         invokeParticipation("pattern_detection", "/detect-patterns", { report_id: reportId, file_path: filePath })
       ];
@@ -129,6 +178,10 @@ class PipelineEngine {
           reportId,
           generatorStatus: generated?.status || "unknown"
         });
+      }
+
+      if (generated.pdf_path) {
+        await this.reportRepository.updateReportPdfPath(reportId, generated.pdf_path);
       }
 
       await this.reportRepository.updateWorkflowState(reportId, WorkflowState.COMPLETED);

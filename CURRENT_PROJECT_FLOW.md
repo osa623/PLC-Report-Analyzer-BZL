@@ -1,346 +1,485 @@
-# Current Project Flow (As Implemented)
+# Current Project Flow (Data-First, Validation-Driven)
 
-This document describes the currently implemented runtime flow end-to-end, including request handling, orchestration, storage, retries/timeouts, batch aggregation, and local startup scripts.
+This document defines the target end-to-end architecture for financial report analysis. It supersedes prior analytics-first behavior and formalizes a data-first pipeline where validation and confidence govern downstream analytics and reporting.
 
-## 1. Runtime Topology
-
-Core orchestrator:
-
-- Node.js API (`nodeBackend`) is the entry point for uploads and report retrieval.
-- It persists metadata/workflow state in Postgres and coordinates Python services over HTTP.
+## 1. Final System Flow (Canonical)
 
-Specialized Python services:
+PDF Upload
+-> document_parser
+-> structure_detector
+-> extractors (parallel)
+-> aggregation_service (new)
+-> validation_engine (new)
+-> canonical_dataset (new)
+-> analytics layer
+-> frontend inspection system
+-> report_generator
 
-- Parsing, extractors, analytics, and report generation run as separate FastAPI backends.
-- `comparative_analysis` aggregates multiple completed reports into a batch-level comparative payload.
+## 2. Architecture Principles
+
+1. Analytics must never run on raw extracted data.
+2. Validation is a hard gate before analytics and report generation.
+3. Every analytical value must be traceable to validated source rows.
+4. Confidence is a first-class field at row level and output level.
+5. The UI is data-observable: operators debug pipeline state through datasets, not logs.
+6. Batch comparative analysis uses only validated, high-confidence data.
 
-Data stores:
+## 3. Runtime Topology
 
-- Postgres: durable metadata (`companies`, `reports`).
-- Redis: intermediate/final analysis payloads and batch comparative result (TTL-based).
-- Local filesystem: uploaded PDFs and generated PDF outputs.
+### 3.1 Orchestrator
 
-## 2. Public API Entry Points
+- Node orchestrator manages upload, report lifecycle, workflow state transitions, and service invocation.
+- Postgres stores durable report/company metadata and workflow status.
+- Redis stores stage datasets, validation artifacts, confidence scores, analytics outputs, and final report payload.
 
-Routes source: `nodeBackend/src/routes/reportRoutes.js`
-Controller source: `nodeBackend/src/controllers/reportController.js`
-
-1. `POST /reports`
-   - Upload field: `report` (single PDF, multer memory storage).
-   - Form fields: `symbol`, `name`, `sector`.
-   - Returns `201` with:
-     - `report`: created DB report row.
-     - `generatedReport`: response from `report_generator /generate-report`.
+### 3.2 Services
 
-2. `POST /reports/batch`
-   - Upload field: `reports` (array, max 10).
-   - Form fields: `symbol`, `name`, `sector`.
-   - Generates `batchId` (UUID).
-   - Returns `201` with:
-     - `batchId`, `totalFiles`, `completedReports`
-     - `consolidatedReport` (single multi-year result status/pdfPath)
-     - `reports[]` (per-file status and pipeline result/error)
-     - `comparativeAnalysis` (raw status payload from comparative service)
+- Ingestion: `document_parser`, `structure_detector`
+- Extraction: domain extractors + narrative extractors (parallel)
+- Data quality: `aggregation_service` (new), `validation_engine` (new)
+- Analytics: `ratio_calculator`, `kpi_sector_engine`, `pattern_detection`
+- Generation: `report_generator`
+- Batch comparative: `comparative_analysis` (validated/high-confidence input only)
 
-3. `GET /reports/:reportId`
-   - Returns `200` with report + joined company fields.
-   - Returns `404` if missing.
+## 4. Single Report Data Flow
 
-4. `GET /reports/batch/:batchId`
-   - Pass-through to `comparative_analysis /get-batch-result`.
-   - Returns `200` batch payload if found.
-   - Returns `404` (`Batch result not found`) when comparative key is absent.
+### 4.1 Ingestion Layer
 
-Related health endpoint:
+#### A) document_parser
 
-- `GET /health` returns orchestrator status/environment.
+- Input: `file_path`
+- Output key: `report:{report_id}:document_chunks`
+- Output contract:
+  - `chunk_id`
+  - `text`
+  - `page_number`
+  - `token_count`
+  - `bbox` (optional)
 
-## 3. Single Report Flow (`POST /reports`)
+#### B) structure_detector
 
-Primary service method: `ReportService.uploadAndAnalyze` (`nodeBackend/src/services/reportService.js`)
+- Input key: `report:{report_id}:document_chunks`
+- Output key: `report:{report_id}:structure`
+- Output contract:
+  - `sections[]`
+  - `detected_tables[]`
+  - `statement_regions`
+  - `narrative_regions`
 
-Execution path:
+### 4.2 Extraction Layer (Parallel)
 
-1. Ensure upload directory exists (`fs.mkdirSync(uploadDir, { recursive: true })`).
-2. Generate UUID file name and preserve extension (default `.pdf`).
-3. Write uploaded bytes from memory to disk at absolute path (`path.resolve`).
-4. Upsert company by `symbol` in Postgres:
-   - Insert or update `name`, `sector`.
-5. Insert report row with initial workflow state `UPLOADED`.
-6. Execute pipeline synchronously via `pipelineEngine.execute({ reportId, filePath })`.
-7. Return the DB report row plus generator output.
+All extractors must:
 
-Important behavior:
+- Read from:
+  - `report:{report_id}:document_chunks`
+  - `report:{report_id}:structure`
+- Execute in parallel using bounded async worker pools.
+- Return normalized rows with mandatory provenance metadata.
 
-- This endpoint is synchronous from API perspective; caller waits for full pipeline completion/failure.
+Extractors:
 
-## 4. Batch Flow (`POST /reports/batch`)
+- `income_statement_extractor`
+- `balance_sheet_extractor`
+- `cashflow_statement_extractor`
+- `income_notes_extractor`
+- `segment_extractor`
+- `governance_extractor`
+- `risk_extractor`
+- `esg_extractor`
+- `strategy_nlp`
 
-Primary service method: `ReportService.batchUploadAndAnalyze`
+Financial output writes:
 
-Execution path:
+- merged into `report:{report_id}`
 
-1. Validate files are present and count is `<= 10`.
-2. Upsert one company record for batch metadata.
-3. Process files using worker concurrency, not sequentially:
-   - Worker count = `min(BATCH_PIPELINE_CONCURRENCY, files.length)`.
-   - Default `BATCH_PIPELINE_CONCURRENCY = 3`.
-4. Per file:
-   - Save PDF to disk.
-   - Create report row in Postgres.
-   - Run pipeline with `strictAllBackends: false` in batch mode.
-   - If per-file PDF is generated, delete it (`cleanupSingleReportPdf`) because batch returns one consolidated multi-year PDF.
-   - Record per-file success/failure in `reports[index]`.
-5. Collect successful `reportIds`.
-6. If at least one report succeeded:
-   - Call `comparative_analysis /analyze-comparative` with:
-     - `batch_id`
-     - `report_ids`
-     - `company: { symbol, name, sector }`
-   - If comparative returns `status = completed`:
-     - Call `report_generator /generate-batch-report`.
-     - Build `consolidatedReport.status = completed` with `pdfPath`.
-   - Else:
-     - Build `consolidatedReport.status = failed` with quality-gate/failure message.
-7. If no report succeeded:
-   - `consolidatedReport.status = failed`, message `No report completed in batch`.
-8. Return aggregate response.
+Narrative output writes:
 
-Batch retrieval path (`GET /reports/batch/:batchId`):
+- `report:{report_id}:governance`
+- `report:{report_id}:risk`
+- `report:{report_id}:esg`
+- `report:{report_id}:strategy`
 
-1. Node calls `comparative_analysis /get-batch-result`.
-2. If comparative payload exists but `pdf_path` is missing:
-   - Node lazily triggers `report_generator /generate-batch-report` and injects `pdf_path`.
-3. If comparative says `not_found` or call fails, Node returns `404`.
+Mandatory extracted row schema:
 
-## 5. Workflow States (Per Report)
+- `label`
+- `value`
+- `year`
+- `entity_type`
+- `statement_type`
+- `source_chunk_id`
+- `page_number`
 
-Source: `nodeBackend/src/workflow/states.js`
+Recommended additional fields:
 
-1. `UPLOADED`
-2. `PARSING`
-3. `EXTRACTING`
-4. `ANALYZING`
-5. `GENERATING_REPORT`
-6. `COMPLETED`
-7. `FAILED`
+- `unit`
+- `currency`
+- `raw_text`
+- `extractor_name`
+- `extraction_method`
 
-Transition owner: `PipelineEngine.execute`
+## 5. Aggregation Layer (New)
 
-- On any thrown error, state is updated to `FAILED` and error message is persisted.
+Service: `aggregation_service`
 
-## 6. Pipeline Engine Behavior
+Input:
 
-Source: `nodeBackend/src/workflow/pipelineEngine.js`
+- `report:{report_id}` (merged financial extraction payload)
 
-### 6.1 Preconditions
+Responsibilities:
 
-1. Load report by ID (includes joined company data).
-2. Validate `report.sector` exists; if missing, throw `400` application error.
+1. Merge all statement rows from all financial extractors.
+2. Remove duplicates across overlapping sources.
+3. Normalize labels using canonical taxonomy (for example, "Total Revenue" -> `revenue`).
+4. Align multi-year rows by canonical year axis.
+5. Standardize schema and units.
+6. Preserve lineage to original extraction rows.
 
-### 6.2 Service call sequence
+Output key:
 
-Hard-required steps:
+- `report:{report_id}:canonical_raw`
 
-1. `document_parser` -> `POST /parse-document`
-   - Must return `status = parsed`.
-2. `report_generator` -> `POST /generate-report`
-   - Must return `status = completed`.
+Canonical raw row contract:
 
-Participation steps (strict vs best-effort policy):
+- `row_id`
+- `canonical_label`
+- `original_label`
+- `value`
+- `year`
+- `entity_type`
+- `statement_type`
+- `unit`
+- `currency`
+- `source_chunk_id`
+- `page_number`
+- `lineage` (array of source row references)
 
-1. `structure_detector` -> `POST /detect-structure`
-2. Extractors (run concurrently):
-   - `financial_statement_extractor` -> `POST /extract-financials`
-   - `balance_sheet_extractor` -> `POST /extract-financials`
-   - `cashflow_extractor` -> `POST /extract-financials`
-   - `segment_extractor` -> `POST /extract-financials`
-   - `governance_extractor` -> `POST /extract-governance`
-   - `risk_extractor` -> `POST /extract-risk`
-   - `esg_extractor` -> `POST /extract-esg`
-3. Analytics (run concurrently):
-   - `ratio_calculator` -> `POST /calculate-ratios`
-   - `strategy_nlp` -> `POST /extract-strategy`
-   - `kpi_sector_engine` -> `POST /sector-kpis` (payload uses `sector`, not `file_path`)
-   - `pattern_detection` -> `POST /detect-patterns`
+## 6. Validation Layer (New)
 
-### 6.3 Strict mode switch
+Service: `validation_engine`
 
-Configured by `PIPELINE_STRICT_ALL_BACKENDS`:
+Input key:
 
-1. `false` (default resilient mode)
-   - Participation calls are best-effort.
-   - Failures are logged and converted to `{ status: "failed", bestEffort: true }`.
-   - Pipeline continues unless required steps fail.
-2. `true` (strict mode)
-   - Participation calls become fail-fast required.
-   - Any participation failure causes full pipeline failure.
+- `report:{report_id}:canonical_raw`
 
-Batch-specific override:
+Responsibilities:
 
-- Batch execution explicitly sets `strictAllBackends: false` for per-file pipelines.
+### 6.1 Financial Validation Rules
 
-## 7. Service Discovery, Timeouts, Retry
+- Balance check: `assets ~= liabilities + equity` within configured tolerance.
+- Profitability sanity: `revenue >= net_profit` unless explicit exception flags.
+- Cashflow consistency checks (operating + investing + financing + fx + other adjustments align with net cash movement).
 
-Sources:
+### 6.2 Cross-Statement Linking
 
-- `nodeBackend/src/config/serviceRegistry.js`
-- `nodeBackend/src/clients/serviceClient.js`
+- `net_income` <-> retained earnings movement.
+- Cash closing balance in balance sheet <-> cashflow closing balance.
+- Debt metrics <-> liabilities composition.
 
-Default service URLs:
+### 6.3 Data Cleaning
 
-- `document_parser`: `http://localhost:8001`
-- `structure_detector`: `http://localhost:8002`
-- `financial_statement_extractor`: `http://localhost:8003`
-- `balance_sheet_extractor`: `http://localhost:8004`
-- `cashflow_extractor`: `http://localhost:8005`
-- `ratio_calculator`: `http://localhost:8006`
-- `segment_extractor`: `http://localhost:8007`
-- `governance_extractor`: `http://localhost:8008`
-- `risk_extractor`: `http://localhost:8009`
-- `esg_extractor`: `http://localhost:8010`
-- `strategy_nlp`: `http://localhost:8011`
-- `kpi_sector_engine`: `http://localhost:8012`
-- `pattern_detection`: `http://localhost:8013`
-- `report_generator`: `http://localhost:8014`
-- `comparative_analysis`: `http://localhost:8015`
+- Remove structurally invalid rows.
+- Flag anomalies (outlier changes, impossible signs, label/value mismatches).
+- Normalize units and scale (for example, thousands vs millions).
 
-Timeouts:
+### 6.4 Confidence Scoring
 
-1. Pipeline required calls: `300000 ms`
-2. Pipeline best-effort calls: `300000 ms`
-3. ServiceClient default timeout (when caller does not override): `120000 ms`
+Each row must include:
 
-Retries (per HTTP request):
+- `confidence_score` in [0, 1]
+- `validation_flags[]`
 
-1. Max attempts: `3`
-2. Retriable network codes: `ECONNREFUSED`, `ECONNRESET`, `ETIMEDOUT`
-3. Delay between retries: `1500 ms`
+Row confidence should combine:
 
-## 8. Persistence and Data Layout
+- extraction confidence
+- schema confidence
+- rule-pass ratio
+- cross-source agreement
+- provenance quality
 
-### 8.1 Postgres
+### 6.5 Global Quality Score
 
-Company upsert:
+Generate:
 
-- Keyed by `symbol` conflict.
-- Updates `name`, `sector`, `updated_at` on conflict.
+- `overall_data_quality_score`
 
-Report row:
+Score is computed from:
 
-- Created with `workflow_state = UPLOADED`.
-- State and `error_message` are updated during pipeline progression/failure.
+- coverage completeness
+- critical-rule pass ratio
+- conflict density
+- unresolved anomaly burden
 
-### 8.2 Redis keys
+Output key:
 
-Common report-level keys (written by Python services):
+- `report:{report_id}:canonical_validated`
 
-- `report:{report_id}`
+Output payload must include:
+
+- `validated_rows[]`
+- `overall_data_quality_score`
+- `validation_summary`
+- `error_catalog`
+- `missing_value_index`
+- `confidence_distribution`
+
+## 7. Canonical Dataset Contract (New)
+
+The canonical dataset for downstream services is `report:{report_id}:canonical_validated`.
+
+Required row fields:
+
+- `canonical_label`
+- `value`
+- `year`
+- `entity_type`
+- `statement_type`
+- `confidence_score`
+- `validation_flags`
+- `source_chunk_id`
+- `page_number`
+
+Consumers must treat this dataset as the single source of truth.
+
+## 8. Analytics Gating (Critical)
+
+Before any analytics service starts:
+
+- Read `overall_data_quality_score`.
+- Compare to configured threshold `ANALYTICS_QUALITY_THRESHOLD`.
+
+Gate logic:
+
+1. If `overall_data_quality_score < threshold`:
+   - stop analytics execution
+   - mark report status as `LOW_CONFIDENCE`
+   - persist gating reason and remediation hints
+2. Else:
+   - continue to analytics layer
+
+Mandatory rule:
+
+- No analytics may consume `report:{report_id}` or `report:{report_id}:canonical_raw`.
+
+## 9. Analytics Layer (Confidence-Aware)
+
+Input key:
+
+- `report:{report_id}:canonical_validated`
+
+Services:
+
+- `ratio_calculator`
+- `kpi_sector_engine`
+- `pattern_detection`
+
+Execution rules:
+
+1. Ignore rows below `MIN_ROW_CONFIDENCE_FOR_ANALYTICS`.
+2. Propagate confidence into each computed metric/pattern.
+3. Emit supporting evidence references to validated rows.
+
+Output keys:
+
 - `report:{report_id}:ratios`
+- `report:{report_id}:sector_kpis`
+- `report:{report_id}:patterns`
+
+Output fields (minimum):
+
+- `metric_or_pattern_name`
+- `value`
+- `confidence_score`
+- `supporting_row_ids[]`
+- `notes`
+
+## 10. Frontend Inspection Layer (Mandatory)
+
+The frontend must expose full pipeline transparency and dataset observability.
+
+### 10.1 Pipeline Tracker
+
+Display stage progression:
+
+Upload -> Parsing -> Structure -> Extraction -> Aggregation -> Validation -> Analytics -> Report
+
+Each stage must show:
+
+- status (`pending|running|completed|failed|skipped`)
+- start/end timestamps
+- duration
+- stage diagnostics
+
+### 10.2 Data Views
+
+1. Raw Data: `report:{report_id}`
+2. Cleaned Data: `report:{report_id}:canonical_raw`
+3. Validated Data: `report:{report_id}:canonical_validated`
+
+The UI must support per-row drilldown to provenance (`source_chunk_id`, `page_number`, source snippet).
+
+### 10.3 Confidence Display
+
+- per-row `confidence_score`
+- report-level `overall_data_quality_score`
+- confidence filters and thresholds in the table view
+
+### 10.4 Error Panel
+
+Show:
+
+- validation errors
+- cross-statement inconsistencies
+- missing critical values
+- unresolved anomalies
+
+### 10.5 Charts and Analytics Views
+
+- Trends, comparisons, and ratio charts may render only from validated data.
+- Charts must annotate confidence at series and point level where available.
+
+### 10.6 Pattern Panel
+
+For each detected pattern show:
+
+- pattern description
+- supporting data references
+- confidence score
+- rule/evidence trace
+
+## 11. Report Generation Layer
+
+Service: `report_generator`
+
+Inputs:
+
+- validated financial dataset
+- confidence-aware ratios
+- confidence-aware patterns
+- validated narrative payloads (`governance`, `risk`, `esg`, `strategy`)
+
+Rules:
+
+1. Exclude low-confidence sections based on configured thresholds.
+2. Include confidence indicators on all major sections and key figures.
+3. Include a data quality summary and unresolved issue appendix.
+
+Outputs:
+
+- Redis: `report:{report_id}:final_report`
+- File: generated PDF path saved in orchestration metadata
+
+## 12. Batch Flow (Extended)
+
+For batch upload:
+
+1. Run the full single-report pipeline independently per report.
+2. Enforce aggregation + validation + analytics gating per report.
+3. Collect only reports with valid `canonical_validated` datasets.
+4. Feed eligible reports into `comparative_analysis`.
+
+Comparative analysis must use:
+
+- only validated rows
+- only rows and metrics meeting high-confidence thresholds
+
+Comparative outputs must include:
+
+- report eligibility summary
+- excluded-report reasons
+- confidence-weighted comparative metrics
+
+## 13. Data Contracts and Redis Keyspace
+
+Core keys:
+
+- `report:{report_id}:document_chunks`
+- `report:{report_id}:structure`
+- `report:{report_id}`
+- `report:{report_id}:governance`
+- `report:{report_id}:risk`
+- `report:{report_id}:esg`
+- `report:{report_id}:strategy`
+- `report:{report_id}:canonical_raw`
+- `report:{report_id}:canonical_validated`
+- `report:{report_id}:ratios`
+- `report:{report_id}:sector_kpis`
 - `report:{report_id}:patterns`
 - `report:{report_id}:final_report`
 
-Batch comparative key:
+Batch keys:
 
 - `report:batch:{batch_id}:comparative`
+- `report:batch:{batch_id}:eligibility`
 
-Batch TTL:
+Recommended metadata:
 
-- Comparative result is stored with expiry `redis_ttl_seconds` (default `3600`).
+- `schema_version`
+- `generated_at`
+- `service_version`
+- `source_report_id`
 
-## 9. Comparative Analysis Result Shape
+## 14. Workflow State Model (Updated)
 
-Sources:
+Suggested state sequence:
 
-- `comparative_analysis/api/routes.py`
-- `comparative_analysis/services/comparative_service.py`
-- `comparative_analysis/models/schemas.py`
+1. `UPLOADED`
+2. `PARSING`
+3. `STRUCTURE_DETECTED`
+4. `EXTRACTING`
+5. `AGGREGATING`
+6. `VALIDATING`
+7. `LOW_CONFIDENCE` (terminal non-analytics path)
+8. `ANALYZING`
+9. `GENERATING_REPORT`
+10. `COMPLETED`
+11. `FAILED`
 
-Comparative process summary:
+State rules:
 
-1. Deduplicate `report_ids`.
-2. Build report snapshots/readiness.
-3. Build anchor year per report.
-4. Aggregate year metrics, ratio history, and pattern history.
-5. Compute:
-   - `verified_financial_summary`
-   - `metric_trends`
-   - `growth_analysis`
-   - `dupont_analysis`
-   - `cashflow_breakdown`
-   - `ratio_comparison`
-   - `risk_heatmap`
-   - `risk_stability_indicators`
-   - `data_integrity`
-   - `analyst_commentary`
-6. Run quality gate and set `status = completed|failed`.
-7. Store full result in Redis under batch key with TTL.
+- `LOW_CONFIDENCE` is not `FAILED`; it is a quality-gated terminal path.
+- Transition to `ANALYZING` requires validation gate pass.
 
-Important fields in stored batch payload:
+## 15. Observability by Data (Not Logs)
 
-- `batch_id`, `company`, `status`
-- `report_ids`, `requested_report_ids`, `skipped_report_ids`, `report_readiness`
-- `years_analyzed`, `report_anchor_years`
-- `quality_gate`, `data_integrity`
-- All major analytics sections listed above
+The platform must be debuggable via persisted stage data.
 
-## 10. Runtime Configuration (Node)
+Minimum per-stage artifacts:
 
-Source: `nodeBackend/src/config/env.js`
+- stage input snapshot reference
+- stage output key
+- quality summary
+- confidence summary
+- error catalog
 
-- `PORT` (default `3000`)
-- `NODE_ENV` (default `development`)
-- `DATABASE_URL`
-- `UPLOAD_DIR` (default `./uploads`)
-- `PIPELINE_STRICT_ALL_BACKENDS` (default `false`)
-- `BATCH_PIPELINE_CONCURRENCY` (default `3`, min effective value `1`)
+Debug UX requirement:
 
-## 11. Local Startup / Shutdown Scripts
+- Any report issue should be diagnosable by traversing stored datasets in order, without requiring backend logs.
 
-Sources:
+## 16. Configuration Surface (New)
 
-- `start_all_backends_local.ps1`
-- `stop_all_backends_local.ps1`
+Recommended environment variables:
 
-`start_all_backends_local.ps1` behavior:
+- `ANALYTICS_QUALITY_THRESHOLD` (for report-level gate)
+- `MIN_ROW_CONFIDENCE_FOR_ANALYTICS`
+- `REPORT_SECTION_CONFIDENCE_THRESHOLD`
+- `VALIDATION_TOLERANCE_BALANCE_SHEET`
+- `VALIDATION_TOLERANCE_CASHFLOW`
+- `CANONICAL_SCHEMA_VERSION`
 
-1. Resolve DB port (auto-detect postgres listener if default not reachable and port not explicitly set).
-2. Build local DB URLs for Python and Node.
-3. Enforce DB reachability (hard fail if unavailable).
-4. Enforce Redis reachability and protocol health (hard fail if unavailable/invalid/fake redis process detected).
-5. Start Node orchestrator on `:3000` (optional skip via `-SkipNode`).
-6. Start Python backends on `:8001..:8015`.
-7. Wait up to 30s per port for readiness.
-8. Persist started process metadata to `backend_pids.json`.
+## 17. Critical Rules (Mandatory)
 
-`stop_all_backends_local.ps1` behavior:
+1. No analytics on raw extracted data.
+2. All analytics must use validated dataset.
+3. All dataset rows must carry `confidence_score` (or explicit non-applicable marker for pre-validation stages).
+4. Frontend must expose full pipeline transparency.
+5. System must be debuggable via data, not logs.
 
-1. Stop processes from `backend_pids.json`.
-2. Fallback cleanup: kill listeners on known backend ports.
-3. Delete `backend_pids.json`.
-4. Report whether any backend ports remain open.
+## 18. Final Expectation
 
-## 12. Docker Startup Reality Check
+The system is considered compliant when:
 
-Sources:
-
-- `start_all_backends.ps1`
-- `docker-compose.yml`
-
-Current behavior:
-
-1. `start_all_backends.ps1` runs `docker compose up` (optional `--build`, `-d`).
-2. `docker-compose.yml` includes Postgres, Redis, Node orchestrator, and Python services up to `report_generator` (`:8014`).
-3. `comparative_analysis` is not currently defined in `docker-compose.yml`.
-
-Operational implication:
-
-- Batch comparative flow (`/reports/batch` and `/reports/batch/:batchId`) requires `comparative_analysis` running separately or added to compose.
-
-## 13. End-to-End Characteristics
-
-1. Single report API is synchronous and returns only after pipeline completion/failure.
-2. Batch report processing is concurrent per file (bounded worker model).
-3. Batch mode intentionally favors resiliency (`strictAllBackends: false`) for per-file pipelines.
-4. Consolidated multi-year PDF is generated once per batch (not one PDF per file).
-5. Comparative batch payload is Redis-backed and TTL-bound; not durable without extra persistence.
+- extraction is modular and parallel
+- aggregation and validation are mandatory pre-analytics stages
+- analytics are confidence-aware and validation-gated
+- frontend exposes full data pipeline visibility
+- report accuracy is driven by validated data, not raw extraction
