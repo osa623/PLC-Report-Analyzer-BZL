@@ -159,6 +159,34 @@ services:
     ports:
       - "8014:8014"
 
+  comparative_analysis:
+    <<: *common-python-service
+    build: ./comparative_analysis
+    container_name: cse-comparative-analysis
+    ports:
+      - "8015:8015"
+
+  oci_extractor:
+    <<: *common-python-service
+    build: ./oci_extractor
+    container_name: cse-oci-extractor
+    ports:
+      - "8016:8016"
+
+  equity_extractor:
+    <<: *common-python-service
+    build: ./equity_extractor
+    container_name: cse-equity-extractor
+    ports:
+      - "8017:8017"
+
+  data_validator:
+    <<: *common-python-service
+    build: ./data_validator
+    container_name: cse-data-validator
+    ports:
+      - "8018:8018"
+
 volumes:
   postgres_data:
   report_uploads:

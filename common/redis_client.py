@@ -7,7 +7,7 @@ from redis import Redis
 
 @lru_cache(maxsize=1)
 def get_redis_client(redis_url: str) -> Redis:
-    return Redis.from_url(redis_url)
+    return Redis.from_url(redis_url, protocol=3)
 
 
 def json_loads(raw: Any, default: Any) -> Any:

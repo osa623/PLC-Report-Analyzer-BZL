@@ -101,6 +101,25 @@ class TransformationService:
         validation_errors = []
         
         for chunk_id, payload in chunk_results:
+            if payload.get("currency_skipped") is True:
+                continue
+            
+            # Currency Check
+            curr = payload.get("detected_currency") or payload.get("currency")
+            if curr and "usd" in str(curr).lower():
+                continue
+
+            # Scale Logic
+            scale_mult = 1.0
+            if "scale_multiplier" in payload and isinstance(payload["scale_multiplier"], (int, float)):
+                scale_mult = float(payload["scale_multiplier"])
+            elif "scale" in payload:
+                legacy_scale = str(payload["scale"]).lower()
+                if "mn" in legacy_scale or "million" in legacy_scale:
+                    scale_mult = 1000.0
+                elif "bn" in legacy_scale or "billion" in legacy_scale:
+                    scale_mult = 1000000.0
+            
             rows = payload.get("rows") or []
             
             for row in rows:
@@ -133,7 +152,7 @@ class TransformationService:
                 if not values:
                     continue
                     
-                for header, raw_value in values.items():
+                for header, raw_value_str in values.items():
                     if "usd" in str(header).lower():
                         continue
                         
@@ -141,7 +160,7 @@ class TransformationService:
                     if year is None:
                         continue
                         
-                    numeric_value, _ = self._to_number(raw_value)
+                    numeric_value, _ = self._to_number(raw_value_str)
                     semantic_type = self._semantic_type(parent, section)
                     
                     # Deduplication key across chunks
@@ -151,8 +170,13 @@ class TransformationService:
                     seen_keys.add(dedup_key)
                     
                     confidence = 1.0
+                    normalized_val = None
+                    
                     if numeric_value is None:
                         confidence -= 0.2
+                    else:
+                        normalized_val = numeric_value * scale_mult
+
                     if not parent and depth > 0:
                         confidence -= 0.1
                         
@@ -162,7 +186,10 @@ class TransformationService:
                         "report_id": report_id,
                         "statement_type": "balance",
                         "label": label,
-                        "value": numeric_value,
+                        "value": normalized_val,
+                        "raw_value": numeric_value,
+                        "scale_multiplier": scale_mult,
+                        "currency": curr or "LKR",
                         "year": year,
                         "entity_type": entity_type,
                         "semantic_type": semantic_type,

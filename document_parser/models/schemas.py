@@ -30,9 +30,11 @@ class ChunkMetadata(BaseModel):
 
 class DocumentChunk(BaseModel):
     chunk_id: str
-    page_start: int
-    page_end: int
-    content: str
+    text_content: str
+    page_number: int | None = None
+    page_start: int | None = None
+    page_end: int | None = None
+    content: str | None = None
     chunk_type: Literal["text", "table", "mixed"]
     metadata: ChunkMetadata
 

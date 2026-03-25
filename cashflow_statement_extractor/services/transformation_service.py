@@ -29,6 +29,12 @@ class TransformationService:
         "indent_level",
         "note_reference",
         "page_number",
+        "detected_currency",
+        "currency_symbol",
+        "scale",
+        "scale_multiplier",
+        "is_audited",
+        "period_end_date"
     }
 
     @staticmethod
@@ -124,6 +130,17 @@ class TransformationService:
         validation_errors = []
         
         for chunk_id, payload in chunk_results:
+            detected_currency = payload.get("detected_currency")
+            if detected_currency and "usd" in str(detected_currency).lower():
+                 continue
+
+            scale_multiplier = 1000.0
+            if "scale_multiplier" in payload:
+                 try:
+                     scale_multiplier = float(payload["scale_multiplier"])
+                 except (ValueError, TypeError):
+                     scale_multiplier = 1000.0
+
             rows = payload.get("rows") or []
             
             for order_index, row in enumerate(rows):
@@ -179,11 +196,17 @@ class TransformationService:
                         
                     page_number = row.get("page_number")
 
+                    normalised_value = None
+                    if numeric_value is not None:
+                        normalised_value = (numeric_value * scale_multiplier) / 1000.0
+
                     normalized_records.append({
                         "report_id": report_id,
-                        "statement_type": "cashflow",
+                        "statement_type": "cashflow_statement",
                         "label": label,
                         "value": numeric_value,
+                        "normalised_value": normalised_value,
+                        "scale_multiplier": scale_multiplier,
                         "year": year,
                         "entity_type": entity_type,
                         "semantic_type": semantic_type,
