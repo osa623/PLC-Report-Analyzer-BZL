@@ -77,6 +77,7 @@ class ChunkingService:
     def build_page(self, page_number: int, page_text: str) -> ParsedPage:
         normalized = "\n".join(line.rstrip() for line in page_text.splitlines())
         cleaned = re.sub(r"[\t\f\v\r]+", " ", normalized)
+        cleaned = re.sub(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", " ", cleaned)
         cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
         line_count = len([line for line in cleaned.splitlines() if line.strip()])
@@ -143,6 +144,8 @@ class ChunkingService:
             chunks.append(
                 DocumentChunk(
                     chunk_id=str(uuid.uuid4()),
+                    text_content=combined_content,
+                    page_number=current[0].page_number,
                     page_start=current[0].page_number,
                     page_end=current[-1].page_number,
                     content=combined_content,

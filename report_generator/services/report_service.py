@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ReportService:
     _SUMMARY_FIELDS = {
-        "total_revenue": "revenue",
+        "total_revenue": "total_revenue",
         "net_profit": "net_profit",
         "operating_cashflow": "operating_cashflow",
         "total_assets": "total_assets",
@@ -159,8 +159,14 @@ class ReportService:
         semantic_values = by_year_semantic[latest_year]
 
         summary: dict[str, float | None] = {}
-        for out_field, semantic in self._SUMMARY_FIELDS.items():
-            summary[out_field] = semantic_values.get(semantic)
+        for out_field, canonical_metric in self._SUMMARY_FIELDS.items():
+            aliases = self._METRIC_ALIASES.get(canonical_metric, {canonical_metric})
+            resolved_value = None
+            for alias in aliases:
+                if alias in semantic_values:
+                    resolved_value = semantic_values[alias]
+                    break
+            summary[out_field] = resolved_value
 
         return summary, latest_year
 
@@ -434,6 +440,29 @@ class ReportService:
         if not batch_payload:
             logger.error("Batch comparative payload not found for key=%s", batch_key)
             return {"status": "not_found", "pdf_path": None}
+
+        if batch_payload.get("status") != "completed":
+            logger.error(
+                "Batch comparative payload failed quality gate for key=%s status=%s",
+                batch_key,
+                batch_payload.get("status"),
+            )
+            return {"status": "failed", "pdf_path": None}
+
+        years_analyzed = batch_payload.get("years_analyzed")
+        metric_trends = batch_payload.get("metric_trends")
+        ratio_comparison = batch_payload.get("ratio_comparison")
+        report_snapshots = batch_payload.get("report_snapshots")
+
+        has_years = isinstance(years_analyzed, list) and len(years_analyzed) > 0
+        has_metric_trends = isinstance(metric_trends, list) and len(metric_trends) > 0
+        has_ratio_comparison = isinstance(ratio_comparison, dict) and len(ratio_comparison) > 0
+        has_snapshots = isinstance(report_snapshots, list) and len(report_snapshots) > 0
+        has_substantive_data = has_years and (has_metric_trends or has_ratio_comparison or has_snapshots)
+
+        if not has_substantive_data:
+            logger.error("Batch comparative payload is too sparse for PDF generation key=%s", batch_key)
+            return {"status": "failed", "pdf_path": None}
             
         try:
             from services.pdf_builder import PDFBuilder

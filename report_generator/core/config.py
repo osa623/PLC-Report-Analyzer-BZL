@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     redis_ratios_suffix: str = "ratios"
     redis_patterns_suffix: str = "patterns"
     redis_final_report_suffix: str = "final_report"
-    redis_ttl_seconds: int = 900
+    redis_ttl_seconds: int = 3600
     report_output_dir: str = "generated_reports"
     pattern_min_confidence: float = 0.35
 

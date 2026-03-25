@@ -184,20 +184,130 @@ class PatternService:
                 continue
             ratio_map[(year, entity)][name] = value
 
-        patterns: list[dict[str, Any]] = []
+        patterns = []
 
-        keys = sorted(grouped_semantics.keys())
-        by_entity: dict[str, list[int]] = defaultdict(list)
-        for year, entity in keys:
-            by_entity[entity].append(year)
+        # Organize by entity
+        entity_years: dict[str, list[int]] = defaultdict(list)
+        data_by_year: dict[str, dict[int, dict[str, float]]] = defaultdict(dict)
+        ratios_by_year: dict[str, dict[int, dict[str, float]]] = defaultdict(dict)
 
-        for entity, years in by_entity.items():
-            ordered_years = sorted(set(years))
-            for idx in range(1, len(ordered_years)):
-                year = ordered_years[idx]
-                prev_year = ordered_years[idx - 1]
-                curr = grouped_semantics.get((year, entity), {})
-                prev = grouped_semantics.get((prev_year, entity), {})
+        # Merge extracted data
+        for (y, e), metrics in grouped_semantics.items():
+            entity_years[e].append(y)
+            if y not in data_by_year[e]:
+                data_by_year[e][y] = {}
+            data_by_year[e][y].update(metrics)
+
+        # Merge calculated ratios
+        for (y, e), ratios in ratio_map.items():
+            entity_years[e].append(y)
+            if y not in ratios_by_year[e]:
+                ratios_by_year[e][y] = {}
+            ratios_by_year[e][y].update(ratios)
+
+        for entity, years in entity_years.items():
+            yrs = sorted(list(set(years)))
+            if len(yrs) < 2:
+                continue
+
+            for i in range(1, len(yrs)):
+                curr_y = yrs[i]
+                prev_y = yrs[i-1]
+                
+                # Metrics
+                curr_m = data_by_year[entity].get(curr_y, {})
+                prev_m = data_by_year[entity].get(prev_y, {})
+                
+                # Ratios
+                curr_r = ratios_by_year[entity].get(curr_y, {})
+                prev_r = ratios_by_year[entity].get(prev_y, {})
+
+                # 1. NIM Compression (Banking Specific)
+                nim_curr = curr_r.get("net_interest_margin")
+                nim_prev = prev_r.get("net_interest_margin")
+                if nim_curr is not None and nim_prev is not None:
+                    diff = nim_curr - nim_prev
+                    # Threshold: -10bps (-0.001)
+                    if diff < -0.001:
+                        patterns.append({
+                            "pattern_type": "nim_compression",
+                            "entity": entity,
+                            "year": curr_y,
+                            "description": f"NIM compressed by {abs(diff)*100:.2f} bps YoY",
+                            "severity": "high" if diff < -0.005 else "medium"
+                        })
+
+                # 2. Earnings Recovery
+                pat_curr = curr_m.get("profit_for_year") or curr_m.get("net_profit")
+                pat_prev = prev_m.get("profit_for_year") or prev_m.get("net_profit")
+                if pat_curr and pat_prev and pat_prev > 0:
+                     growth = (pat_curr - pat_prev) / abs(pat_prev)
+                     # Check prior year for dip (if possible)
+                     if i > 1:
+                         prev2_y = yrs[i-2]
+                         prev2_m = data_by_year[entity].get(prev2_y, {})
+                         pat_prev2 = prev2_m.get("profit_for_year") or prev2_m.get("net_profit")
+                         if pat_prev2 and pat_prev < pat_prev2 and growth > 0.05:
+                             patterns.append({
+                                 "pattern_type": "earnings_recovery",
+                                 "entity": entity,
+                                 "year": curr_y,
+                                 "description": f"Earnings recovered (+{growth*100:.1f}%) after prior decline",
+                                 "severity": "positive"
+                             })
+
+                # 3. Loan Book Acceleration
+                loans_curr = curr_m.get("loans_and_advances_net")
+                loans_prev = prev_m.get("loans_and_advances_net")
+                if loans_curr and loans_prev and loans_prev > 0:
+                    growth = (loans_curr - loans_prev) / loans_prev
+                    if growth > 0.15:
+                         patterns.append({
+                             "pattern_type": "loan_growth_acceleration",
+                             "entity": entity,
+                             "year": curr_y,
+                             "description": f"Loan book grew aggressively by {growth*100:.1f}%",
+                             "severity": "medium"
+                         })
+
+                # 4. Deposit Flight Risk
+                dep_curr = curr_m.get("due_to_depositors")
+                dep_prev = prev_m.get("due_to_depositors")
+                if dep_curr and dep_prev and dep_prev > 0:
+                    growth = (dep_curr - dep_prev) / dep_prev
+                    if growth < -0.05:
+                        patterns.append({
+                             "pattern_type": "deposit_outflow",
+                             "entity": entity,
+                             "year": curr_y,
+                             "description": f"Deposit base contacted by {abs(growth)*100:.1f}%",
+                             "severity": "high" 
+                        })
+
+                # 5. Cost Efficiency deterioration
+                cir_curr = curr_r.get("cost_to_income_ratio")
+                cir_prev = prev_r.get("cost_to_income_ratio")
+                if cir_curr and cir_prev:
+                    if cir_curr > (cir_prev + 0.05): # +5% deterioration
+                         patterns.append({
+                             "pattern_type": "efficiency_deterioration",
+                             "entity": entity,
+                             "year": curr_y,
+                             "description": "Cost-to-Income ratio deteriorated significantly",
+                             "severity": "medium"
+                         })
+
+        output = {
+            "report_id": report_id,
+            "patterns": patterns,
+            "count": len(patterns)
+        }
+        
+        try:
+            self.redis_client.set(self._key(report_id, self.patterns_suffix), json.dumps(output), ex=self.ttl_seconds)
+            return "completed"
+        except Exception:
+            return "failed"
                 curr_ratios = ratio_map.get((year, entity), {})
                 prev_ratios = ratio_map.get((prev_year, entity), {})
 
