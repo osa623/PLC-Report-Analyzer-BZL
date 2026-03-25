@@ -2,6 +2,7 @@ const { env } = require("./env");
 const { logger } = require("./logger");
 const { serviceRegistry } = require("./serviceRegistry");
 const { pool } = require("../repositories/db");
+const { redisClient } = require("./redis");
 const { ReportRepository } = require("../repositories/reportRepository");
 const { CompanyRepository } = require("../repositories/companyRepository");
 const { ServiceClient } = require("../clients/serviceClient");
@@ -17,7 +18,8 @@ function createContainer() {
     reportRepository,
     serviceClient,
     logger,
-    strictAllBackends: env.pipelineStrictAllBackends
+    strictAllBackends: env.pipelineStrictAllBackends,
+    analyticsQualityThreshold: env.analyticsQualityThreshold
   });
   const reportService = new ReportService({
     reportRepository,
@@ -25,13 +27,16 @@ function createContainer() {
     pipelineEngine,
     uploadDir: env.uploadDir,
     serviceClient,
+    redisClient, // Inject Redis
     batchPipelineConcurrency: env.batchPipelineConcurrency
   });
   const reportController = new ReportController({ reportService });
-
+  
   return {
     env,
     logger,
+    pool,
+    redisClient,
     serviceRegistry,
     reportRepository,
     companyRepository,

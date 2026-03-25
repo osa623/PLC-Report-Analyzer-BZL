@@ -6,13 +6,27 @@ BEGIN
     CREATE TYPE workflow_state AS ENUM (
       'UPLOADED',
       'PARSING',
+      'STRUCTURE_DETECTED',
       'EXTRACTING',
+      'AGGREGATING',
+      'VALIDATING',
+      'LOW_CONFIDENCE',
       'ANALYZING',
       'GENERATING_REPORT',
       'COMPLETED',
       'FAILED'
     );
   END IF;
+END$$;
+
+DO $$
+BEGIN
+  ALTER TYPE workflow_state ADD VALUE IF NOT EXISTS 'STRUCTURE_DETECTED';
+  ALTER TYPE workflow_state ADD VALUE IF NOT EXISTS 'AGGREGATING';
+  ALTER TYPE workflow_state ADD VALUE IF NOT EXISTS 'VALIDATING';
+  ALTER TYPE workflow_state ADD VALUE IF NOT EXISTS 'LOW_CONFIDENCE';
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
 END$$;
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -28,6 +42,7 @@ CREATE TABLE IF NOT EXISTS reports (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID NOT NULL REFERENCES companies(id),
   file_path TEXT NOT NULL,
+  pdf_path TEXT,
   workflow_state workflow_state NOT NULL DEFAULT 'UPLOADED',
   error_message TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
