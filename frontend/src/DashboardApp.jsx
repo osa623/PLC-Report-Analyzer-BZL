@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { 
   Upload, FileText, CheckCircle, XCircle, Activity, 
   DollarSign, PieChart, BarChart2, ShieldCheck, 
-  Layers, AlertCircle, Loader2 
+    Layers, AlertCircle, Loader2, Download, Table2, AlignLeft
 } from 'lucide-react';
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
@@ -83,14 +83,96 @@ const SERVICES_MAP = {
   validation: { name: "Validation", icon: ShieldCheck },
 };
 
+const EXTRACTION_DOWNLOAD_FORMATS = ['md', 'xlsx', 'docx', 'pdf', 'json', 'csv'];
+
+const EXTRACTION_LABEL_MAP = {
+        income_statement: 'Income Statement',
+        balance_sheet: 'Balance Sheet',
+        cashflow_statement: 'Cash Flow Statement',
+        segments: 'Segments',
+        oci_statement: 'OCI Statement',
+        equity_statement: 'Equity Statement',
+        governance: 'Governance',
+        risk: 'Risk',
+        esg: 'ESG',
+        strategy: 'Strategy',
+};
+
 function DashboardApp() {
   const [batchId, setBatchId] = useState(null);
   const [reports, setReports] = useState([]);
   const [batchStatus, setBatchStatus] = useState(null);
   const [reportDetails, setReportDetails] = useState({});
+  const [reportViewMode, setReportViewMode] = useState({});
+  const [extractionViews, setExtractionViews] = useState({});
+  const [analyzerViews, setAnalyzerViews] = useState({});
+    const [analyzerAccuracy, setAnalyzerAccuracy] = useState({});
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
     const [backendConnected, setBackendConnected] = useState(true);
+
+    const getSectionIcon = (sectionKey) => {
+        const mapped = SERVICES_MAP[sectionKey];
+        return mapped?.icon || FileText;
+    };
+
+    const fetchExtractionView = useCallback(async (reportId) => {
+        if (!reportId || extractionViews[reportId]) return;
+        try {
+            const res = await axios.get(`${API_BASE}/reports/${reportId}/extractions`);
+            setExtractionViews((prev) => ({
+                ...prev,
+                [reportId]: res.data
+            }));
+        } catch (_) {
+            // best effort
+        }
+    }, [extractionViews]);
+
+    const fetchAnalyzerView = useCallback(async (reportId) => {
+        if (!reportId || analyzerViews[reportId]) return;
+        try {
+            const res = await axios.get(`${API_BASE}/reports/${reportId}/analyzer`);
+            setAnalyzerViews((prev) => ({
+                ...prev,
+                [reportId]: res.data
+            }));
+        } catch (_) {
+            // best effort
+        }
+    }, [analyzerViews]);
+
+    const fetchAnalyzerAccuracy = useCallback(async (reportId) => {
+        if (!reportId) return;
+        try {
+            const res = await axios.get(`${API_BASE}/reports/${reportId}/analyzer/accuracy`);
+            setAnalyzerAccuracy((prev) => ({
+                ...prev,
+                [reportId]: res.data
+            }));
+        } catch (_) {
+            // best effort
+        }
+    }, []);
+
+    const openExtractionView = useCallback((reportId) => {
+        if (!reportId) return;
+        setReportViewMode((prev) => ({
+            ...prev,
+            [reportId]: 'extraction'
+        }));
+        fetchExtractionView(reportId);
+    }, [fetchExtractionView]);
+
+    const openAnalyzerView = useCallback((reportId) => {
+        if (!reportId) return;
+        setReportViewMode((prev) => ({
+            ...prev,
+            [reportId]: 'analyzer'
+        }));
+        fetchAnalyzerView(reportId);
+        fetchAnalyzerAccuracy(reportId);
+    }, [fetchAnalyzerView, fetchAnalyzerAccuracy]);
 
     const normalizePipelineTracker = (details) => {
         const tracker = details?.pipeline_tracker;
@@ -343,6 +425,174 @@ function DashboardApp() {
     return () => clearInterval(interval);
   }, [reports]);
 
+    const renderExtractionPanel = (reportId) => {
+        const payload = extractionViews[reportId];
+
+        if (!payload) {
+            return (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-500">
+                    Loading extraction sections...
+                </div>
+            );
+        }
+
+        const sections = Array.isArray(payload.sections) ? payload.sections : [];
+        if (sections.length === 0) {
+            return (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-500">
+                    No extraction sections available yet.
+                </div>
+            );
+        }
+
+        return (
+            <div className="space-y-4">
+                {sections.map((section) => {
+                    const SectionIcon = getSectionIcon(section.key);
+                    return (
+                        <div key={section.key} className="bg-white border border-gray-200 rounded-lg p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                <div className="flex items-center gap-2">
+                                    <SectionIcon size={16} className="text-blue-600" />
+                                    <h4 className="text-sm font-semibold text-gray-800">
+                                        {section.label || EXTRACTION_LABEL_MAP[section.key] || section.key}
+                                    </h4>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {EXTRACTION_DOWNLOAD_FORMATS.map((fmt) => (
+                                        <a
+                                            key={`${section.key}-${fmt}`}
+                                            href={`${API_BASE}/reports/${reportId}/extractions/${section.key}/download?format=${fmt}`}
+                                            className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-1"
+                                        >
+                                            <Download size={12} /> {fmt.toUpperCase()}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {(section.blocks || []).map((block, idx) => (
+                                    <div key={`${section.key}-block-${idx}`} className="border border-gray-100 rounded p-3">
+                                        <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-2 flex items-center gap-2">
+                                            {block.type === 'table' ? <Table2 size={12} /> : <AlignLeft size={12} />}
+                                            {block.type} {block.title ? `• ${block.title}` : ''}
+                                        </div>
+
+                                        {block.type === 'table' ? (
+                                            <div className="overflow-x-auto">
+                                                <table className="min-w-full text-xs border-collapse">
+                                                    <thead>
+                                                        <tr>
+                                                            {(block.columns || []).map((col) => (
+                                                                <th key={col} className="text-left border-b border-gray-200 px-2 py-1 font-semibold text-gray-700">
+                                                                    {col}
+                                                                </th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(block.rows || []).slice(0, 20).map((row, rowIndex) => (
+                                                            <tr key={`${section.key}-${idx}-${rowIndex}`}>
+                                                                {(block.columns || []).map((col) => (
+                                                                    <td key={`${section.key}-${idx}-${rowIndex}-${col}`} className="border-b border-gray-100 px-2 py-1 text-gray-700 align-top">
+                                                                        {row?.[col] === null || row?.[col] === undefined
+                                                                            ? ''
+                                                                            : typeof row[col] === 'object'
+                                                                            ? JSON.stringify(row[col])
+                                                                            : String(row[col])}
+                                                                    </td>
+                                                                ))}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                                {(block.rows || []).length > 20 && (
+                                                    <div className="text-[11px] text-gray-500 mt-2">
+                                                        Showing 20 of {(block.rows || []).length} rows.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <pre className="text-xs whitespace-pre-wrap text-gray-700 bg-gray-50 border border-gray-100 rounded p-2 max-h-64 overflow-auto">
+                                                {block.text || ''}
+                                            </pre>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const renderAnalyzerPanel = (reportId) => {
+        const payload = analyzerViews[reportId];
+        const latestAccuracy = analyzerAccuracy[reportId]?.accuracy || payload?.accuracy || {};
+        if (!payload) {
+            return (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 text-sm text-gray-500">
+                    Loading analyzer view...
+                </div>
+            );
+        }
+
+        const accuracy = latestAccuracy;
+        const score = accuracy.overall_data_quality_score;
+        const threshold = accuracy.quality_threshold;
+        const passed = accuracy.passed;
+
+        return (
+            <div className="space-y-4">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Analyzer Accuracy</div>
+                        <button
+                            onClick={() => fetchAnalyzerAccuracy(reportId)}
+                            className="text-xs px-2 py-1 rounded border border-gray-200 hover:bg-gray-50 text-gray-700"
+                        >
+                            Recheck Accuracy
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="border border-gray-100 rounded p-3 bg-gray-50">
+                            <div className="text-[10px] text-gray-500 uppercase">Quality Score</div>
+                            <div className="text-lg font-semibold text-gray-800 mt-1">
+                                {typeof score === 'number' ? `${(score * 100).toFixed(1)}%` : 'N/A'}
+                            </div>
+                        </div>
+                        <div className="border border-gray-100 rounded p-3 bg-gray-50">
+                            <div className="text-[10px] text-gray-500 uppercase">Threshold</div>
+                            <div className="text-lg font-semibold text-gray-800 mt-1">
+                                {typeof threshold === 'number' ? `${(threshold * 100).toFixed(1)}%` : 'N/A'}
+                            </div>
+                        </div>
+                        <div className="border border-gray-100 rounded p-3 bg-gray-50">
+                            <div className="text-[10px] text-gray-500 uppercase">Validation Errors</div>
+                            <div className="text-lg font-semibold text-gray-800 mt-1">{accuracy.validation_errors_count ?? 0}</div>
+                        </div>
+                        <div className="border border-gray-100 rounded p-3 bg-gray-50">
+                            <div className="text-[10px] text-gray-500 uppercase">Missing Values</div>
+                            <div className="text-lg font-semibold text-gray-800 mt-1">{accuracy.missing_values_count ?? 0}</div>
+                        </div>
+                    </div>
+                    <div className={`mt-3 text-xs font-semibold inline-flex px-2 py-1 rounded border ${passed === true ? 'bg-green-50 text-green-700 border-green-200' : passed === false ? 'bg-red-50 text-red-700 border-red-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                        Accuracy Gate: {passed === true ? 'PASSED' : passed === false ? 'NOT PASSED' : 'PENDING'}
+                    </div>
+                </div>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="text-xs uppercase tracking-wide text-gray-500 font-semibold mb-3">Analytics Output</div>
+                    <pre className="text-xs whitespace-pre-wrap text-gray-700 bg-gray-50 border border-gray-100 rounded p-2 max-h-80 overflow-auto">
+                        {JSON.stringify(payload.analytics || {}, null, 2)}
+                    </pre>
+                </div>
+            </div>
+        );
+    };
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans text-gray-900 pb-20">
       <header className="bg-white border-b border-gray-200 px-8 py-4 shadow-sm sticky top-0 z-10">
@@ -411,7 +661,15 @@ function DashboardApp() {
                         </p>
                     </div>
                     <button 
-                        onClick={() => { setBatchId(null); setReports([]); setReportDetails({}); }} 
+                        onClick={() => { 
+                            setBatchId(null); 
+                            setReports([]); 
+                            setReportDetails({});
+                            setExtractionViews({});
+                            setAnalyzerViews({});
+                            setAnalyzerAccuracy({});
+                            setReportViewMode({});
+                        }} 
                         className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
                         Upload New Batch
@@ -483,7 +741,9 @@ function DashboardApp() {
                                             <div className="bg-white border border-gray-200 rounded p-3">
                                                 <div className="text-[10px] text-gray-500 uppercase">QUALITY SCORE</div>
                                                 <div className="text-lg font-semibold text-gray-800 mt-1">
-                                                    {typeof reportDetails[report.id]?.confidence?.overall_data_quality_score === 'number'
+                                                    {typeof analyzerAccuracy[report.id]?.accuracy?.overall_data_quality_score === 'number'
+                                                        ? `${(analyzerAccuracy[report.id].accuracy.overall_data_quality_score * 100).toFixed(1)}%`
+                                                        : typeof reportDetails[report.id]?.confidence?.overall_data_quality_score === 'number'
                                                         ? `${(reportDetails[report.id].confidence.overall_data_quality_score * 100).toFixed(1)}%`
                                                         : 'N/A'}
                                                 </div>
@@ -493,7 +753,31 @@ function DashboardApp() {
                                     </div>
                                 </div>
                             )}
+
+                            {report.id && (
+                                <div className="mb-6 border border-gray-200 rounded-lg bg-gray-50 p-2 inline-flex gap-2">
+                                    <button
+                                        onClick={() => setReportViewMode((prev) => ({ ...prev, [report.id]: 'overview' }))}
+                                        className={`text-xs px-3 py-1.5 rounded ${((reportViewMode[report.id] || 'overview') === 'overview') ? 'bg-white border border-gray-300 text-gray-800' : 'text-gray-600 hover:text-gray-800'}`}
+                                    >
+                                        Overview
+                                    </button>
+                                    <button
+                                        onClick={() => openExtractionView(report.id)}
+                                        className={`text-xs px-3 py-1.5 rounded ${((reportViewMode[report.id] || 'overview') === 'extraction') ? 'bg-white border border-gray-300 text-gray-800' : 'text-gray-600 hover:text-gray-800'}`}
+                                    >
+                                        Extractions
+                                    </button>
+                                    <button
+                                        onClick={() => openAnalyzerView(report.id)}
+                                        className={`text-xs px-3 py-1.5 rounded ${((reportViewMode[report.id] || 'overview') === 'analyzer') ? 'bg-white border border-gray-300 text-gray-800' : 'text-gray-600 hover:text-gray-800'}`}
+                                    >
+                                        Analyzer
+                                    </button>
+                                </div>
+                            )}
                             
+                            {(reportViewMode[report.id] || 'overview') === 'overview' && (
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                                 {Object.entries(SERVICES_MAP).map(([key, service]) => {
                                     const details = reportDetails[report.id];
@@ -533,6 +817,19 @@ function DashboardApp() {
                                     );
                                 })}
                             </div>
+                            )}
+
+                            {(reportViewMode[report.id] || 'overview') === 'extraction' && (
+                                <div className="mt-2">
+                                    {renderExtractionPanel(report.id)}
+                                </div>
+                            )}
+
+                            {(reportViewMode[report.id] || 'overview') === 'analyzer' && (
+                                <div className="mt-2">
+                                    {renderAnalyzerPanel(report.id)}
+                                </div>
+                            )}
                             
                             {/* Download Section */}
                             {reportDetails[report.id]?.pdf_path && (

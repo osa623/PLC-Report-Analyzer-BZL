@@ -41,6 +41,31 @@ function createReportRoutes(container) {
   );
 
   router.get(
+    "/:reportId/extractions",
+    asyncHandler((req, res) => reportController.getExtractions(req, res))
+  );
+
+  router.get(
+    "/:reportId/extractions/:sectionKey",
+    asyncHandler((req, res) => reportController.getExtractionBySection(req, res))
+  );
+
+  router.get(
+    "/:reportId/extractions/:sectionKey/download",
+    asyncHandler((req, res) => reportController.downloadExtraction(req, res))
+  );
+
+  router.get(
+    "/:reportId/analyzer",
+    asyncHandler((req, res) => reportController.getAnalyzerView(req, res))
+  );
+
+  router.get(
+    "/:reportId/analyzer/accuracy",
+    asyncHandler((req, res) => reportController.getAnalyzerAccuracy(req, res))
+  );
+
+  router.get(
     "/:reportId",
     asyncHandler((req, res) => reportController.getById(req, res))
   );

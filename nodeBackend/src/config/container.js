@@ -28,7 +28,8 @@ function createContainer() {
     uploadDir: env.uploadDir,
     serviceClient,
     redisClient, // Inject Redis
-    batchPipelineConcurrency: env.batchPipelineConcurrency
+    batchPipelineConcurrency: env.batchPipelineConcurrency,
+    analyticsQualityThreshold: env.analyticsQualityThreshold
   });
   const reportController = new ReportController({ reportService });
   

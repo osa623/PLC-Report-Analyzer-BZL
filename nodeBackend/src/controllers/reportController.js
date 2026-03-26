@@ -57,6 +57,82 @@ class ReportController {
     return res.status(200).json(report);
   }
 
+  async getExtractions(req, res) {
+    const payload = await this.reportService.getExtractions(req.params.reportId);
+    if (!payload) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    return res.status(200).json(payload);
+  }
+
+  async getExtractionBySection(req, res) {
+    const payload = await this.reportService.getExtractionBySection(
+      req.params.reportId,
+      req.params.sectionKey
+    );
+
+    if (!payload) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    if (payload.error === "section_not_found") {
+      return res.status(404).json({ error: "Extraction section not found" });
+    }
+
+    return res.status(200).json(payload);
+  }
+
+  async downloadExtraction(req, res) {
+    const format = String(req.query.format || "md").toLowerCase();
+    const download = await this.reportService.downloadExtractionBySection({
+      reportId: req.params.reportId,
+      sectionKey: req.params.sectionKey,
+      format
+    });
+
+    if (!download) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    if (download.error === "section_not_found") {
+      return res.status(404).json({ error: "Extraction section not found" });
+    }
+
+    if (download.error === "unsupported_format") {
+      return res.status(400).json({
+        error: "Unsupported format",
+        supported_formats: download.supportedFormats || []
+      });
+    }
+
+    res.setHeader("Content-Type", download.contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${download.fileName}"`
+    );
+
+    return res.status(200).send(download.buffer);
+  }
+
+  async getAnalyzerView(req, res) {
+    const payload = await this.reportService.getAnalyzerView(req.params.reportId);
+    if (!payload) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    return res.status(200).json(payload);
+  }
+
+  async getAnalyzerAccuracy(req, res) {
+    const payload = await this.reportService.getAnalyzerAccuracy(req.params.reportId);
+    if (!payload) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    return res.status(200).json(payload);
+  }
+
   async download(req, res) {
     const report = await this.reportService.getReport(req.params.reportId);
 
