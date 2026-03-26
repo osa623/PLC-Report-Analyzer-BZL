@@ -2,7 +2,7 @@ $ErrorActionPreference = "Continue"
 
 $root = $PSScriptRoot
 $pidFile = Join-Path $root "backend_pids.json"
-$backendPorts = @(3000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8015)
+$backendPorts = @(3000, 8001, 8002, 8003, 8004, 8005, 8006, 8007, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8015, 8016, 8017, 8018, 8019, 8020)
 $stoppedProcIds = New-Object System.Collections.Generic.HashSet[int]
 
 function Stop-ProcessSafe {

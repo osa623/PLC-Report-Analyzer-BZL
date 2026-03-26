@@ -7,7 +7,30 @@ import {
   Layers, AlertCircle, Loader2 
 } from 'lucide-react';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024;
+
+function getUploadErrorMessage(err) {
+    if (err?.response) {
+        const status = err.response.status;
+        const backendMessage = err.response?.data?.error || err.response?.data?.message;
+
+        if (status === 413) {
+            return 'Upload failed: file is too large. Maximum allowed size is 50MB per file.';
+        }
+        if (status === 400 && backendMessage) {
+            return `Upload failed: ${backendMessage}`;
+        }
+
+        return `Upload failed (${status}): ${backendMessage || 'Unexpected backend error.'}`;
+    }
+
+    if (err?.request) {
+        return 'Upload failed: cannot reach API. Make sure Node backend is running on port 3000 and frontend proxy/API URL is correct.';
+    }
+
+    return `Upload failed: ${err?.message || 'Unknown error'}`;
+}
 
 const PIPELINE_STAGE_SEQUENCE = [
     'UPLOAD',
@@ -178,6 +201,11 @@ function DashboardApp() {
 
   const onDrop = useCallback(async (acceptedFiles) => {
     if (acceptedFiles.length === 0) return;
+
+        if (!backendConnected) {
+            setError('API is disconnected. Start backends and retry upload.');
+            return;
+        }
     
     setUploading(true);
     setError(null);
@@ -210,13 +238,40 @@ function DashboardApp() {
       
     } catch (err) {
       console.error(err);
-      setError("Upload failed. Please check connection and try again.");
+            setError(getUploadErrorMessage(err));
     } finally {
       setUploading(false);
     }
-  }, []);
+    }, [backendConnected]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+    const onDropRejected = useCallback((fileRejections) => {
+        const first = fileRejections?.[0];
+        if (!first) {
+            setError('Upload rejected. Please select PDF files up to 50MB each.');
+            return;
+        }
+
+        const oversized = first.errors?.some((e) => e.code === 'file-too-large');
+        const badType = first.errors?.some((e) => e.code === 'file-invalid-type');
+
+        if (oversized) {
+            setError('Upload rejected: one or more files exceed 50MB.');
+            return;
+        }
+        if (badType) {
+            setError('Upload rejected: only PDF files are allowed.');
+            return;
+        }
+
+        setError('Upload rejected. Please check file type and size.');
+    }, []);
+
+    const { getRootProps, getInputProps, isDragActive } = useDropzone({
+        onDrop,
+        onDropRejected,
+        accept: { 'application/pdf': ['.pdf'] },
+        maxSize: MAX_UPLOAD_SIZE,
+    });
 
     useEffect(() => {
         const checkHealth = async () => {
