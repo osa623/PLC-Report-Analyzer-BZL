@@ -8,12 +8,24 @@ class ReportController {
   async create(req, res) {
     const { symbol, name, sector } = req.body;
 
-    const result = await this.reportService.uploadAndAnalyze({
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ error: "File upload failed or missing." });
+    }
+
+    // Create the report record and return immediately
+    const { report } = await this.reportService.createReportRecord({
       file: req.file,
-      company: { symbol, name, sector }
+      company: { symbol: symbol || "UNKNOWN", name: name || "Unknown Company", sector: sector || "Diversified" }
     });
 
-    res.status(201).json(result);
+    // Fire pipeline asynchronously — don't block the response
+    this.reportService.startPipelineAsync(report.id, req.file.path);
+
+    res.status(201).json({
+      report_id: report.id,
+      workflow_state: "UPLOADED",
+      message: "Report created. Pipeline started. Poll /pipeline/:reportId/stages for progress."
+    });
   }
 
   async createBatch(req, res) {
@@ -31,7 +43,7 @@ class ReportController {
     const result = await this.reportService.batchUploadAndAnalyze({
       batchId,
       files,
-      company: { symbol, name, sector }
+      company: { symbol: symbol || "BATCH", name: name || "Batch Upload", sector: sector || "Diversified" }
     });
 
     res.status(201).json(result);

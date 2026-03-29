@@ -35,12 +35,35 @@ class ReportService {
     this.analyticsQualityThreshold = Number(analyticsQualityThreshold) || 0.65;
   }
 
-  // --- Single Report Upload & Analysis ---
-  async uploadAndAnalyze({ file, company }) {
-    // If multer diskStorage is used, file.path is the location. 
-    // If we want to use our own naming convention or path, we can move/rename it, 
-    // but for now let's assume valid file on disk.
+  // --- Create report record (returns immediately, no pipeline) ---
+  async createReportRecord({ file, company }) {
+    if (!file || !file.path) {
+      throw new Error("File upload failed or missing.");
+    }
 
+    const companyRecord = await this.companyRepository.upsertCompany(company);
+
+    const report = await this.reportRepository.createReport({
+      companyId: companyRecord.id,
+      filePath: file.path
+    });
+
+    return { report, company: companyRecord };
+  }
+
+  // --- Start pipeline asynchronously (fire-and-forget) ---
+  startPipelineAsync(reportId, filePath) {
+    this.pipelineEngine.execute({
+      reportId,
+      filePath,
+      strictAllBackends: false
+    }).catch(err => {
+      console.error(`Pipeline failed for report ${reportId}:`, err.message);
+    });
+  }
+
+  // --- Single Report Upload & Analysis (sync, kept for batch flow) ---
+  async uploadAndAnalyze({ file, company }) {
     if (!file || !file.path) {
         throw new Error("File upload failed or missing.");
     }
@@ -52,8 +75,6 @@ class ReportService {
       filePath: file.path
     });
 
-    // Execute the analysis pipeline
-    // Note: The pipeline engine likely expects an absolute path.
     const result = await this.pipelineEngine.execute({
       reportId: report.id,
       filePath: file.path

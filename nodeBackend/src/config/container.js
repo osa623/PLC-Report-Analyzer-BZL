@@ -9,6 +9,7 @@ const { ServiceClient } = require("../clients/serviceClient");
 const { PipelineEngine } = require("../workflow/pipelineEngine");
 const { ReportService } = require("../services/reportService");
 const { ReportController } = require("../controllers/reportController");
+const { PipelineController } = require("../controllers/pipelineController");
 
 function createContainer() {
   const reportRepository = new ReportRepository(pool);
@@ -17,6 +18,7 @@ function createContainer() {
   const pipelineEngine = new PipelineEngine({
     reportRepository,
     serviceClient,
+    redisClient,
     logger,
     strictAllBackends: env.pipelineStrictAllBackends,
     analyticsQualityThreshold: env.analyticsQualityThreshold
@@ -27,12 +29,13 @@ function createContainer() {
     pipelineEngine,
     uploadDir: env.uploadDir,
     serviceClient,
-    redisClient, // Inject Redis
+    redisClient,
     batchPipelineConcurrency: env.batchPipelineConcurrency,
     analyticsQualityThreshold: env.analyticsQualityThreshold
   });
   const reportController = new ReportController({ reportService });
-  
+  const pipelineController = new PipelineController({ redisClient, reportRepository });
+
   return {
     env,
     logger,
@@ -44,7 +47,8 @@ function createContainer() {
     serviceClient,
     pipelineEngine,
     reportService,
-    reportController
+    reportController,
+    pipelineController
   };
 }
 
