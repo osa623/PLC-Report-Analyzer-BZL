@@ -62,7 +62,7 @@ Return this schema only:
 
 
 class GeminiExtractor:
-    """Gemini API client with model alias/fallback and retry strategy."""
+    """Gemini API client for strict JSON extraction of income-related notes."""
 
     def __init__(
         self,
@@ -141,7 +141,7 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def _generate_with_strategy(self, chunk_text: str, prompt: str) -> dict[str, Any]:
+    def _generate_with_strategy(self, chunk_text: str) -> dict[str, Any]:
         last_error: Exception | None = None
         for model_name in self.model_candidates:
             model = genai.GenerativeModel(model_name)
@@ -150,7 +150,7 @@ class GeminiExtractor:
                     response = model.generate_content(
                         [
                             "Here is the text chunk:\n\n" + chunk_text,
-                            prompt,
+                            INCOME_NOTES_CHUNK_PROMPT,
                         ],
                         generation_config=genai.GenerationConfig(
                             response_mime_type="application/json",
@@ -175,4 +175,4 @@ class GeminiExtractor:
     def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
         if not chunk_text.strip():
             return {"notes": []}
-        return self._generate_with_strategy(chunk_text, INCOME_NOTES_CHUNK_PROMPT)
+        return self._generate_with_strategy(chunk_text)

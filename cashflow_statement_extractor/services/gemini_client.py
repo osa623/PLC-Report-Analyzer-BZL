@@ -7,47 +7,62 @@ import google.generativeai as genai
 
 logger = logging.getLogger(__name__)
 
-CASHFLOW_CHUNK_PROMPT = """
-You are extracting financial data from a text chunk of an annual report.
+from common.prompts import SHARED_CURRENCY_SCALE_INSTRUCTION
 
-Task:
-Extract any Cash Flow Statement line items found in this text chunk.
-If the chunk contains NO cash flow data, return empty lists for rows.
-This is a PARTIAL extraction. Do not worry if totals or sections are missing.
+CASHFLOW_CHUNK_PROMPT = f"""
+You are a forensic financial data extractor for Sri Lankan Public Listed Companies (PLCs).
 
-Hard constraints:
-- Return ONLY valid JSON. No markdown. No commentary.
-- IGNORE any tables or data denominated in USD (US Dollars). ONLY extract LKR (Sri Lankan Rupees) tables or tables where currency is unspecified.
-- Preserve exact column headers exactly as printed (e.g. "2024 (Group)", "2023 (Company)").
-- Preserve exact row order and labels.
-- Capture hierarchy using indent_level and/or parent_label when possible.
-- Include sections: Operating Activities, Investing Activities, Financing Activities if they can be inferred.
-- Values must remain as strings exactly as shown in the table (including commas and parentheses).
+YOUR GOAL:
+Extract the **Cash Flow Statement** (Statement of Cash Flows) line items from the provided text chunk.
+This may include both Direct Method and Indirect Method presentations.
 
-Return this schema only:
-{
+{SHARED_CURRENCY_SCALE_INSTRUCTION}
+
+SPECIFIC INSTRUCTIONS FOR CASH FLOW:
+1. **Identify Sections**:
+   - `Operating Activities`: Cash generated from operations, interest paid, tax paid, etc.
+   - `Investing Activities`: Purchase/sale of PPE, investment income, etc.
+   - `Financing Activities`: Dividend paid, loan repayments, share issues.
+
+2. **Mandatory Line Items**:
+   - You MUST extract the line "Net increase / (decrease) in cash and cash equivalents" (or similar wording).
+   - You MUST extract "Cash and cash equivalents at the beginning of the year".
+   - You MUST extract "Cash and cash equivalents at the end of the year".
+   - If presented, extract the components of "Cash and cash equivalents" (e.g., "Cash in hand", "Bank overdrafts").
+
+3. **Direct Method**:
+   - If the statement uses the Direct Method (e.g., "Cash receipts from customers", "Cash paid to suppliers"), extract these lines with high precision.
+
+4. **Negative Values**:
+   - Items in parentheses `(123)` are negative. Return them as negative numbers (e.g., `-123`).
+
+JSON RESPONSE SCHEMA:
+{{
   "statement_type": "cashflow_statement",
-  "currency": "string or null",
-  "scale": "string or null",
+  "detected_currency": "LKR",
+  "currency_symbol": "Rs.",
+  "scale": "000",
+  "scale_multiplier": 1000,
+  "is_audited": true,
+  "period_end_date": "YYYY-MM-DD",
   "rows": [
-    {
-      "label": "string",
-      "values": {
-        "<Exact Column Header>": "value as printed or null"
-      },
-      "section": "Operating Activities|Investing Activities|Financing Activities|null",
-      "subsection": "string or null",
-      "parent_label": "string or null",
-      "indent_level": 0,
-      "note_reference": "string or null"
-    }
+    {{
+      "label": "exact row label",
+      "values": {{
+        "2024": 12500,
+        "2023": 11200
+      }},
+      "section": "Operating|Investing|Financing|Net Increase|Reconciliation|null",
+      "parent_label": "parent header if indented",
+      "notes": "note number reference"
+    }}
   ]
-}
+}}
 """
 
 
 class GeminiExtractor:
-    """Gemini API client with model alias/fallback and retry strategy."""
+    """Gemini API client for strict JSON extraction of cash flow statements from text chunks."""
 
     def __init__(
         self,
@@ -124,9 +139,10 @@ class GeminiExtractor:
 
         if not isinstance(parsed, dict):
             raise ValueError("Gemini response is not a JSON object")
+            
         return parsed
 
-    def _generate_with_strategy(self, chunk_text: str, prompt: str) -> dict[str, Any]:
+    def _generate_with_strategy(self, chunk_text: str) -> dict[str, Any]:
         last_error: Exception | None = None
         for model_name in self.model_candidates:
             model = genai.GenerativeModel(model_name)
@@ -135,7 +151,7 @@ class GeminiExtractor:
                     response = model.generate_content(
                         [
                             "Here is the text chunk:\n\n" + chunk_text,
-                            prompt,
+                            CASHFLOW_CHUNK_PROMPT,
                         ],
                         generation_config=genai.GenerationConfig(
                             response_mime_type="application/json",
@@ -160,4 +176,5 @@ class GeminiExtractor:
     def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
         if not chunk_text.strip():
             return {"rows": []}
-        return self._generate_with_strategy(chunk_text, CASHFLOW_CHUNK_PROMPT)
+        return self._generate_with_strategy(chunk_text)
+

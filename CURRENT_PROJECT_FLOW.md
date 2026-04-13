@@ -2,6 +2,12 @@
 
 This document defines the target end-to-end architecture for financial report analysis. It supersedes prior analytics-first behavior and formalizes a data-first pipeline where validation and confidence govern downstream analytics and reporting.
 
+## Consolidation Reference
+
+For the approved three-service consolidation design (service boundary reduction only, no behavioral weakening), see:
+
+- `THREE_SERVICE_CONSOLIDATED_ARCHITECTURE.md`
+
 ## 1. Final System Flow (Canonical)
 
 PDF Upload

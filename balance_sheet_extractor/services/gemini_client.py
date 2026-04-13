@@ -8,27 +8,49 @@ import google.generativeai as genai
 logger = logging.getLogger(__name__)
 
 BALANCE_SHEET_CHUNK_PROMPT = """
-You are extracting financial data from a text chunk of an annual report.
+You are a forensic financial data extractor.
 
 Task:
 Extract any Balance Sheet (Statement of Financial Position) line items found in this text chunk.
-If the chunk contains NO balance sheet data, return empty lists for rows.
-This is a PARTIAL extraction. Do not worry if totals or sections are missing.
+
+CRITICAL DATA EXTRACTION RULES:
+
+1. CURRENCY DETECTION:
+   - You must detect the currency of the table.
+   - Look for headers like "Rs 000", "Rs '000", "Rs. '000", "Rs Ths", "Rs Thousands", "Rs Mn", "Rs Mill", "LKR '000", "LKR Mn".
+   - IGNORE tables where the header or footnote says "USD", "US$", "In US Dollars", or similar. If the table is in USD, return "currency_skipped": true and empty rows.
+   - Output `detected_currency`: "LKR" (or "USD" if ignored).
+
+2. SCALE NORMALIZATION:
+   - The canonical unit for this system is "Rs 000" (Thousands of LKR).
+   - "Rs Mn" or "Rs Million" -> output `scale_multiplier`: 1000.
+   - "Rs Bn" or "Rs Billion" -> output `scale_multiplier`: 1000000.
+   - "Rs 000" or "Rs '000" -> output `scale_multiplier`: 1.
+   - Output `scale_multiplier`: The number you multiply the column by to get Rs '000.
+
+3. REQUIRED FIELD: TOTAL ASSETS
+   - You MUST extract the line item "Total Assets" (or "Total Assets").
+   - It usually appears after the last asset line item (e.g., Other Assets).
+   - Do NOT miss this line. It is CRITICAL.
+
+Rules you MUST follow:
+- TWO YEARS: Each table has columns for current year (e.g. 2024) and prior year (e.g. 2023). Extract BOTH columns.
+- MISSING = NULL: If a value is not present, return null. Do NOT interpolate or estimate.
+- NEGATIVE VALUES: Expense items may appear in parentheses (123,456) which means -123,456. Store as negative number string or number.
+- SECTIONS: Identify generic sections (Assets, Liabilities, Equity) if clearly visible.
 
 Hard constraints:
-- Return ONLY valid JSON. No markdown. No commentary.
-- IGNORE any tables or data denominated in USD (US Dollars). ONLY extract LKR (Sri Lankan Rupees) tables or tables where currency is unspecified.
-- Preserve exact column headers exactly as printed (e.g. "2024 (Group)", "2023 (Company)").
-- Preserve exact row order and labels.
-- Capture hierarchy using indent_level and/or parent_label when possible.
-- Include sections: Assets, Liabilities, Equity if they can be inferred.
-- Values must remain as strings exactly as shown in the table (including commas and parentheses).
+- Return ONLY valid JSON.
+- Preserve exact column headers exactly as printed.
+- Preserve exact row labels.
+- Capture hierarchy using "parent_label" or "indent_level" when possible.
 
 Return this schema only:
 {
   "statement_type": "balance_sheet",
-  "currency": "string or null",
-  "scale": "string or null",
+  "currency_skipped": false,
+  "detected_currency": "string (LKR or null)",
+  "scale_multiplier": "number (e.g. 1.0, 1000.0, 1000000.0)",
   "rows": [
     {
       "label": "string",
@@ -47,7 +69,7 @@ Return this schema only:
 
 
 class GeminiExtractor:
-    """Gemini API client with model alias/fallback and retry strategy."""
+    """Gemini API client for strict JSON extraction of balance sheets from text chunks."""
 
     def __init__(
         self,
@@ -126,7 +148,7 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def _generate_with_strategy(self, chunk_text: str, prompt: str) -> dict[str, Any]:
+    def _generate_with_strategy(self, chunk_text: str) -> dict[str, Any]:
         last_error: Exception | None = None
         for model_name in self.model_candidates:
             model = genai.GenerativeModel(model_name)
@@ -135,7 +157,7 @@ class GeminiExtractor:
                     response = model.generate_content(
                         [
                             "Here is the text chunk:\n\n" + chunk_text,
-                            prompt,
+                            BALANCE_SHEET_CHUNK_PROMPT,
                         ],
                         generation_config=genai.GenerationConfig(
                             response_mime_type="application/json",
@@ -160,4 +182,5 @@ class GeminiExtractor:
     def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
         if not chunk_text.strip():
             return {"rows": []}
-        return self._generate_with_strategy(chunk_text, BALANCE_SHEET_CHUNK_PROMPT)
+        return self._generate_with_strategy(chunk_text)
+

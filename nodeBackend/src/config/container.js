@@ -21,7 +21,8 @@ function createContainer() {
     redisClient,
     logger,
     strictAllBackends: env.pipelineStrictAllBackends,
-    analyticsQualityThreshold: env.analyticsQualityThreshold
+    analyticsQualityThreshold: env.analyticsQualityThreshold,
+    consolidatedPipelineMode: env.consolidatedPipelineMode
   });
   const reportService = new ReportService({
     reportRepository,

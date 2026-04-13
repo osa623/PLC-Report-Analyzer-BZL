@@ -14,6 +14,29 @@ Extract any Statement of Profit or Loss (Income Statement) line items found in t
 If the chunk contains no income statement data, return an empty rows list.
 This is a PARTIAL extraction.
 
+CRITICAL DATA EXTRACTION RULES:
+
+1. CURRENCY DETECTION:
+   - You must detect the currency of the table.
+   - Look for headers like "Rs 000", "Rs '000", "Rs. '000", "Rs Ths", "Rs Thousands", "Rs Mn", "Rs Mill", "LKR '000", "LKR Mn".
+   - IGNORE tables where the header or footnote says "USD", "US$", "In US Dollars", or similar. If the table is in USD, return an empty `rows` list.
+   - Output `detected_currency`: "LKR" (or "USD" if ignored).
+
+2. SCALE NORMALIZATION:
+   - The canonical unit for this system is "Rs 000" (Thousands of LKR).
+   - "Rs Mn" or "Rs Million" -> output `scale_multiplier`: 1000.
+   - "Rs Bn" or "Rs Billion" -> output `scale_multiplier`: 1000000.
+   - "Rs 000" or "Rs '000" -> output `scale_multiplier`: 1.
+   - Output `scale_multiplier`: The number you multiply the column by to get Rs '000.
+
+3. DISAMBIGUATION RULES:
+   - "Revenue" vs "Net Profit":
+     - EXTRACT exact line-item names.
+     - "Revenue" or "Interest Income" is usually the FIRST DATA ROW.
+     - "Profit for the year" or "Net Profit" is usually near the BOTTOM.
+     - Do NOT confuse "Gross Income" with "Net Profit".
+     - Do NOT extract "Comprehensive Income" as "Net Profit".
+
 Hard constraints:
 - Return ONLY valid JSON. No markdown. No commentary.
 - Preserve exact column headers exactly as printed (e.g. "2024 (Group)", "2023 (Company)").
@@ -26,8 +49,8 @@ Hard constraints:
 Return this schema only:
 {
     "statement_type": "income_statement",
-    "currency": "string or null",
-    "scale": "string or null",
+    "detected_currency": "string (LKR or null)",
+    "scale_multiplier": "number (e.g. 1.0, 1000.0, 1000000.0)",
     "rows": [
         {
             "label": "string",
@@ -47,7 +70,7 @@ Return this schema only:
 
 
 class GeminiExtractor:
-    """Gemini API client with model alias/fallback and retry strategy."""
+    """Gemini API client for strict JSON extraction of income statements from text chunks."""
 
     def __init__(
         self,
@@ -126,7 +149,7 @@ class GeminiExtractor:
             raise ValueError("Gemini response is not a JSON object")
         return parsed
 
-    def _generate_with_strategy(self, chunk_text: str, prompt: str) -> dict[str, Any]:
+    def _generate_with_strategy(self, chunk_text: str) -> dict[str, Any]:
         last_error: Exception | None = None
         for model_name in self.model_candidates:
             model = genai.GenerativeModel(model_name)
@@ -135,7 +158,7 @@ class GeminiExtractor:
                     response = model.generate_content(
                         [
                             "Here is the text chunk:\n\n" + chunk_text,
-                            prompt,
+                            INCOME_STATEMENT_CHUNK_PROMPT,
                         ],
                         generation_config=genai.GenerationConfig(
                             response_mime_type="application/json",
@@ -160,4 +183,4 @@ class GeminiExtractor:
     def extract_chunk(self, chunk_text: str) -> dict[str, Any]:
         if not chunk_text.strip():
             return {"rows": []}
-        return self._generate_with_strategy(chunk_text, INCOME_STATEMENT_CHUNK_PROMPT)
+        return self._generate_with_strategy(chunk_text)

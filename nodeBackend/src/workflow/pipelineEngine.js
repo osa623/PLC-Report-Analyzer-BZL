@@ -8,13 +8,15 @@ class PipelineEngine {
     redisClient,
     logger,
     strictAllBackends = false,
-    analyticsQualityThreshold = 0.65
+    analyticsQualityThreshold = 0.65,
+    consolidatedPipelineMode = false
   }) {
     this.reportRepository = reportRepository;
     this.serviceClient = serviceClient;
     this.redisClient = redisClient;
     this.logger = logger;
     this.strictAllBackends = strictAllBackends;
+    this.consolidatedPipelineMode = consolidatedPipelineMode;
     this.analyticsQualityThreshold = Number(analyticsQualityThreshold) || 0.65;
     this.requiredTimeoutMs = 300000;
     this.optionalTimeoutMs = 300000;
@@ -148,6 +150,124 @@ class PipelineEngine {
   // Main pipeline execution
   // ---------------------------------------------------------------------------
 
+  async executeConsolidated({ reportId, filePath, strictMode, report }) {
+    // -----------------------------------------------------------------------
+    // STAGE: PARSING + STRUCTURE + EXTRACTION (handled in consolidated service)
+    // -----------------------------------------------------------------------
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.PARSING);
+    await this._startStage(reportId, "PARSING");
+    const parseStart = Date.now();
+
+    await this.invokeRequired("ingestion_extraction_platform", "/run-ingestion-extraction", {
+      report_id: reportId,
+      file_path: filePath,
+      strict_mode: strictMode
+    });
+
+    await this._completeStage(reportId, "PARSING", parseStart);
+
+    await this._startStage(reportId, "STRUCTURE");
+    const structStart = Date.now();
+    await this._completeStage(reportId, "STRUCTURE", structStart);
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.STRUCTURE_DETECTED);
+
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.EXTRACTING);
+    await this._startStage(reportId, "EXTRACTION");
+    const extractStart = Date.now();
+    await this._completeStage(reportId, "EXTRACTION", extractStart);
+
+    // -----------------------------------------------------------------------
+    // STAGE: AGGREGATION + VALIDATION + ANALYTICS (handled in consolidated service)
+    // -----------------------------------------------------------------------
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.AGGREGATING);
+    await this._startStage(reportId, "AGGREGATION");
+    const aggStart = Date.now();
+
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.VALIDATING);
+    await this._startStage(reportId, "VALIDATION");
+    const valStart = Date.now();
+
+    const qualityRun = await this.invokeRequired(
+      "data_quality_intelligence_engine",
+      "/run-quality-intelligence",
+      {
+        report_id: reportId,
+        file_path: filePath,
+        sector: report.sector,
+        strict_mode: strictMode
+      }
+    );
+
+    await this._completeStage(reportId, "AGGREGATION", aggStart);
+    await this._completeStage(reportId, "VALIDATION", valStart);
+
+    const overallDataQualityScore =
+      this.resolveQualityScore(qualityRun?.validation || qualityRun) ??
+      qualityRun?.overall_data_quality_score ??
+      null;
+
+    if (qualityRun?.status === "low_confidence" || (
+      typeof overallDataQualityScore === "number" &&
+      overallDataQualityScore < this.analyticsQualityThreshold
+    )) {
+      const msg = `Low confidence: overall_data_quality_score=${Number(overallDataQualityScore).toFixed(
+        3
+      )} threshold=${this.analyticsQualityThreshold.toFixed(3)}`;
+
+      await this._skipStage(reportId, "ANALYTICS", msg);
+      await this._skipStage(reportId, "REPORT", msg);
+      await this.reportRepository.updateWorkflowState(reportId, WorkflowState.LOW_CONFIDENCE);
+
+      return {
+        status: "low_confidence",
+        report_id: reportId,
+        workflow_state: WorkflowState.LOW_CONFIDENCE,
+        overall_data_quality_score: overallDataQualityScore,
+        quality_threshold: this.analyticsQualityThreshold,
+        message: msg
+      };
+    }
+
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.ANALYZING);
+    await this._startStage(reportId, "ANALYTICS");
+    const analyticsStart = Date.now();
+    await this._completeStage(reportId, "ANALYTICS", analyticsStart);
+
+    // -----------------------------------------------------------------------
+    // STAGE: REPORT GENERATION
+    // -----------------------------------------------------------------------
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.GENERATING_REPORT);
+    await this._startStage(reportId, "REPORT");
+    const reportStart = Date.now();
+
+    const generated = await this.invokeRequired("reporting_delivery_service", "/run-report", {
+      report_id: reportId,
+      file_path: filePath
+    });
+
+    if (generated?.status !== "completed") {
+      throw new ApplicationError("Report generation failed", 502, {
+        reportId,
+        generatorStatus: generated?.status || "unknown"
+      });
+    }
+
+    if (generated.pdf_path) {
+      await this.reportRepository.updateReportPdfPath(reportId, generated.pdf_path);
+    }
+
+    await this._completeStage(reportId, "REPORT", reportStart);
+    await this.reportRepository.updateWorkflowState(reportId, WorkflowState.COMPLETED);
+
+    return {
+      ...generated,
+      status: "completed",
+      report_id: reportId,
+      workflow_state: WorkflowState.COMPLETED,
+      overall_data_quality_score: overallDataQualityScore
+    };
+  }
+
   async execute({ reportId, filePath, strictAllBackends }) {
     try {
       const report = await this.reportRepository.getById(reportId);
@@ -157,6 +277,16 @@ class PipelineEngine {
 
       const strictMode =
         typeof strictAllBackends === "boolean" ? strictAllBackends : this.strictAllBackends;
+
+      if (this.consolidatedPipelineMode) {
+        await this._initStages(reportId);
+        return this.executeConsolidated({
+          reportId,
+          filePath,
+          strictMode,
+          report
+        });
+      }
 
       const invokeParticipation = strictMode
         ? this.invokeRequired.bind(this)
