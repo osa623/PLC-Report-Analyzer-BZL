@@ -1,7 +1,7 @@
 {
-  "name": "cse-report-orchestrator",
+  "name": "plc-node-backend",
   "version": "1.0.0",
-  "description": "Node.js orchestration backend for CSE annual report intelligence platform",
+  "description": "Node backend API gateway for PLC pipeline",
   "main": "src/server.js",
   "type": "commonjs",
   "scripts": {
@@ -11,17 +11,11 @@
   "dependencies": {
     "axios": "^1.8.2",
     "cors": "^2.8.5",
-    "docx": "^9.5.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",
-    "pdfkit": "^0.17.2",
-    "pg": "^8.13.3",
-    "pino": "^9.6.0",
-    "pino-http": "^10.3.0",
     "redis": "^5.11.0",
-    "uuid": "^11.1.0",
-    "xlsx": "^0.18.5"
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"

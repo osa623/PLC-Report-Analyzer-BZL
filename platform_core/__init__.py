@@ -1,1 +1,1 @@
-"""Shared platform core modules for all Python services."""
+"""Platform Core — shared contracts and infrastructure for all microservices."""
