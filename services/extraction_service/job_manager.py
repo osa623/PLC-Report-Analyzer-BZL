@@ -12,4 +12,6 @@ def mark_success(redis, report_id: str) -> None:
 
 
 def mark_failed(redis, report_id: str, error: str) -> None:
-    update_pipeline_stage(redis, report_id, "EXTRACTION", "failed", 86400, {"error": error})
+    update_pipeline_stage(
+        redis, report_id, "EXTRACTION", "failed", 86400, {"error": error}
+    )

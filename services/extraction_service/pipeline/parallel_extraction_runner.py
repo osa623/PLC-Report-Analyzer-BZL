@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from extractors import balance_sheet, cashflow, equity, esg, governance, income_statement, notes, risk, segment
+from extractors import (
+    balance_sheet,
+    cashflow,
+    equity,
+    esg,
+    governance,
+    income_statement,
+    notes,
+    risk,
+    segment,
+)
 
 
 def run_parallel_extraction(chunks: list[dict], structure: dict, config) -> dict:

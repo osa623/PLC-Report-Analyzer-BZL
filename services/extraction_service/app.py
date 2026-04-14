@@ -32,7 +32,9 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
         chunks = chunk_pages(pages)
         structure = detect_structure(chunks)
         extraction_output = run_parallel_extraction(chunks, structure, cfg)
-        payload = save_canonical_raw(redis, request.report_id, extraction_output, cfg.redis_ttl_seconds)
+        payload = save_canonical_raw(
+            redis, request.report_id, extraction_output, cfg.redis_ttl_seconds
+        )
         mark_success(redis, request.report_id)
         return {
             "status": "completed",

@@ -1,0 +1,6 @@
+{
+  "golden_benchmark": {
+    "min_pass_rate": 0.5,
+    "require_normalized": true
+  }
+}

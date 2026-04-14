@@ -199,6 +199,55 @@ Stop local stack:
 ./stop_all_backends_local.ps1
 ```
 
+### Environment variables
+
+Create a local `.env` file at the repository root by copying `.env.sample` and filling in secret values. Do NOT commit `.env`.
+
+```bash
+cp .env.sample .env
+# edit .env and insert keys
+```
+
+We load `.env` automatically at service startup when `python-dotenv` is installed. To install it for the extraction service:
+
+```bash
+cd services/extraction_service
+python -m pip install -r requirements.txt
+```
+
+Key variables are listed in `.env.sample` (Document AI, AWS, Gemini, REDIS_URL, DATABASE_DSN, METRICS_PORT, PIPELINE_TMP).
+
+**End-to-end local setup (recommended for real E2E testing)**
+
+- Start local infra (Redis + Postgres) and install deps (requires Docker):
+
+```powershell
+# Windows PowerShell
+.\scripts\setup_full_env.ps1 -InstallDeps -StartInfra
+```
+
+```bash
+# POSIX
+./scripts/setup_full_env.sh install-deps start-infra
+```
+
+- After starting infra, edit `.env` and populate real credentials (Document AI processor, Google service account or API key, AWS keys, Gemini/OpenAI keys). Do NOT commit `.env`.
+
+- Run the pipeline on a PDF (example):
+
+```bash
+# from repo root (use .venv if created)
+python -m services.extraction_service.orchestrator path/to/input.pdf path/to/output.json
+```
+
+If you prefer an offline development run (no cloud SDKs), use:
+
+```bash
+python scripts/run_golden_benchmark_local.py
+```
+
+
+
 ## API Entry Points (Node Orchestrator)
 
 - POST /reports
