@@ -6,38 +6,12 @@ function QualityGauge({ score }) {
   const rotation = (percent / 100) * 180;
 
   return (
-    <div style={{ position: 'relative', width: 120, height: 70 }}>
+    <div className="relative" style={{ width: 120, height: 70 }}>
       <svg width="120" height="70" viewBox="0 0 120 70">
-        {/* Background arc */}
-        <path
-          d="M 10 65 A 50 50 0 0 1 110 65"
-          fill="none"
-          stroke="#e2e8f0"
-          strokeWidth="10"
-          strokeLinecap="round"
-        />
-        {/* Filled arc */}
-        <path
-          d="M 10 65 A 50 50 0 0 1 110 65"
-          fill="none"
-          stroke={color}
-          strokeWidth="10"
-          strokeLinecap="round"
-          strokeDasharray={`${(percent / 100) * 157} 157`}
-          style={{ transition: 'stroke-dasharray 0.6s ease' }}
-        />
+        <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke="#e2e8f0" strokeWidth="10" strokeLinecap="round" />
+        <path d="M 10 65 A 50 50 0 0 1 110 65" fill="none" stroke={color} strokeWidth="10" strokeLinecap="round" strokeDasharray={`${(percent / 100) * 157} 157`} style={{ transition: 'stroke-dasharray 0.6s cubic-bezier(0.16,1,0.3,1)' }} />
       </svg>
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 2,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: 20,
-          fontWeight: 800,
-          color: color,
-        }}
-      >
+      <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 text-xl font-bold tracking-[-0.025em]" style={{ color }}>
         {percent}%
       </div>
     </div>
@@ -50,62 +24,32 @@ export default function QualitySummary({ validatedData, errors }) {
     const rows = validated.validated_rows || [];
     const score = validated.overall_data_quality_score;
     const validRows = rows.filter((r) => (r.confidence_score || 0) >= 0.6).length;
-    const provisionalRows = rows.filter(
-      (r) => (r.confidence_score || 0) >= 0.4 && (r.confidence_score || 0) < 0.6
-    ).length;
-    const issues =
-      (errors?.total_errors || 0) + (errors?.total_missing || 0) + (errors?.total_weak || 0);
-
-    return {
-      score,
-      totalRows: rows.length,
-      validRows,
-      provisionalRows,
-      issues,
-    };
+    const provisionalRows = rows.filter((r) => (r.confidence_score || 0) >= 0.4 && (r.confidence_score || 0) < 0.6).length;
+    const issues = (errors?.total_errors || 0) + (errors?.total_missing || 0) + (errors?.total_weak || 0);
+    return { score, totalRows: rows.length, validRows, provisionalRows, issues };
   }, [validatedData, errors]);
 
   return (
     <div className="card fade-in">
       <div className="card-header">Data Quality Summary</div>
       <div className="card-body">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
-          {/* Gauge */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div className="flex items-center gap-8 flex-wrap">
+          <div className="flex flex-col items-center gap-1">
             <QualityGauge score={stats.score} />
-            <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>
-              Overall Quality Score
-            </span>
+            <span className="text-[12px] text-slate-500 font-medium tracking-[-0.01em]">Overall Quality Score</span>
           </div>
-
-          {/* Stats grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, flex: 1 }}>
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                Valid Rows
+          <div className="grid grid-cols-2 gap-4 flex-1">
+            {[
+              { label: 'Valid Rows', value: stats.validRows, color: 'text-slate-900' },
+              { label: 'Total Rows', value: stats.totalRows, color: 'text-slate-900' },
+              { label: 'Provisional Rows', value: stats.provisionalRows, color: 'text-amber-600' },
+              { label: 'Issues Found', value: stats.issues, color: stats.issues > 0 ? 'text-red-500' : 'text-green-600' },
+            ].map((item) => (
+              <div key={item.label}>
+                <div className="text-[11px] text-slate-400 font-semibold uppercase tracking-widest">{item.label}</div>
+                <div className={`text-2xl font-bold tracking-[-0.025em] ${item.color}`}>{item.value}</div>
               </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#1e293b' }}>{stats.validRows}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                Total Rows
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#1e293b' }}>{stats.totalRows}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                Provisional Rows
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: '#f59e0b' }}>{stats.provisionalRows}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-                Issues Found
-              </div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: stats.issues > 0 ? '#ef4444' : '#22c55e' }}>
-                {stats.issues}
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

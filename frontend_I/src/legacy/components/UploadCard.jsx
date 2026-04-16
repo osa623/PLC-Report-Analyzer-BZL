@@ -24,44 +24,33 @@ export default function UploadCard({ onUpload, isUploading }) {
       <div className="card-body">
         {/* File drop zone */}
         <div
-          style={{
-            border: '2px dashed #cbd5e1',
-            borderRadius: 12,
-            padding: '32px 24px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            position: 'relative',
-            background: file ? '#f0fdf4' : '#fafbfc',
-            transition: 'all 0.2s',
-          }}
+          className={`relative rounded-2xl border-2 border-dashed text-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+            ${file ? 'border-green-300 bg-green-50/30' : 'border-slate-200 bg-slate-50/30 hover:border-slate-300 hover:bg-white'}`}
+          style={{ padding: '32px 24px' }}
         >
           <input
             type="file"
             accept=".pdf"
             onChange={handleFileChange}
             id="file-upload-input"
-            style={{
-              position: 'absolute',
-              inset: 0,
-              opacity: 0,
-              cursor: 'pointer',
-              width: '100%',
-              height: '100%',
-            }}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
-          <Upload size={32} color={file ? '#22c55e' : '#94a3b8'} style={{ marginBottom: 8 }} />
-          <div style={{ fontSize: 14, fontWeight: 600, color: '#1e293b' }}>
+          <div className={`w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-3 transition-colors duration-200
+            ${file ? 'bg-green-100 border border-green-200/60' : 'bg-slate-100 border border-slate-200/60'}`}>
+            <Upload size={20} className={file ? 'text-green-600' : 'text-slate-400'} />
+          </div>
+          <div className="text-[13px] font-semibold text-slate-800 tracking-[-0.01em]">
             {file ? file.name : 'Drop PDF here or click to select'}
           </div>
-          <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+          <div className="text-[11px] text-slate-400 mt-1 tracking-[-0.01em]">
             {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'Max 50MB • PDF only'}
           </div>
         </div>
 
         {/* Company metadata */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+        <div className="grid grid-cols-2 gap-3 mt-4">
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+            <label className="block text-[11px] font-medium text-slate-400 mb-1.5 tracking-[-0.01em]">
               Company Symbol
             </label>
             <input
@@ -70,18 +59,11 @@ export default function UploadCard({ onUpload, isUploading }) {
               onChange={(e) => setSymbol(e.target.value)}
               placeholder="e.g. JKH"
               id="company-symbol-input"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-                fontSize: 13,
-                outline: 'none',
-              }}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all duration-200 tracking-[-0.01em]"
             />
           </div>
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+            <label className="block text-[11px] font-medium text-slate-400 mb-1.5 tracking-[-0.01em]">
               Company Name
             </label>
             <input
@@ -90,34 +72,19 @@ export default function UploadCard({ onUpload, isUploading }) {
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="e.g. John Keells Holdings"
               id="company-name-input"
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                border: '1px solid #e2e8f0',
-                borderRadius: 6,
-                fontSize: 13,
-                outline: 'none',
-              }}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all duration-200 tracking-[-0.01em]"
             />
           </div>
         </div>
-        <div style={{ marginTop: 12 }}>
-          <label style={{ fontSize: 11, fontWeight: 600, color: '#64748b', display: 'block', marginBottom: 4 }}>
+        <div className="mt-3">
+          <label className="block text-[11px] font-medium text-slate-400 mb-1.5 tracking-[-0.01em]">
             Sector
           </label>
           <select
             value={sector}
             onChange={(e) => setSector(e.target.value)}
             id="sector-select"
-            style={{
-              width: '100%',
-              padding: '8px 12px',
-              border: '1px solid #e2e8f0',
-              borderRadius: 6,
-              fontSize: 13,
-              outline: 'none',
-              background: '#fff',
-            }}
+            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-[13px] bg-white focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all duration-200 tracking-[-0.01em]"
           >
             {['Diversified', 'Banking', 'Insurance', 'Manufacturing', 'Telecommunications',
               'Plantations', 'Hotels', 'Healthcare', 'Energy', 'Real Estate', 'IT', 'Other'].map(
@@ -133,27 +100,14 @@ export default function UploadCard({ onUpload, isUploading }) {
           onClick={handleSubmit}
           disabled={!file || isUploading}
           id="start-analysis-btn"
-          style={{
-            width: '100%',
-            marginTop: 16,
-            padding: '12px',
-            borderRadius: 8,
-            border: 'none',
-            background: !file || isUploading ? '#cbd5e1' : '#2d3a8c',
-            color: '#fff',
-            fontWeight: 600,
-            fontSize: 14,
-            cursor: !file || isUploading ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'all 0.2s',
-          }}
+          className={`w-full mt-4 py-3 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 transition-all duration-200 tracking-[-0.01em]
+            ${!file || isUploading
+              ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+              : 'bg-slate-900 text-white hover:bg-slate-800 shadow-sm hover:shadow-md cursor-pointer'}`}
         >
           {isUploading ? (
             <>
-              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={16} className="animate-spin" />
               Processing...
             </>
           ) : (

@@ -11,14 +11,11 @@ function formatMetricValue(val) {
 
 function extractKeyMetrics(analytics) {
   if (!analytics) return [];
-
   const metrics = [];
 
-  // Extract from ratios
   const ratios = analytics.ratios;
   if (ratios) {
     const ratioData = ratios.ratios || ratios.data || ratios;
-
     const map = Array.isArray(ratioData)
       ? Object.fromEntries(ratioData.map(r => [r.metric_name || r.name || r.label, r]))
       : (typeof ratioData === 'object' ? ratioData : {});
@@ -27,8 +24,7 @@ function extractKeyMetrics(analytics) {
       for (const k of keys) {
         const lower = k.toLowerCase();
         for (const [name, val] of Object.entries(map)) {
-          if (name.toLowerCase().includes(lower))
-            return typeof val === 'object' ? (val.value ?? val) : val;
+          if (name.toLowerCase().includes(lower)) return typeof val === 'object' ? (val.value ?? val) : val;
         }
       }
       return null;
@@ -45,7 +41,6 @@ function extractKeyMetrics(analytics) {
     if (roe != null) metrics.push({ label: 'ROE', value: roe, confidence: ratios.confidence_score || 0.83 });
   }
 
-  // Extract from patterns
   const patterns = analytics.patterns;
   if (patterns) {
     const patternList = patterns.patterns || patterns.data || (Array.isArray(patterns) ? patterns : []);
@@ -70,7 +65,7 @@ export default function AnalyticsCards({ analytics }) {
     return (
       <div className="card">
         <div className="card-header">Key Analytics Metrics</div>
-        <div className="card-body" style={{ textAlign: 'center', color: '#94a3b8', padding: 32 }}>
+        <div className="card-body text-center text-slate-400 py-8 text-[13px] tracking-[-0.01em]">
           Analytics not yet available. Pipeline must complete analytics stage.
         </div>
       </div>
@@ -81,20 +76,12 @@ export default function AnalyticsCards({ analytics }) {
     <div className="card fade-in">
       <div className="card-header">Key Analytics Metrics</div>
       <div className="card-body">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
           {metrics.map((m, i) => (
             <div key={i} className="metric-card">
               <div className="metric-card-label">{m.label}</div>
               {m.isPattern ? (
-                <div style={{
-                  background: '#f1f5f9',
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: '#1e293b',
-                  marginTop: 4,
-                }}>
+                <div className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-800 mt-1 tracking-[-0.01em]">
                   {m.value}
                 </div>
               ) : (

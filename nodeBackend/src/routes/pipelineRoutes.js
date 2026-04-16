@@ -66,6 +66,14 @@ async function startPipeline(reportId, filePath) {
   await triggerGenerateReport(reportId);
 }
 
+function inferFailedStage(error) {
+  const url = String(error?.config?.url || '').toLowerCase();
+  if (url.includes('/extract')) return 'EXTRACTION';
+  if (url.includes('/analyze')) return 'ANALYSIS';
+  if (url.includes('/generate-report')) return 'REPORTING';
+  return 'EXTRACTION';
+}
+
 router.post('/upload', upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) {
@@ -100,10 +108,11 @@ router.post('/reports', upload.single('report'), async (req, res, next) => {
     );
 
     void startPipeline(reportId, req.file.path).catch(async (error) => {
+      const failedStage = inferFailedStage(error);
       const state = {
-        EXTRACTION: { status: 'failed', diagnostics: { error: error.message } },
-        ANALYSIS: { status: 'failed', diagnostics: { error: error.message } },
-        REPORTING: { status: 'failed', diagnostics: { error: error.message } },
+        EXTRACTION: { status: failedStage === 'EXTRACTION' ? 'failed' : 'completed', diagnostics: { error: error.message } },
+        ANALYSIS: { status: failedStage === 'ANALYSIS' ? 'failed' : (failedStage === 'EXTRACTION' ? 'pending' : 'completed'), diagnostics: { error: error.message } },
+        REPORTING: { status: failedStage === 'REPORTING' ? 'failed' : 'pending', diagnostics: { error: error.message } },
       };
       await redis.set(`report:${reportId}:pipeline_stages`, JSON.stringify(state));
     });

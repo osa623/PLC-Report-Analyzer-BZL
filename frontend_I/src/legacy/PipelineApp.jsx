@@ -69,34 +69,21 @@ export default function PipelineApp() {
 
           const wf = stages.workflow_state;
 
-          // Fetch validated data when validation is complete or beyond
           const validationDone = stages.stages?.some(
             (s) => s.stage === 'VALIDATION' && s.status === 'completed'
           );
           if (validationDone) {
-            try {
-              const vd = await fetchValidated(id);
-              setValidatedData(vd);
-            } catch (_) {}
-
-            try {
-              const ed = await fetchErrors(id);
-              setErrorsData(ed);
-            } catch (_) {}
+            try { const vd = await fetchValidated(id); setValidatedData(vd); } catch (_) {}
+            try { const ed = await fetchErrors(id); setErrorsData(ed); } catch (_) {}
           }
 
-          // Fetch analytics when analytics done
           const analyticsDone = stages.stages?.some(
             (s) => s.stage === 'ANALYTICS' && s.status === 'completed'
           );
           if (analyticsDone) {
-            try {
-              const ad = await fetchAnalytics(id);
-              setAnalyticsData(ad);
-            } catch (_) {}
+            try { const ad = await fetchAnalytics(id); setAnalyticsData(ad); } catch (_) {}
           }
 
-          // Stop polling when pipeline reaches terminal state
           if (['COMPLETED', 'FAILED', 'LOW_CONFIDENCE'].includes(wf)) {
             clearInterval(pollRef.current);
             pollRef.current = null;
@@ -106,7 +93,6 @@ export default function PipelineApp() {
         }
       };
 
-      // Immediate first poll
       poll();
       pollRef.current = setInterval(poll, 3000);
     },
@@ -114,9 +100,7 @@ export default function PipelineApp() {
   );
 
   useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
   // ─── Upload handler ────────────────────────────────────────
@@ -136,10 +120,7 @@ export default function PipelineApp() {
       setContextTab('Pipeline Overview');
       startPolling(id);
     } catch (err) {
-      const msg =
-        err?.response?.data?.error ||
-        err?.message ||
-        'Upload failed. Check if backend is running.';
+      const msg = err?.response?.data?.error || err?.message || 'Upload failed. Check if backend is running.';
       setUploadError(msg);
     } finally {
       setIsUploading(false);
@@ -153,45 +134,32 @@ export default function PipelineApp() {
 
   // ─── Render helpers ────────────────────────────────────────
   const renderPipelineOverview = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
+    <div className="space-y-5 fade-in">
       <PipelineStepper stages={stages} />
 
-      {/* Three-column grid: table + metrics + errors */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 0.8fr', gap: 16, alignItems: 'start' }}>
+      {/* Three-column grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr_0.8fr] gap-4 items-start">
         <ValidatedDataTable data={validatedData} />
         <AnalyticsCards analytics={analyticsData} />
         <ErrorsPanel errors={errorsData} />
       </div>
 
       {/* Bottom row: charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ConfidenceChart validatedData={validatedData} />
         <QualitySummary validatedData={validatedData} errors={errorsData} />
       </div>
 
-      {/* Trend charts */}
       <TrendCharts validatedData={validatedData} />
 
       {/* Download section */}
       {workflowState === 'COMPLETED' && reportId && (
-        <div className="card" style={{ padding: 16, display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="card p-4 flex justify-end">
           <a
             href={downloadReportUrl(reportId)}
             download
             id="download-report-btn"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 8,
-              background: '#2d3a8c',
-              color: '#fff',
-              padding: '10px 20px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 600,
-              textDecoration: 'none',
-              transition: 'background 0.2s',
-            }}
+            className="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-[13px] font-medium hover:bg-slate-800 transition-all duration-200 shadow-sm hover:shadow-md tracking-[-0.01em]"
           >
             Download Analysis Report (PDF)
           </a>
@@ -200,23 +168,13 @@ export default function PipelineApp() {
 
       {/* Low confidence notice */}
       {workflowState === 'LOW_CONFIDENCE' && (
-        <div
-          style={{
-            background: '#fffbeb',
-            border: '1px solid #fde68a',
-            borderRadius: 10,
-            padding: 20,
-            display: 'flex',
-            gap: 12,
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ fontSize: 24 }}>⚠️</span>
+        <div className="rounded-2xl border border-amber-200/60 bg-amber-50/50 p-5 flex gap-3 items-center">
+          <span className="text-2xl">⚠️</span>
           <div>
-            <div style={{ fontWeight: 700, color: '#92400e', fontSize: 14 }}>
+            <div className="text-[13px] font-semibold text-amber-800 tracking-[-0.01em]">
               Low Confidence — Analytics & Report Skipped
             </div>
-            <div style={{ fontSize: 13, color: '#a16207', marginTop: 4 }}>
+            <div className="text-[12px] text-amber-700 mt-1 tracking-[-0.01em]">
               The overall data quality score is below the threshold. Review errors and validated data to diagnose issues.
             </div>
           </div>
@@ -226,28 +184,28 @@ export default function PipelineApp() {
   );
 
   const renderValidatedDataTab = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
+    <div className="space-y-5 fade-in">
       <ValidatedDataTable data={validatedData} />
       <TrendCharts validatedData={validatedData} />
     </div>
   );
 
   const renderAnalyticsTab = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
+    <div className="space-y-5 fade-in">
       <AnalyticsCards analytics={analyticsData} />
       <TrendCharts validatedData={validatedData} />
     </div>
   );
 
   const renderErrorsTab = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
+    <div className="space-y-5 fade-in">
       <ErrorsPanel errors={errorsData} />
       <ConfidenceChart validatedData={validatedData} />
     </div>
   );
 
   const renderQualityTab = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
+    <div className="space-y-5 fade-in">
       <QualitySummary validatedData={validatedData} errors={errorsData} />
       <ConfidenceChart validatedData={validatedData} />
     </div>
@@ -255,26 +213,19 @@ export default function PipelineApp() {
 
   const renderContextContent = () => {
     if (!reportId) return null;
-
     switch (contextTab) {
-      case 'Pipeline Overview':
-        return renderPipelineOverview();
-      case 'Validated Data':
-        return renderValidatedDataTab();
-      case 'Analytics':
-        return renderAnalyticsTab();
-      case 'Errors & Warnings':
-        return renderErrorsTab();
-      case 'Data Quality Summary':
-        return renderQualityTab();
-      default:
-        return renderPipelineOverview();
+      case 'Pipeline Overview': return renderPipelineOverview();
+      case 'Validated Data': return renderValidatedDataTab();
+      case 'Analytics': return renderAnalyticsTab();
+      case 'Errors & Warnings': return renderErrorsTab();
+      case 'Data Quality Summary': return renderQualityTab();
+      default: return renderPipelineOverview();
     }
   };
 
   // ─── Main layout ───────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg)' }}>
+    <div className="min-h-screen bg-slate-50">
       <Navbar activeTab={globalTab} onTabChange={setGlobalTab} connected={connected} />
 
       {reportId && (
@@ -287,35 +238,23 @@ export default function PipelineApp() {
         />
       )}
 
-      <main style={{ maxWidth: 1340, margin: '0 auto', padding: '24px 28px 60px' }}>
+      <main className="max-w-[1340px] mx-auto px-6 lg:px-8 py-6 pb-16">
         {/* Dashboard tab */}
         {globalTab === 'Dashboard' && (
           <>
             {!reportId ? (
               <div>
-                <div style={{ textAlign: 'center', marginBottom: 32, marginTop: 40 }}>
-                  <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1e293b', margin: 0 }}>
+                <div className="text-center mb-8 mt-10">
+                  <h1 className="text-[24px] font-bold text-slate-900 tracking-[-0.025em] leading-tight">
                     Financial Report Analysis
                   </h1>
-                  <p style={{ color: '#64748b', fontSize: 15, marginTop: 8 }}>
+                  <p className="text-[14px] text-slate-500 mt-2 tracking-[-0.01em]">
                     Upload an annual report PDF to begin pipeline analysis with validation and quality scoring.
                   </p>
                 </div>
                 <UploadCard onUpload={handleUpload} isUploading={isUploading} />
                 {uploadError && (
-                  <div
-                    style={{
-                      maxWidth: 560,
-                      margin: '16px auto 0',
-                      background: '#fef2f2',
-                      border: '1px solid #fecaca',
-                      borderRadius: 8,
-                      padding: '12px 16px',
-                      color: '#991b1b',
-                      fontSize: 13,
-                      fontWeight: 500,
-                    }}
-                  >
+                  <div className="max-w-[560px] mx-auto mt-4 bg-red-50/80 border border-red-200/60 rounded-xl px-4 py-3 text-red-700 text-[13px] font-medium tracking-[-0.01em]">
                     {uploadError}
                   </div>
                 )}
@@ -326,19 +265,19 @@ export default function PipelineApp() {
           </>
         )}
 
-        {/* Reports tab — placeholder with upload option */}
+        {/* Reports tab */}
         {globalTab === 'Reports' && (
           <div className="fade-in">
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b', marginBottom: 16 }}>
+            <h2 className="text-[18px] font-semibold text-slate-900 mb-4 tracking-[-0.025em]">
               Reports
             </h2>
             {reportId ? (
-              <div className="card" style={{ padding: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="card p-5">
+                <div className="flex justify-between items-center">
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>Current Report: {reportId.slice(0, 12)}...</div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{companyInfo}</div>
-                    <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>State: {workflowState || 'UPLOADED'}</div>
+                    <div className="text-[13px] font-semibold text-slate-800 tracking-[-0.01em]">Current Report: {reportId.slice(0, 12)}...</div>
+                    <div className="text-[12px] text-slate-500 mt-0.5 tracking-[-0.01em]">{companyInfo}</div>
+                    <div className="text-[12px] text-slate-500 mt-0.5 tracking-[-0.01em]">State: {workflowState || 'UPLOADED'}</div>
                   </div>
                   <button
                     onClick={() => {
@@ -350,15 +289,7 @@ export default function PipelineApp() {
                       setCompanyInfo(null);
                       if (pollRef.current) clearInterval(pollRef.current);
                     }}
-                    style={{
-                      background: '#f1f5f9',
-                      border: '1px solid #e2e8f0',
-                      padding: '8px 16px',
-                      borderRadius: 6,
-                      fontSize: 13,
-                      fontWeight: 500,
-                      cursor: 'pointer',
-                    }}
+                    className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-[13px] font-medium hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 tracking-[-0.01em]"
                   >
                     Upload New Report
                   </button>
@@ -372,10 +303,10 @@ export default function PipelineApp() {
 
         {/* Comparisons tab */}
         {globalTab === 'Comparisons' && (
-          <div className="fade-in" style={{ textAlign: 'center', padding: 60, color: '#94a3b8' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#475569' }}>Comparative Analysis</h2>
-            <p style={{ fontSize: 14 }}>
+          <div className="fade-in text-center py-16">
+            <div className="text-4xl mb-4">📊</div>
+            <h2 className="text-[18px] font-semibold text-slate-600 tracking-[-0.025em]">Comparative Analysis</h2>
+            <p className="text-[13px] text-slate-400 mt-2 tracking-[-0.01em]">
               Upload multiple reports to enable cross-report comparison. Available after batch processing.
             </p>
           </div>
@@ -384,32 +315,26 @@ export default function PipelineApp() {
         {/* Settings tab */}
         {globalTab === 'Settings' && (
           <div className="fade-in">
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b', marginBottom: 16 }}>Settings</h2>
-            <div className="card" style={{ padding: 20 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <h2 className="text-[18px] font-semibold text-slate-900 mb-4 tracking-[-0.025em]">Settings</h2>
+            <div className="card p-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
                     Analytics Quality Threshold
                   </div>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: '#1e293b' }}>65%</div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                  <div className="text-2xl font-bold text-slate-900 tracking-[-0.025em]">65%</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5 tracking-[-0.01em]">
                     Reports below this will skip analytics and report generation
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
                     API Status
                   </div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 700,
-                      color: connected ? '#22c55e' : '#ef4444',
-                    }}
-                  >
+                  <div className={`text-[14px] font-bold ${connected ? 'text-green-600' : 'text-red-500'}`}>
                     {connected ? '● Connected' : '● Disconnected'}
                   </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>
+                  <div className="text-[11px] text-slate-400 mt-0.5 tracking-[-0.01em]">
                     Backend orchestrator on port 3000
                   </div>
                 </div>

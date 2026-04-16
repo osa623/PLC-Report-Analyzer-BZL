@@ -56,9 +56,9 @@ const TopBar = ({ onToggleSidebar }) => {
   };
 
   return (
-    <header className="h-16 bg-white  border-b border-slate-200 flex items-center justify-between lg:px-12 shrink-0">
+    <header className="sticky top-0 z-30 h-16 bg-white/95 backdrop-blur border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 shrink-0">
       {/* Left: hamburger + breadcrumb */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 min-w-0">
         <button
           onClick={onToggleSidebar}
           className="lg:hidden w-9 h-9 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
@@ -66,7 +66,7 @@ const TopBar = ({ onToggleSidebar }) => {
           <Bars3Icon className="w-5 h-5 text-slate-600" />
         </button>
 
-        <div className="hidden sm:flex items-center gap-1.5 text-sm">
+        <div className="hidden sm:flex items-center gap-1.5 text-sm min-w-0">
           <span className="text-slate-400 font-medium">PDF Extractor Panel</span>
           {crumbs.map((c, i) => (
             <span key={i} className="flex items-center gap-1.5">
@@ -82,7 +82,7 @@ const TopBar = ({ onToggleSidebar }) => {
       </div>
 
       {/* Right: credits, profile */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 pl-2">
         {/* Credits badge */}
         <button
           onClick={() => navigate('/pricing')}

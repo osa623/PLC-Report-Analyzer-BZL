@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 
 module.exports = {
   port: Number(process.env.PORT || 3000),
@@ -6,5 +7,5 @@ module.exports = {
   extractionServiceUrl: process.env.EXTRACTION_SERVICE_URL || 'http://localhost:8001',
   analysisServiceUrl: process.env.ANALYSIS_SERVICE_URL || 'http://localhost:8002',
   reportingServiceUrl: process.env.REPORTING_SERVICE_URL || 'http://localhost:8003',
-  uploadDir: process.env.UPLOAD_DIR || 'uploads'
+  uploadDir: path.resolve(process.cwd(), process.env.UPLOAD_DIR || 'uploads')
 };

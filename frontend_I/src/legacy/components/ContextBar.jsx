@@ -20,43 +20,26 @@ export default function ContextBar({
   const scorePercent = typeof qualityScore === 'number' ? `${Math.round(qualityScore * 100)}%` : '—';
 
   return (
-    <div
-      id="context-bar"
-      style={{
-        background: '#fff',
-        borderBottom: '1px solid #e2e8f0',
-        padding: '0 28px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-      }}
-    >
+    <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-lg border-b border-slate-200/40">
       {/* Top row: Report info + quality score */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '10px 0 6px 0',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ fontWeight: 700, fontSize: 13, color: '#1e293b' }}>
-            Report ID: {reportId ? reportId.slice(0, 8) : '—'}
+      <div className="flex items-center justify-between px-6 lg:px-8 py-2.5">
+        <div className="flex items-center gap-3">
+          <span className="text-[12px] font-semibold text-slate-800 tracking-[-0.01em]">
+            Report: {reportId ? reportId.slice(0, 8) : '—'}
           </span>
-          <span style={{ color: '#94a3b8', fontSize: 13 }}>|</span>
-          <span style={{ fontSize: 13, color: '#475569', fontWeight: 500 }}>
-            {company || 'Select Company'} ▾
+          <span className="text-slate-300 text-[12px]">·</span>
+          <span className="text-[12px] text-slate-500 font-medium tracking-[-0.01em]">
+            {company || 'No company selected'}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: '#64748b', fontWeight: 500 }}>Overall Quality Score:</span>
-          <span style={{ fontSize: 16, fontWeight: 800, color: scoreColor }}>{scorePercent}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-400 font-medium tracking-[-0.01em]">Quality:</span>
+          <span className="text-[14px] font-bold" style={{ color: scoreColor }}>{scorePercent}</span>
         </div>
       </div>
 
       {/* Bottom row: tabs */}
-      <div style={{ display: 'flex', gap: 0, borderTop: '1px solid #f1f5f9' }}>
+      <div className="flex gap-0 px-6 lg:px-8 border-t border-slate-100/60">
         {CONTEXT_TABS.map((tab) => {
           const isActive = activeContextTab === tab;
           return (
@@ -64,18 +47,10 @@ export default function ContextBar({
               key={tab}
               id={`context-tab-${tab.toLowerCase().replace(/[^a-z]/g, '-')}`}
               onClick={() => onContextTabChange(tab)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                borderBottom: isActive ? '2px solid #2d3a8c' : '2px solid transparent',
-                color: isActive ? '#2d3a8c' : '#64748b',
-                padding: '10px 16px',
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                whiteSpace: 'nowrap',
-              }}
+              className={`px-3.5 py-2.5 text-[12px] font-medium border-b-2 transition-all duration-200 whitespace-nowrap tracking-[-0.01em]
+                ${isActive
+                  ? 'border-slate-900 text-slate-900'
+                  : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300'}`}
             >
               {tab}
             </button>

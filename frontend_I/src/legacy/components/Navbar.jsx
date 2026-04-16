@@ -1,60 +1,40 @@
 import React from 'react';
 import { FileText } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const NAV_TABS = ['Dashboard', 'Reports', 'Comparisons', 'Settings'];
 
 export default function Navbar({ activeTab, onTabChange, connected }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isEngineering = location.pathname === '/engineering';
+
   return (
     <nav
       id="global-navbar"
-      style={{
-        background: '#2d3a8c',
-        padding: '0 28px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: 52,
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}
+      className="sticky top-0 z-50 h-14 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-6 lg:px-8 transition-all duration-300"
     >
       {/* Left: Logo + Title + Tabs */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              background: 'rgba(255,255,255,0.15)',
-              borderRadius: 8,
-              padding: '6px 7px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <FileText size={20} color="#fff" />
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-slate-900 rounded-lg flex items-center justify-center">
+            <FileText size={14} color="#fff" />
           </div>
-          <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, letterSpacing: '-0.01em' }}>
-            Report Analysis
+          <span className="text-[14px] font-semibold text-slate-900 tracking-[-0.01em]">
+            {isEngineering ? 'Engineering Dashboard' : 'Report Analysis'}
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: 2 }}>
+        <div className="hidden md:flex items-center gap-0.5">
           {NAV_TABS.map((tab) => (
             <button
               key={tab}
               id={`nav-tab-${tab.toLowerCase()}`}
               onClick={() => onTabChange(tab)}
-              style={{
-                background: activeTab === tab ? 'rgba(255,255,255,0.15)' : 'transparent',
-                border: 'none',
-                color: activeTab === tab ? '#fff' : 'rgba(255,255,255,0.7)',
-                padding: '8px 16px',
-                borderRadius: 6,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
+              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]
+                ${activeTab === tab
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
             >
               {tab}
             </button>
@@ -62,27 +42,26 @@ export default function Navbar({ activeTab, onTabChange, connected }) {
         </div>
       </div>
 
-      {/* Right: Help + Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, fontWeight: 500 }}>Help</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ color: '#fff', fontSize: 13, fontWeight: 500 }}>Admin</span>
-          <div
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: '50%',
-              background: connected ? '#22c55e' : '#ef4444',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#fff',
-            }}
-          >
-            A
-          </div>
+      {/* Right: Nav links + status */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/home')}
+          className="text-[12px] font-medium text-slate-400 hover:text-slate-700 transition-colors duration-200 tracking-[-0.01em]"
+        >
+          Extraction Hub
+        </button>
+        <button
+          onClick={() => navigate(isEngineering ? '/pipeline' : '/engineering')}
+          className="text-[12px] font-medium text-slate-400 hover:text-slate-700 transition-colors duration-200 tracking-[-0.01em]"
+        >
+          {isEngineering ? 'Pipeline' : 'Engineering'}
+        </button>
+        <div className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors duration-200
+          ${connected
+            ? 'bg-green-50/80 text-green-700 border-green-200/60'
+            : 'bg-red-50/80 text-red-700 border-red-200/60'}`}
+        >
+          {connected ? '● Connected' : '● Disconnected'}
         </div>
       </div>
     </nav>

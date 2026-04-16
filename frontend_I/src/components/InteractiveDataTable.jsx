@@ -160,7 +160,7 @@ const InteractiveDataTable = ({ section }) => {
   };
 
   if (!rowData.length) {
-    return <p className="text-xs text-slate-400">No table rows available.</p>;
+    return <p className="text-[12px] text-slate-400 tracking-refined">No table rows available.</p>;
   }
 
   return (
@@ -176,15 +176,15 @@ const InteractiveDataTable = ({ section }) => {
             }
           }}
           placeholder="Search table"
-          className="text-xs border border-slate-200 rounded px-2 py-1"
+          className="text-[12px] border border-slate-200 rounded-xl px-3 py-1.5 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 transition-all duration-200 ease-apple tracking-refined placeholder:text-slate-400"
         />
-        <button onClick={copySelected} className="text-xs px-2 py-1 border rounded border-slate-200 bg-white">Copy Selected</button>
-        <button onClick={copyRow} className="text-xs px-2 py-1 border rounded border-slate-200 bg-white">Copy Row</button>
-        <button onClick={copyColumn} className="text-xs px-2 py-1 border rounded border-slate-200 bg-white">Copy Column</button>
-        <button onClick={copyTable} className="text-xs px-2 py-1 border rounded border-slate-200 bg-white">Copy Table</button>
+        <button onClick={copySelected} className="text-[11px] px-2.5 py-1.5 border rounded-xl border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 tracking-refined">Copy Selected</button>
+        <button onClick={copyRow} className="text-[11px] px-2.5 py-1.5 border rounded-xl border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 tracking-refined">Copy Row</button>
+        <button onClick={copyColumn} className="text-[11px] px-2.5 py-1.5 border rounded-xl border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 tracking-refined">Copy Column</button>
+        <button onClick={copyTable} className="text-[11px] px-2.5 py-1.5 border rounded-xl border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all duration-150 tracking-refined">Copy Table</button>
       </div>
 
-      <div className="ag-theme-alpine rounded-lg border border-slate-200 overflow-hidden" style={{ height: 420, width: '100%' }}>
+      <div className="ag-theme-alpine rounded-xl border border-slate-200/80 overflow-hidden shadow-apple-sm" style={{ height: 420, width: '100%' }}>
         <AgGridReact
           ref={gridRef}
           rowData={rowData}

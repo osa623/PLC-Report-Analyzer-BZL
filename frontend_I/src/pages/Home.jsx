@@ -171,7 +171,7 @@ const CardProgress = ({ sectionTitle }) => {
         <div className="mt-3 space-y-2">
             <div className="h-1 rounded-full bg-slate-100 overflow-hidden">
                 <div
-                    className="h-full rounded-full bg-indigo-500 transition-all duration-700 ease-out"
+                    className="h-full rounded-full bg-indigo-500 transition-all duration-700 ease-apple"
                     style={{ width: `${pct}%` }}
                 />
             </div>
@@ -193,7 +193,7 @@ const CardProgress = ({ sectionTitle }) => {
                                     <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />
                                 </span>
                             )}
-                            <span className={`text-[11px] leading-none ${done ? 'text-green-600' : active ? 'text-indigo-600 font-medium' : 'text-slate-400'}`}>
+                            <span className={`text-[11px] leading-none tracking-refined ${done ? 'text-green-600' : active ? 'text-indigo-600 font-medium' : 'text-slate-400'}`}>
                                 {l}
                             </span>
                         </div>
@@ -216,7 +216,7 @@ const StatementTable = ({ section }) => {
         return (
             <div className="py-10 text-center text-slate-400">
                 <TableCellsIcon className="w-8 h-8 mx-auto mb-1.5 opacity-40" />
-                <p className="text-xs">No data found</p>
+                <p className="text-[12px] tracking-refined">No data found</p>
             </div>
         );
     }
@@ -229,12 +229,12 @@ const StatementTable = ({ section }) => {
         return (
             <div className="space-y-3">
                 {(section?.paragraphs || []).map((p, idx) => (
-                    <p key={`p-${idx}`} className="text-[12px] text-slate-600 leading-relaxed">{p}</p>
+                    <p key={`p-${idx}`} className="text-[12px] text-slate-600 leading-relaxed tracking-refined">{p}</p>
                 ))}
                 {(section?.bullets || []).length > 0 && (
                     <ul className="list-disc pl-5 space-y-1">
                         {section.bullets.map((b, idx) => (
-                            <li key={`b-${idx}`} className="text-[12px] text-slate-600 leading-relaxed">{b}</li>
+                            <li key={`b-${idx}`} className="text-[12px] text-slate-600 leading-relaxed tracking-refined">{b}</li>
                         ))}
                     </ul>
                 )}
@@ -256,20 +256,20 @@ const StatementTable = ({ section }) => {
                 };
 
                 return (
-                    <div key={`${subsection?.title || 'sub'}-${idx}`} className="rounded-lg border border-slate-200 bg-white p-3">
+                    <div key={`${subsection?.title || 'sub'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white p-3">
                         <div className="mb-2">
-                            <p className="text-[12px] font-semibold text-slate-700">{subsection?.title || `Subsection ${idx + 1}`}</p>
-                            <p className="text-[11px] text-slate-400 uppercase tracking-wider">{subsection?.type || 'content'}</p>
+                            <p className="text-[12px] font-semibold text-slate-700 tracking-refined">{subsection?.title || `Subsection ${idx + 1}`}</p>
+                            <p className="text-[11px] text-slate-400 uppercase tracking-widest">{subsection?.type || 'content'}</p>
                         </div>
                         {isTable ? (
                             <InteractiveDataTable section={tableShape} />
                         ) : (
                             <div className="space-y-2">
                                 {(subsection?.paragraphs || []).length === 0 ? (
-                                    <p className="text-xs text-slate-400">No paragraph content</p>
+                                    <p className="text-[11px] text-slate-400 tracking-refined">No paragraph content</p>
                                 ) : (
                                     subsection.paragraphs.map((p, pIdx) => (
-                                        <p key={pIdx} className="text-[12px] text-slate-600 leading-relaxed">{p}</p>
+                                        <p key={pIdx} className="text-[12px] text-slate-600 leading-relaxed tracking-refined">{p}</p>
                                     ))
                                 )}
                             </div>
@@ -517,10 +517,10 @@ const Home = () => {
             {/* ---- Top bar ------------------------------------------------- */}
             <div className="flex items-end justify-between mb-8">
                 <div>
-                    <h1 className="text-[22px] font-semibold text-slate-900 leading-tight">
+                    <h1 className="text-[22px] font-semibold text-slate-900 leading-heading tracking-heading">
                         {phase === 'upload' ? 'Annual Report Extractor' : file?.name?.replace(/\.pdf$/i, '')}
                     </h1>
-                    <p className="text-[13px] text-slate-500 mt-0.5">
+                    <p className="text-[13px] text-slate-500 mt-0.5 tracking-refined leading-rhythm">
                         {phase === 'upload' && 'Upload a PDF to extract structured financial data.'}
                         {phase === 'extraction' && doneCount > 0 && (
                             <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; {doneCount}/{EXTRACTION_SECTIONS.length} extracted &middot; {totalRows} rows</>
@@ -532,16 +532,16 @@ const Home = () => {
                 </div>
                 <div className="flex items-center gap-3">
                     {phase === 'upload' && (
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5">
+                        <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-apple-sm">
                             <span className={`w-2 h-2 rounded-full ${credits > 0 ? 'bg-green-500' : 'bg-red-400'}`} />
-                            <span className="text-[13px] text-slate-600 font-medium">{credits} credit{credits !== 1 ? 's' : ''}</span>
+                            <span className="text-[13px] text-slate-600 font-medium tracking-refined">{credits} credit{credits !== 1 ? 's' : ''}</span>
                             {credits === 0 && (
-                                <button onClick={() => navigate('/pricing')} className="text-[11px] text-indigo-600 hover:text-indigo-700 font-medium ml-1">Buy more</button>
+                                <button onClick={() => navigate('/pricing')} className="text-[11px] text-indigo-600 hover:text-indigo-700 font-medium ml-1 tracking-refined">Buy more</button>
                             )}
                         </div>
                     )}
                     {phase === 'extraction' && (
-                        <button onClick={handleReset} className="text-[13px] text-slate-400 hover:text-slate-600 transition-colors">
+                        <button onClick={handleReset} className="text-[13px] text-slate-400 hover:text-slate-600 transition-colors duration-200 tracking-refined">
                             New file
                         </button>
                     )}
@@ -550,10 +550,10 @@ const Home = () => {
 
             {/* ---- Error --------------------------------------------------- */}
             {error && (
-                <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+                <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-200/80 bg-red-50/80 px-4 py-3 shadow-apple-sm animate-slide-down">
                     <ExclamationTriangleIcon className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
-                    <p className="flex-1 text-[13px] text-red-700">{error}</p>
-                    <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600"><XMarkIcon className="w-4 h-4" /></button>
+                    <p className="flex-1 text-[13px] text-red-700 tracking-refined">{error}</p>
+                    <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600 transition-colors duration-150"><XMarkIcon className="w-4 h-4" /></button>
                 </div>
             )}
 
@@ -564,27 +564,27 @@ const Home = () => {
                 <div
                     onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
                     onClick={() => !uploading && fileInputRef.current?.click()}
-                    className={`relative rounded-xl border-2 border-dashed transition-all duration-200 text-center cursor-pointer
+                    className={`relative rounded-2xl border-2 border-dashed transition-all duration-300 ease-apple text-center cursor-pointer
                         ${uploading ? 'pointer-events-none opacity-60' : ''}
-                        ${dragActive ? 'border-indigo-400 bg-indigo-50/50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                        ${dragActive ? 'border-indigo-400 bg-indigo-50/30 shadow-apple' : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple'}`}
                 >
                     <div className="py-20 px-6">
                         {uploading ? (
-                            <div className="space-y-3">
+                            <div className="space-y-3 animate-fade-in">
                                 <ArrowPathIcon className="w-8 h-8 mx-auto text-indigo-500 animate-spin" />
-                                <p className="text-sm text-slate-600 font-medium">Uploading {file?.name}...</p>
-                                <p className="text-xs text-slate-400">{(file?.size / 1024 / 1024).toFixed(1)} MB</p>
+                                <p className="text-sm text-slate-600 font-medium tracking-refined">Uploading {file?.name}...</p>
+                                <p className="text-[12px] text-slate-400 tracking-refined">{(file?.size / 1024 / 1024).toFixed(1)} MB</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="w-14 h-14 mx-auto rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center">
+                                <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shadow-apple-sm">
                                     <ArrowUpTrayIcon className="w-6 h-6 text-slate-400" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-slate-700">
+                                    <p className="text-sm font-medium text-slate-700 tracking-refined">
                                         {dragActive ? 'Drop your file' : 'Drop a PDF here or click to browse'}
                                     </p>
-                                    <p className="text-xs text-slate-400 mt-1">Annual reports up to 100 MB</p>
+                                    <p className="text-[12px] text-slate-400 mt-1 tracking-refined">Annual reports up to 100 MB</p>
                                 </div>
                             </div>
                         )}
@@ -601,18 +601,18 @@ const Home = () => {
 
                     {/* ---- Action row ---------------------------------------- */}
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2">
+                        <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2 shadow-apple-sm">
                             <DocumentTextIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px]">{file?.name}</span>
-                            <span className="text-[11px] text-green-600 bg-green-50 border border-green-200 rounded px-1.5 py-0.5 font-medium">
+                            <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px] tracking-refined">{file?.name}</span>
+                            <span className="text-[11px] text-green-600 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5 font-medium tracking-wide">
                                 Ready
                             </span>
                         </div>
                         <button
                             onClick={handleExtractAll}
                             disabled={extractingAll || anyBusy}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
-                                hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
+                                hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
                         >
                             {extractingAll
                                 ? <><ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> Extracting...</>
@@ -621,16 +621,16 @@ const Home = () => {
                     </div>
 
                     {fullReportProgress && (
-                        <div className="rounded-xl border border-slate-200 bg-white p-4">
+                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-apple-sm animate-slide-down">
                             <div className="flex items-center justify-between gap-3">
-                                <p className="text-[12px] font-medium text-slate-700">{fullReportProgress.message || 'Processing full report extraction...'}</p>
-                                <span className="text-[11px] text-slate-400">
+                                <p className="text-[12px] font-medium text-slate-700 tracking-refined">{fullReportProgress.message || 'Processing full report extraction...'}</p>
+                                <span className="text-[11px] text-slate-400 tracking-refined">
                                     {fullReportProgress.total > 0 ? `${fullReportProgress.step}/${fullReportProgress.total}` : 'running'}
                                 </span>
                             </div>
                             <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
                                 <div
-                                    className="h-full bg-indigo-500 transition-all duration-200"
+                                    className="h-full bg-indigo-500 transition-all duration-300 ease-apple rounded-full"
                                     style={{ width: `${fullReportProgress.total > 0 ? Math.min((fullReportProgress.step / fullReportProgress.total) * 100, 100) : 10}%` }}
                                 />
                             </div>
@@ -640,7 +640,7 @@ const Home = () => {
                     {/* ---- Cards by category --------------------------------- */}
                     {[...new Set(EXTRACTION_SECTIONS.map(s => s.category))].map(cat => (
                         <div key={cat}>
-                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-3">{cat}</p>
+                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">{cat}</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {EXTRACTION_SECTIONS.filter(s => s.category === cat).map(sec => {
                                     const st = sectionStates[sec.key];
@@ -663,46 +663,46 @@ const Home = () => {
                                             key={sec.key}
                                             id={`card-${sec.key}`}
                                             onClick={handleClick}
-                                            className={`rounded-xl border p-4 transition-all duration-150 select-none
-                                                ${isExtracting ? 'border-indigo-200 bg-indigo-50/30 cursor-wait'
-                                                    : isActive ? 'border-slate-900 bg-white shadow-sm cursor-pointer ring-1 ring-slate-900'
-                                                    : isErr ? 'border-red-200 bg-red-50/30 cursor-pointer'
-                                                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm cursor-pointer'}`}
+                                            className={`rounded-2xl border p-4 transition-all duration-200 ease-apple select-none
+                                                ${isExtracting ? 'border-indigo-200/80 bg-indigo-50/20 cursor-wait shadow-apple-sm'
+                                                    : isActive ? 'border-slate-900 bg-white shadow-apple cursor-pointer ring-1 ring-slate-900'
+                                                    : isErr ? 'border-red-200/80 bg-red-50/20 cursor-pointer shadow-apple-sm'
+                                                    : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple cursor-pointer shadow-apple-sm'}`}
                                         >
                                             {/* top row: icon + title + badge */}
                                             <div className="flex items-start gap-3">
-                                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0
-                                                    ${isActive ? 'bg-slate-900' : 'bg-slate-100'}`}>
-                                                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-600'}`} />
+                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
+                                                    ${isActive ? 'bg-slate-900 shadow-apple-sm' : 'bg-slate-50 border border-slate-100'}`}>
+                                                    <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500'}`} />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h3 className="text-[13px] font-semibold text-slate-800 truncate">{sec.title}</h3>
+                                                        <h3 className="text-[13px] font-semibold text-slate-800 truncate tracking-refined">{sec.title}</h3>
                                                         {isExtracting && (
-                                                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-100 rounded px-1.5 py-0.5">
+                                                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-100/80 rounded-lg px-1.5 py-0.5">
                                                                 <ArrowPathIcon className="w-3 h-3 animate-spin" /> Working
                                                             </span>
                                                         )}
                                                         {isDone && st.data && (
-                                                            <span className="shrink-0 text-[10px] font-medium text-green-700 bg-green-50 border border-green-200 rounded px-1.5 py-0.5">
+                                                            <span className="shrink-0 text-[10px] font-medium text-green-700 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5">
                                                                 {rows} rows
                                                             </span>
                                                         )}
                                                         {isDone && !st.data && (
-                                                            <span className="shrink-0 text-[10px] text-slate-400 bg-slate-100 rounded px-1.5 py-0.5">
+                                                            <span className="shrink-0 text-[10px] text-slate-400 bg-slate-50 rounded-lg px-1.5 py-0.5 tracking-refined">
                                                                 Not found
                                                             </span>
                                                         )}
                                                         {isErr && (
-                                                            <span className="shrink-0 text-[10px] text-red-600 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">
+                                                            <span className="shrink-0 text-[10px] text-red-600 bg-red-50/80 border border-red-200/60 rounded-lg px-1.5 py-0.5">
                                                                 Error
                                                             </span>
                                                         )}
                                                         {status === 'idle' && (
-                                                            <span className="shrink-0 text-[10px] text-slate-400">Click to extract</span>
+                                                            <span className="shrink-0 text-[10px] text-slate-400 tracking-refined">Click to extract</span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[12px] text-slate-500 mt-0.5 leading-snug">{sec.description}</p>
+                                                    <p className="text-[12px] text-slate-500 mt-0.5 leading-snug tracking-refined">{sec.description}</p>
                                                     <div className="mt-2 flex items-center gap-2">
                                                         <button
                                                             type="button"
@@ -711,7 +711,7 @@ const Home = () => {
                                                                 if (st?.data) setActiveSection(sec.key);
                                                             }}
                                                             disabled={!st?.data}
-                                                            className="text-[11px] px-2 py-1 rounded border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                                                            className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
                                                         >
                                                             Preview
                                                         </button>
@@ -722,7 +722,7 @@ const Home = () => {
                                                                 handleExtractSection(sec.key);
                                                             }}
                                                             disabled={isExtracting}
-                                                            className="text-[11px] px-2 py-1 rounded border border-slate-200 bg-white text-slate-600 disabled:opacity-40"
+                                                            className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
                                                         >
                                                             Re-extract
                                                         </button>
@@ -735,7 +735,7 @@ const Home = () => {
 
                                             {/* Error message */}
                                             {isErr && st.error && (
-                                                <p className="mt-2 text-[11px] text-red-500 line-clamp-2">{st.error}</p>
+                                                <p className="mt-2 text-[11px] text-red-500 line-clamp-2 tracking-refined">{st.error}</p>
                                             )}
                                         </div>
                                     );
@@ -746,23 +746,23 @@ const Home = () => {
 
                     {/* ---- Data viewer --------------------------------------- */}
                     {activeSection && activeData && (
-                        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+                        <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-apple-sm animate-scale-in">
+                            <div className="px-5 py-3 border-b border-slate-100/80 flex items-center justify-between">
                                 <div>
-                                    <h2 className="text-[15px] font-semibold text-slate-800">{activeDef?.title}</h2>
-                                    {activeData.title && <p className="text-[11px] text-slate-500 mt-0.5">{activeData.title}</p>}
-                                    {activeData.notes && <p className="text-[11px] text-slate-400 italic">{activeData.notes}</p>}
+                                    <h2 className="text-[15px] font-semibold text-slate-800 tracking-refined">{activeDef?.title}</h2>
+                                    {activeData.title && <p className="text-[11px] text-slate-500 mt-0.5 tracking-refined">{activeData.title}</p>}
+                                    {activeData.notes && <p className="text-[11px] text-slate-400 italic tracking-refined">{activeData.notes}</p>}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {activeData.page_numbers?.length > 0 && (
-                                        <span className="text-[11px] text-slate-400">pg {activeData.page_numbers.join(', ')}</span>
+                                        <span className="text-[11px] text-slate-400 tracking-refined">pg {activeData.page_numbers.join(', ')}</span>
                                     )}
-                                    <span className="text-[11px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                                    <span className="text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg tracking-refined">
                                         {rowCount(activeData)} rows
                                     </span>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleExtractSection(activeSection); }}
-                                        className="text-[11px] text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-colors"
+                                        className="text-[11px] text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg transition-colors duration-150 tracking-refined"
                                     >
                                         Re-extract
                                     </button>
@@ -776,16 +776,16 @@ const Home = () => {
 
                     {/* ---- Export bar ----------------------------------------- */}
                     {hasResults && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mr-1">Export:</span>
+                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-apple-sm">
+                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mr-1">Export:</span>
                             {exports.map(({ f, l }) => (
                                 <button
                                     key={f}
                                     onClick={() => handleExport(f)}
                                     disabled={!!exporting}
-                                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1.5
+                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200/80 bg-white px-2.5 py-1.5
                                         text-[12px] font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300
-                                        disabled:opacity-40 transition-colors"
+                                        disabled:opacity-40 transition-all duration-200 ease-apple tracking-refined"
                                 >
                                     {exporting === f
                                         ? <ArrowPathIcon className="w-3 h-3 animate-spin" />

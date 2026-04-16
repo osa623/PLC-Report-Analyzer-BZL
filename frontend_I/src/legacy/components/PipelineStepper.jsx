@@ -2,26 +2,16 @@ import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, SkipForward } from 'lucide-react';
 
 const STAGE_LABELS = {
-  UPLOAD: 'Upload',
-  PARSING: 'Parsing',
-  STRUCTURE: 'Structure',
-  EXTRACTION: 'Extraction',
-  AGGREGATION: 'Aggregation',
-  VALIDATION: 'Validation',
-  ANALYTICS: 'Analytics',
-  REPORT: 'Report Generation',
+  UPLOAD: 'Upload', PARSING: 'Parsing', STRUCTURE: 'Structure', EXTRACTION: 'Extraction',
+  AGGREGATION: 'Aggregation', VALIDATION: 'Validation', ANALYTICS: 'Analytics', REPORT: 'Report Generation',
 };
 
 function StepIcon({ status }) {
-  if (status === 'completed')
-    return <CheckCircle size={18} color="#fff" />;
-  if (status === 'failed')
-    return <XCircle size={18} color="#fff" />;
-  if (status === 'skipped')
-    return <SkipForward size={16} color="#fff" />;
-  if (status === 'running')
-    return <Clock size={16} color="#fff" />;
-  return <span style={{ fontSize: 12, color: '#94a3b8' }}>●</span>;
+  if (status === 'completed') return <CheckCircle size={18} color="#fff" />;
+  if (status === 'failed') return <XCircle size={18} color="#fff" />;
+  if (status === 'skipped') return <SkipForward size={16} color="#fff" />;
+  if (status === 'running') return <Clock size={16} color="#fff" />;
+  return <span className="text-[12px] text-slate-300">●</span>;
 }
 
 function formatDuration(ms) {
@@ -33,15 +23,15 @@ function formatDuration(ms) {
 export default function PipelineStepper({ stages }) {
   if (!stages || stages.length === 0) {
     return (
-      <div className="card" style={{ padding: 24 }}>
-        <div className="skeleton" style={{ height: 80, width: '100%' }} />
+      <div className="card p-6">
+        <div className="h-20 w-full bg-slate-50 rounded-xl animate-pulse" />
       </div>
     );
   }
 
   return (
     <div className="card" style={{ padding: '16px 0' }}>
-      <div style={{ padding: '0 20px 12px', fontWeight: 700, fontSize: 15, color: '#1e293b' }}>
+      <div className="px-5 pb-3 text-[14px] font-semibold text-slate-900 tracking-[-0.025em]">
         Processing Pipeline
       </div>
       <div className="pipeline-stepper">
@@ -64,19 +54,14 @@ export default function PipelineStepper({ stages }) {
                 <div className="pipeline-step-label">{label}</div>
                 <div className="pipeline-step-status">
                   {statusLabel}
-                  {duration && ` • ${duration}`}
+                  {duration && ` · ${duration}`}
                 </div>
               </div>
               {i < stages.length - 1 && (
-                <div
-                  className={`pipeline-step-connector ${
-                    stage.status === 'completed'
-                      ? 'completed'
-                      : stage.status === 'running'
-                      ? 'active'
-                      : ''
-                  }`}
-                />
+                <div className={`pipeline-step-connector ${
+                  stage.status === 'completed' ? 'completed' :
+                  stage.status === 'running' ? 'active' : ''
+                }`} />
               )}
             </React.Fragment>
           );

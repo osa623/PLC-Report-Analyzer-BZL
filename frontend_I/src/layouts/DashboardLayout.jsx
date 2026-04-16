@@ -6,15 +6,13 @@ const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50/60">
-      {/* Top nav bar */}
+    <div className="min-h-screen bg-slate-50">
       <SidebarNav isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      {/* Main area */}
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="lg:pl-64 min-h-screen flex flex-col">
         <TopBar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

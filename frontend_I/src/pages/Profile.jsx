@@ -47,24 +47,24 @@ export default function Profile() {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
+                <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-200 border-t-slate-900"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="max-w-4xl mx-auto p-6">
+            <div className="max-w-4xl mx-auto p-6 animate-fade-in">
                 <button
                     onClick={() => navigate(-1)}
-                    className="flex items-center text-gray-600 hover:text-black mb-6 transition-colors"
+                    className="flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors duration-200 text-[13px] tracking-refined"
                 >
-                    <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                    <ArrowLeftIcon className="w-4 h-4 mr-2" />
                     Back
                 </button>
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                    <strong className="font-bold">Error: </strong>
-                    <span className="block sm:inline">{error}</span>
+                <div className="bg-red-50/80 border border-red-200/60 text-red-700 px-4 py-3 rounded-xl text-[13px] tracking-refined" role="alert">
+                    <strong className="font-semibold">Error: </strong>
+                    <span>{error}</span>
                 </div>
             </div>
         );
@@ -73,47 +73,47 @@ export default function Profile() {
     if (!profileData) return null;
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-6 animate-fade-in">
             <button
                 onClick={() => navigate(-1)}
-                className="flex items-center text-gray-600 hover:text-black mb-6 transition-colors"
+                className="flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors duration-200 text-[13px] tracking-refined"
             >
-                <ArrowLeftIcon className="w-5 h-5 mr-2" />
+                <ArrowLeftIcon className="w-4 h-4 mr-2" />
                 Back
             </button>
 
-            <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
-                <div className="bg-gray-900 h-32 relative">
-                    <div className="absolute -bottom-16 left-8">
-                        <div className="w-32 h-32 bg-white rounded-full p-2 shadow-md">
-                            <div className="w-full h-full bg-gray-200 rounded-full flex items-center justify-center text-gray-500">
-                                <UserCircleIcon className="w-20 h-20" />
+            <div className="bg-white shadow-apple-md rounded-2xl overflow-hidden border border-slate-200/60">
+                <div className="bg-slate-900 h-28 relative">
+                    <div className="absolute -bottom-14 left-8">
+                        <div className="w-28 h-28 bg-white rounded-2xl p-1.5 shadow-apple-md">
+                            <div className="w-full h-full bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 border border-slate-100">
+                                <UserCircleIcon className="w-16 h-16" />
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="pt-20 pb-8 px-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-1">{profileData.email ? profileData.email.split('@')[0] : 'User'}</h1>
-                    <p className="text-gray-500 mb-8">Administrator</p>
+                    <h1 className="text-2xl font-bold text-slate-900 mb-0.5 tracking-heading">{profileData.email ? profileData.email.split('@')[0] : 'User'}</h1>
+                    <p className="text-[13px] text-slate-500 mb-8 tracking-refined">Administrator</p>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-100 pt-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-100 pt-8">
                         <div className="space-y-2">
-                            <div className="flex items-center text-gray-500 mb-1">
+                            <div className="flex items-center text-slate-400 mb-1.5">
                                 <IdentificationIcon className="w-4 h-4 mr-2" />
-                                <span className="text-sm font-medium">User ID</span>
+                                <span className="text-[12px] font-medium tracking-refined">User ID</span>
                             </div>
-                            <p className="text-gray-900 font-mono text-sm bg-gray-50 p-3 rounded-lg border border-gray-200 break-all">
+                            <p className="text-slate-700 font-mono text-[13px] bg-slate-50 p-3 rounded-xl border border-slate-200/60 break-all tracking-wide">
                                 {profileData._id || profileData.id}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex items-center text-gray-500 mb-1">
+                            <div className="flex items-center text-slate-400 mb-1.5">
                                 <EnvelopeIcon className="w-4 h-4 mr-2" />
-                                <span className="text-sm font-medium">Email Address</span>
+                                <span className="text-[12px] font-medium tracking-refined">Email Address</span>
                             </div>
-                            <p className="text-gray-900 text-lg">
+                            <p className="text-slate-900 text-[16px] font-medium tracking-refined">
                                 {profileData.email}
                             </p>
                         </div>

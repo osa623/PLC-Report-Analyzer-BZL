@@ -16,7 +16,7 @@ export default function ErrorsPanel({ errors }) {
     return (
       <div className="card">
         <div className="card-header">Errors & Warnings</div>
-        <div className="card-body" style={{ textAlign: 'center', color: '#94a3b8', padding: 32 }}>
+        <div className="card-body text-center text-slate-400 py-8 text-[13px] tracking-[-0.01em]">
           No error data available yet.
         </div>
       </div>
@@ -30,14 +30,12 @@ export default function ErrorsPanel({ errors }) {
   const allItems = [
     ...errorCatalog.map(categorizeError),
     ...missingValues.slice(0, 10).map((mv) => ({
-      type: 'warning',
-      icon: AlertCircle,
+      type: 'warning', icon: AlertCircle,
       text: `Missing values for row: ${mv.row_id || 'unknown'}`,
       detail: (mv.flags || []).join(', '),
     })),
     ...weakEntries.slice(0, 5).map((w) => ({
-      type: 'info',
-      icon: Info,
+      type: 'info', icon: Info,
       text: `Weak Data Entry: ${w.canonical_label || 'unknown'}`,
       detail: `Confidence: ${((w.confidence_score || 0) * 100).toFixed(0)}%`,
     })),
@@ -47,24 +45,17 @@ export default function ErrorsPanel({ errors }) {
 
   return (
     <div className="card fade-in">
-      <div className="card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div className="card-header flex items-center justify-between">
         <span>Errors & Warnings</span>
         {hasIssues && (
-          <span style={{
-            fontSize: 11,
-            fontWeight: 600,
-            background: '#fef2f2',
-            color: '#991b1b',
-            padding: '3px 10px',
-            borderRadius: 12,
-          }}>
+          <span className="text-[11px] font-semibold bg-red-50/80 text-red-700 border border-red-200/60 px-2.5 py-0.5 rounded-lg tracking-[-0.01em]">
             {allItems.length} issues
           </span>
         )}
       </div>
-      <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 350, overflowY: 'auto' }}>
+      <div className="card-body flex flex-col gap-2" style={{ maxHeight: 350, overflowY: 'auto' }}>
         {!hasIssues ? (
-          <div style={{ textAlign: 'center', color: '#22c55e', padding: 20, fontWeight: 600, fontSize: 14 }}>
+          <div className="text-center text-green-600 py-5 font-semibold text-[13px] tracking-[-0.01em]">
             ✓ No errors or warnings detected
           </div>
         ) : (
@@ -72,11 +63,11 @@ export default function ErrorsPanel({ errors }) {
             const Icon = item.icon;
             return (
               <div key={i} className={`error-item ${item.type}`}>
-                <Icon size={16} style={{ flexShrink: 0 }} />
+                <Icon size={16} className="shrink-0 mt-0.5" />
                 <div>
-                  <div style={{ fontWeight: 600 }}>{item.text}</div>
+                  <div className="font-semibold tracking-[-0.01em]">{item.text}</div>
                   {item.detail && (
-                    <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>{item.detail}</div>
+                    <div className="text-[11px] opacity-80 mt-0.5 tracking-[-0.01em]">{item.detail}</div>
                   )}
                 </div>
               </div>

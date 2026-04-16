@@ -46,8 +46,8 @@ function App() {
             <Route path="/pricing" element={<WithLayout><Pricing /></WithLayout>} />
             <Route path="/settings" element={<WithLayout><Settings /></WithLayout>} />
             <Route path="/profile/:userId" element={<WithLayout><Profile /></WithLayout>} />
-            <Route path="/pipeline" element={<WithLayout><PipelineApp /></WithLayout>} />
-            <Route path="/engineering" element={<WithLayout><EngineeringDashboard /></WithLayout>} />
+            <Route path="/pipeline" element={<PipelineApp />} />
+            <Route path="/engineering" element={<EngineeringDashboard />} />
 
             {/* ─── Redirect old routes ─── */}
             <Route path="/extract" element={<Navigate to="/home" replace />} />
