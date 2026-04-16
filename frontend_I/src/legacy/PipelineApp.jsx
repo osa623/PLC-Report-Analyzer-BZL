@@ -19,6 +19,8 @@ import {
   downloadReportUrl,
 } from './api';
 
+const PIPELINE_SESSION_KEY = 'plc.pipeline.currentReport.v1';
+
 export default function PipelineApp() {
   // ─── Global state ──────────────────────────────────────────
   const [globalTab, setGlobalTab] = useState('Dashboard');
@@ -41,6 +43,29 @@ export default function PipelineApp() {
 
   // ─── Polling ref ───────────────────────────────────────────
   const pollRef = useRef(null);
+  const hydratedRef = useRef(false);
+  const validatedLoadedRef = useRef(false);
+  const errorsLoadedRef = useRef(false);
+  const analyticsLoadedRef = useRef(false);
+
+  const persistPipelineSession = useCallback((patch = {}) => {
+    try {
+      const raw = localStorage.getItem(PIPELINE_SESSION_KEY);
+      const prev = raw ? JSON.parse(raw) : {};
+      const next = { ...prev, ...patch, updated_at: new Date().toISOString() };
+      localStorage.setItem(PIPELINE_SESSION_KEY, JSON.stringify(next));
+    } catch (_) {
+      // Keep app functional even when local storage is unavailable.
+    }
+  }, []);
+
+  const clearPipelineSession = useCallback(() => {
+    try {
+      localStorage.removeItem(PIPELINE_SESSION_KEY);
+    } catch (_) {
+      // Keep app functional even when local storage is unavailable.
+    }
+  }, []);
 
   // ─── Health check ──────────────────────────────────────────
   useEffect(() => {
@@ -62,29 +87,69 @@ export default function PipelineApp() {
     (id) => {
       if (pollRef.current) clearInterval(pollRef.current);
 
+      validatedLoadedRef.current = false;
+      errorsLoadedRef.current = false;
+      analyticsLoadedRef.current = false;
+
       const poll = async () => {
         try {
           const stages = await fetchStages(id);
           setStagesData(stages);
 
           const wf = stages.workflow_state;
+          let validationPayloadLoaded = validatedLoadedRef.current;
+          let errorsPayloadLoaded = errorsLoadedRef.current;
+          let analyticsPayloadLoaded = analyticsLoadedRef.current;
 
           const validationDone = stages.stages?.some(
             (s) => s.stage === 'VALIDATION' && s.status === 'completed'
           );
           if (validationDone) {
-            try { const vd = await fetchValidated(id); setValidatedData(vd); } catch (_) {}
-            try { const ed = await fetchErrors(id); setErrorsData(ed); } catch (_) {}
+            try {
+              const vd = await fetchValidated(id);
+              setValidatedData(vd);
+              validationPayloadLoaded = Boolean(vd?.validated);
+              if (validationPayloadLoaded) {
+                validatedLoadedRef.current = true;
+              }
+            } catch (_) {}
+
+            try {
+              const ed = await fetchErrors(id);
+              setErrorsData(ed);
+              errorsPayloadLoaded = Boolean(ed && typeof ed === 'object');
+              if (errorsPayloadLoaded) {
+                errorsLoadedRef.current = true;
+              }
+            } catch (_) {}
           }
 
           const analyticsDone = stages.stages?.some(
             (s) => s.stage === 'ANALYTICS' && s.status === 'completed'
           );
           if (analyticsDone) {
-            try { const ad = await fetchAnalytics(id); setAnalyticsData(ad); } catch (_) {}
+            try {
+              const ad = await fetchAnalytics(id);
+              setAnalyticsData(ad);
+              analyticsPayloadLoaded = Boolean(ad && typeof ad === 'object');
+              if (analyticsPayloadLoaded) {
+                analyticsLoadedRef.current = true;
+              }
+            } catch (_) {}
           }
 
-          if (['COMPLETED', 'FAILED', 'LOW_CONFIDENCE'].includes(wf)) {
+          const canStopCompleted =
+            wf === 'COMPLETED' &&
+            validationPayloadLoaded &&
+            errorsPayloadLoaded &&
+            analyticsPayloadLoaded;
+
+          const canStopLowConfidence =
+            wf === 'LOW_CONFIDENCE' &&
+            validationPayloadLoaded &&
+            errorsPayloadLoaded;
+
+          if (wf === 'FAILED' || canStopCompleted || canStopLowConfidence) {
             clearInterval(pollRef.current);
             pollRef.current = null;
           }
@@ -103,6 +168,35 @@ export default function PipelineApp() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PIPELINE_SESSION_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved?.reportId) return;
+
+      setReportId(saved.reportId);
+      setCompanyInfo(saved.companyInfo || null);
+      setContextTab(saved.contextTab || 'Pipeline Overview');
+      startPolling(saved.reportId);
+    } catch (_) {
+      // Ignore malformed persisted data.
+    } finally {
+      hydratedRef.current = true;
+    }
+  }, [startPolling]);
+
+  useEffect(() => {
+    if (!hydratedRef.current) {
+      return;
+    }
+    if (!reportId) {
+      clearPipelineSession();
+      return;
+    }
+    persistPipelineSession({ reportId, companyInfo, contextTab });
+  }, [reportId, companyInfo, contextTab, clearPipelineSession, persistPipelineSession]);
+
   // ─── Upload handler ────────────────────────────────────────
   const handleUpload = async (file, company) => {
     setIsUploading(true);
@@ -118,6 +212,11 @@ export default function PipelineApp() {
       setReportId(id);
       setCompanyInfo(`${company.name} — ${company.sector}`);
       setContextTab('Pipeline Overview');
+      persistPipelineSession({
+        reportId: id,
+        companyInfo: `${company.name} — ${company.sector}`,
+        contextTab: 'Pipeline Overview',
+      });
       startPolling(id);
     } catch (err) {
       const msg = err?.response?.data?.error || err?.message || 'Upload failed. Check if backend is running.';
@@ -287,6 +386,8 @@ export default function PipelineApp() {
                       setAnalyticsData(null);
                       setErrorsData(null);
                       setCompanyInfo(null);
+                      setContextTab('Pipeline Overview');
+                      clearPipelineSession();
                       if (pollRef.current) clearInterval(pollRef.current);
                     }}
                     className="bg-white border border-slate-200 text-slate-600 px-4 py-2 rounded-xl text-[13px] font-medium hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 tracking-[-0.01em]"

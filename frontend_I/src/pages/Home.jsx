@@ -133,6 +133,21 @@ const EXTRACTION_SECTIONS = [
     },
 ];
 
+const EXTRACTION_SESSION_KEY = 'plc.extraction.session.v1';
+
+const sectionStateFromFullReport = (resultData = {}) => {
+    const next = {};
+    EXTRACTION_SECTIONS.forEach((sec) => {
+        const data = resultData[sec.key] || null;
+        next[sec.key] = {
+            status: data ? 'done' : 'error',
+            data,
+            error: data ? null : 'Section not found in report',
+        };
+    });
+    return next;
+};
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -304,6 +319,133 @@ const Home = () => {
     const [reportGenerating, setReportGenerating] = useState(false);
     const [analysisBundle, setAnalysisBundle] = useState(null);
 
+    const persistSession = useCallback((patch = {}) => {
+        try {
+            const raw = localStorage.getItem(EXTRACTION_SESSION_KEY);
+            const prev = raw ? JSON.parse(raw) : {};
+            const next = {
+                ...prev,
+                ...patch,
+                updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem(EXTRACTION_SESSION_KEY, JSON.stringify(next));
+        } catch (_) {
+            // Ignore storage errors so extraction flow is never blocked.
+        }
+    }, []);
+
+    const clearPersistedSession = useCallback(() => {
+        try {
+            localStorage.removeItem(EXTRACTION_SESSION_KEY);
+        } catch (_) {
+            // Ignore storage errors so reset flow is never blocked.
+        }
+    }, []);
+
+    const waitForFullReportCompletion = useCallback(async (jobId) => {
+        let attempts = 0;
+        while (attempts < 600) {
+            attempts += 1;
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            const result = await pdfService.getFullReportResult(jobId);
+            if (result?.status === 'completed' && result?.data) {
+                return result;
+            }
+            if (result?.status === 'failed') {
+                throw new Error(result?.error || 'Full-report extraction failed');
+            }
+        }
+        throw new Error('Full-report extraction timed out');
+    }, []);
+
+    const resumeFullReportJob = useCallback(async (jobId) => {
+        setExtractingAll(true);
+
+        const stream = pdfService.createFullReportProgressStream(jobId, (event) => {
+            const details = event?.details || {};
+            const sectionName = details?.display_name || details?.section_key || null;
+            const normalizedEvent = {
+                ...event,
+                message: sectionName && event?.message ? `${event.message} (${sectionName})` : event?.message,
+            };
+            setFullReportProgress(normalizedEvent);
+            persistSession({ fullReportProgress: normalizedEvent });
+            const sectionKey = event?.details?.section_key;
+            const status = event?.details?.status;
+            if (!sectionKey) return;
+
+            setSectionStates((prev) => {
+                const next = {
+                    ...prev,
+                    [sectionKey]: {
+                        ...(prev[sectionKey] || {}),
+                        status: status === 'done' ? 'done' : 'extracting',
+                        data: prev[sectionKey]?.data || null,
+                        error: null,
+                    },
+                };
+                persistSession({ sectionStates: next });
+                return next;
+            });
+        });
+
+        try {
+            const result = await waitForFullReportCompletion(jobId);
+            const next = sectionStateFromFullReport(result.data);
+            setSectionStates(next);
+            setActiveSection('income_statement');
+            setFullReportProgress({ step: -1, total: -1, message: 'Full-report extraction completed.' });
+            persistSession({
+                sectionStates: next,
+                activeSection: 'income_statement',
+                extractingAll: false,
+                fullReportJobId: null,
+                fullReportProgress: { step: -1, total: -1, message: 'Full-report extraction completed.' },
+            });
+        } finally {
+            stream.close();
+            setExtractingAll(false);
+        }
+    }, [persistSession, waitForFullReportCompletion]);
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(EXTRACTION_SESSION_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            if (!saved) return;
+
+            if (saved.phase === 'extraction') {
+                setPhase('extraction');
+            }
+            if (saved.fileMeta) {
+                setFile(saved.fileMeta);
+            }
+            if (saved.pdfId) {
+                setPdfId(saved.pdfId);
+            }
+            if (saved.sectionStates && typeof saved.sectionStates === 'object') {
+                setSectionStates(saved.sectionStates);
+            }
+            if (saved.activeSection) {
+                setActiveSection(saved.activeSection);
+            }
+            if (saved.fullReportProgress) {
+                setFullReportProgress(saved.fullReportProgress);
+            }
+            if (saved.fullReportJobId) {
+                setFullReportProgress((prev) => prev || { step: 0, total: 0, message: 'Resuming full-report extraction...' });
+                void resumeFullReportJob(saved.fullReportJobId).catch((err) => {
+                    setError(err?.message || 'Failed to resume full-report extraction');
+                    setExtractingAll(false);
+                    persistSession({ extractingAll: false, fullReportJobId: null });
+                });
+            }
+        } catch (_) {
+            // Ignore malformed persisted session payload.
+        }
+    }, [persistSession, resumeFullReportJob]);
+
     // -- Drag & Drop -------------------------------------------------------
     const onDragOver = useCallback((e) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); }, []);
     const onDragLeave = useCallback((e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }, []);
@@ -323,22 +465,41 @@ const Home = () => {
         }
         setFile(selectedFile); setError(null); setSectionStates({}); setActiveSection(null); setPdfId(null); setUploading(true);
         setAnalysisBundle(null);
+        persistSession({
+            phase: 'upload',
+            fileMeta: { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type },
+            sectionStates: {},
+            activeSection: null,
+            pdfId: null,
+            fullReportProgress: null,
+            fullReportJobId: null,
+            extractingAll: false,
+        });
         try {
             const res = await pdfService.uploadPDF(selectedFile);
             setPdfId(res.pdf_id);
             // Deduct 1 credit on successful upload
             useCredit();
             setPhase('extraction');
+            persistSession({
+                phase: 'extraction',
+                pdfId: res.pdf_id,
+            });
         } catch (err) {
             setError(err.response?.data?.error || err.message || 'Upload failed');
             setFile(null);
+            clearPersistedSession();
         } finally { setUploading(false); }
     };
 
     // -- Extract single -----------------------------------------------------
     const handleExtractSection = async (key) => {
         if (!pdfId) return;
-        setSectionStates(p => ({ ...p, [key]: { status: 'extracting', data: null, error: null } }));
+        setSectionStates(p => {
+            const next = { ...p, [key]: { status: 'extracting', data: null, error: null } };
+            persistSession({ sectionStates: next });
+            return next;
+        });
         // Scroll to the card so user sees the progress
         setTimeout(() => {
             const el = document.getElementById(`card-${key}`);
@@ -346,74 +507,87 @@ const Home = () => {
         }, 80);
         try {
             const res = await pdfService.extractStatement(pdfId, key);
-            setSectionStates(p => ({ ...p, [key]: { status: 'done', data: res.data, error: null } }));
+            setSectionStates(p => {
+                const next = { ...p, [key]: { status: 'done', data: res.data, error: null } };
+                persistSession({ sectionStates: next });
+                return next;
+            });
             if (res.data) setActiveSection(key);
         } catch (err) {
             const msg = err.response?.data?.error || err.message || 'Extraction failed';
-            setSectionStates(p => ({ ...p, [key]: { status: 'error', data: null, error: msg } }));
+            setSectionStates(p => {
+                const next = { ...p, [key]: { status: 'error', data: null, error: msg } };
+                persistSession({ sectionStates: next });
+                return next;
+            });
         }
     };
 
     // -- Extract all --------------------------------------------------------
     const handleExtractAll = async () => {
         if (!file || extractingAll) return;
+        if (!(file instanceof File)) {
+            setError('Cannot restart extraction from restored session without the original file. Please upload the PDF again.');
+            return;
+        }
 
         setExtractingAll(true);
         setError(null);
         setFullReportProgress({ step: 0, total: 0, message: 'Queued full-report extraction...' });
+        persistSession({ extractingAll: true, fullReportProgress: { step: 0, total: 0, message: 'Queued full-report extraction...' } });
 
         try {
             const start = await pdfService.extractFullReportAsync(file);
             const jobId = start?.job_id;
             if (!jobId) throw new Error('No extraction job id returned from backend');
 
+            persistSession({ fullReportJobId: jobId, extractingAll: true });
+
             const stream = pdfService.createFullReportProgressStream(jobId, (event) => {
-                setFullReportProgress(event);
+                const details = event?.details || {};
+                const sectionName = details?.display_name || details?.section_key || null;
+                const normalizedEvent = {
+                    ...event,
+                    message: sectionName && event?.message ? `${event.message} (${sectionName})` : event?.message,
+                };
+                setFullReportProgress(normalizedEvent);
+                persistSession({ fullReportProgress: normalizedEvent });
                 const sectionKey = event?.details?.section_key;
                 const status = event?.details?.status;
                 if (!sectionKey) return;
 
-                setSectionStates((prev) => ({
-                    ...prev,
-                    [sectionKey]: {
-                        ...(prev[sectionKey] || {}),
-                        status: status === 'done' ? 'done' : 'extracting',
-                        data: prev[sectionKey]?.data || null,
-                        error: null,
-                    },
-                }));
+                setSectionStates((prev) => {
+                    const next = {
+                        ...prev,
+                        [sectionKey]: {
+                            ...(prev[sectionKey] || {}),
+                            status: status === 'done' ? 'done' : 'extracting',
+                            data: prev[sectionKey]?.data || null,
+                            error: null,
+                        },
+                    };
+                    persistSession({ sectionStates: next });
+                    return next;
+                });
             });
 
-            let attempts = 0;
-            let done = false;
-            while (!done && attempts < 600) {
-                attempts += 1;
-                await new Promise((resolve) => setTimeout(resolve, 1500));
-                const result = await pdfService.getFullReportResult(jobId);
-                if (result?.status === 'completed' && result?.data) {
-                    const next = {};
-                    EXTRACTION_SECTIONS.forEach((sec) => {
-                        const data = result.data[sec.key] || null;
-                        next[sec.key] = {
-                            status: data ? 'done' : 'error',
-                            data,
-                            error: data ? null : 'Section not found in report',
-                        };
-                    });
-                    setSectionStates(next);
-                    setActiveSection('income_statement');
-                    done = true;
-                } else if (result?.status === 'failed') {
-                    throw new Error(result?.error || 'Full-report extraction failed');
-                }
-            }
+            const result = await waitForFullReportCompletion(jobId);
+            const next = sectionStateFromFullReport(result.data);
+            setSectionStates(next);
+            setActiveSection('income_statement');
+            persistSession({
+                sectionStates: next,
+                activeSection: 'income_statement',
+                fullReportJobId: null,
+                extractingAll: false,
+                fullReportProgress: { step: -1, total: -1, message: 'Full-report extraction completed.' },
+            });
 
             stream.close();
-            if (!done) {
-                throw new Error('Full-report extraction timed out');
-            }
+            setFullReportProgress({ step: -1, total: -1, message: 'Full-report extraction completed.' });
         } catch (err) {
             setError(err?.message || 'Failed to run full-report extraction');
+            persistSession({ extractingAll: false, fullReportJobId: null });
         } finally {
             setExtractingAll(false);
         }
@@ -424,7 +598,7 @@ const Home = () => {
         setError(null);
         try {
             let analysisPayload = analysisBundle;
-            if (!analysisPayload && file) {
+            if (!analysisPayload && file instanceof File) {
                 const intelligence = await pdfService.runFullIntelligence([file]);
                 analysisPayload = intelligence;
                 setAnalysisBundle(intelligence);
@@ -485,6 +659,8 @@ const Home = () => {
         setFile(null); setPdfId(null); setSectionStates({}); setActiveSection(null);
         setError(null); setExporting(null); setExtractingAll(false); setPhase('upload');
         setAnalysisBundle(null);
+        setFullReportProgress(null);
+        clearPersistedSession();
     };
 
     // -- Derived values ------------------------------------------------------

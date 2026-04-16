@@ -17,20 +17,125 @@ function parseJson(raw, fallback = null) {
   }
 }
 
-function mapLegacyStages(stageState = {}, hasUpload = false) {
+function normalizeStatus(status) {
+  if (status === 'completed' || status === 'running' || status === 'failed' || status === 'skipped') {
+    return status;
+  }
+  return 'pending';
+}
+
+function buildValidatedRows(validated = null) {
+  const financialStatements = validated?.financial_statements;
+  if (!financialStatements || typeof financialStatements !== 'object') {
+    return [];
+  }
+
+  const statementTypeByKey = {
+    income_statement: 'income_statement',
+    balance_sheet: 'balance_sheet',
+    cashflow: 'cashflow_statement',
+    equity: 'equity_statement',
+  };
+
+  const rows = [];
+  Object.entries(statementTypeByKey).forEach(([key, statementType]) => {
+    const items = Array.isArray(financialStatements[key]) ? financialStatements[key] : [];
+    items.forEach((item, index) => {
+      rows.push({
+        row_id: `${statementType}-${index}`,
+        canonical_label: item?.label || 'unknown',
+        original_label: item?.label || 'unknown',
+        value: typeof item?.value === 'number' ? item.value : Number(item?.value || 0),
+        year: item?.period || null,
+        statement_type: statementType,
+        confidence_score: 0.9,
+        page_number: null,
+      });
+    });
+  });
+
+  return rows;
+}
+
+function deriveQualityScore(validatedRows = [], validationIssues = [], deterministicChecks = {}) {
+  if (!Array.isArray(validatedRows) || validatedRows.length === 0) {
+    return 0;
+  }
+
+  const avgRowConfidence = validatedRows.reduce((acc, row) => acc + (row.confidence_score || 0), 0) / validatedRows.length;
+  const issuePenalty = Math.min((validationIssues.length || 0) * 0.04, 0.4);
+  const checks = Object.values(deterministicChecks || {});
+  const passedChecks = checks.filter(Boolean).length;
+  const checkBonus = checks.length > 0 ? (passedChecks / checks.length) * 0.1 : 0;
+  return Math.max(0, Math.min(1, avgRowConfidence - issuePenalty + checkBonus));
+}
+
+function mapLegacyStages(stageState = {}, hasUpload = false, artifacts = {}) {
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
 
+  const parsingStatus =
+    extraction === 'failed'
+      ? 'failed'
+      : artifacts.hasCanonicalRaw
+      ? 'completed'
+      : normalizeStatus(extraction);
+
+  const structureStatus = parsingStatus;
+
+  const extractionStatus =
+    extraction === 'failed'
+      ? 'failed'
+      : artifacts.hasCanonicalRaw
+      ? 'completed'
+      : normalizeStatus(extraction);
+
+  const aggregationStatus =
+    analysis === 'failed'
+      ? 'failed'
+      : artifacts.hasCanonicalValidated
+      ? 'completed'
+      : analysis === 'running'
+      ? 'running'
+      : 'pending';
+
+  const validationStatus =
+    analysis === 'failed'
+      ? 'failed'
+      : artifacts.hasCanonicalValidated
+      ? 'completed'
+      : analysis === 'running'
+      ? 'running'
+      : 'pending';
+
+  const analyticsStatus =
+    analysis === 'failed'
+      ? 'failed'
+      : artifacts.hasAnalytics
+      ? 'completed'
+      : analysis === 'running'
+      ? 'running'
+      : 'pending';
+
+  const reportStatus =
+    reporting === 'failed'
+      ? 'failed'
+      : (artifacts.hasFinalReport && analyticsStatus === 'completed' && validationStatus === 'completed')
+      ? 'completed'
+      : reporting === 'running'
+      ? 'running'
+      : 'pending';
+
   return [
     { stage: 'UPLOAD', status: hasUpload ? 'completed' : 'pending' },
-    { stage: 'PARSING', status: extraction },
-    { stage: 'STRUCTURE', status: extraction },
-    { stage: 'EXTRACTION', status: extraction },
-    { stage: 'AGGREGATION', status: analysis },
-    { stage: 'VALIDATION', status: analysis },
-    { stage: 'ANALYTICS', status: analysis },
-    { stage: 'REPORT', status: reporting },
+    { stage: 'PARSING', status: parsingStatus },
+    { stage: 'STRUCTURE', status: structureStatus },
+    { stage: 'EXTRACTION', status: extractionStatus },
+    { stage: 'AGGREGATION', status: aggregationStatus },
+    { stage: 'VALIDATION', status: validationStatus },
+    { stage: 'ANALYTICS', status: analyticsStatus },
+    { stage: 'REPORT', status: reportStatus },
   ];
 }
 
@@ -42,13 +147,13 @@ function deriveWorkflowState(stageState = {}, confidence = null) {
   if ([extraction, analysis, reporting].includes('failed')) {
     return 'FAILED';
   }
-  if (reporting === 'completed') {
+  if (extraction === 'completed' && analysis === 'completed' && reporting === 'completed') {
     return 'COMPLETED';
   }
   if (analysis === 'completed' && confidence?.band === 'low') {
     return 'LOW_CONFIDENCE';
   }
-  if (reporting === 'running') {
+  if (analysis === 'completed' && reporting === 'running') {
     return 'GENERATING_REPORT';
   }
   if (analysis === 'running') {
@@ -58,6 +163,32 @@ function deriveWorkflowState(stageState = {}, confidence = null) {
     return 'EXTRACTING';
   }
   return 'UPLOADED';
+}
+
+function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confidence = null) {
+  const extraction = stageState.EXTRACTION?.status || 'pending';
+  const analysis = stageState.ANALYSIS?.status || 'pending';
+  const reporting = stageState.REPORTING?.status || 'pending';
+
+  if ([extraction, analysis, reporting].includes('failed')) {
+    return 'FAILED';
+  }
+  if (artifacts.hasFinalReport || (extraction === 'completed' && analysis === 'completed' && reporting === 'completed')) {
+    return 'COMPLETED';
+  }
+  if ((analysis === 'completed' || artifacts.hasCanonicalValidated) && confidence?.band === 'low') {
+    return 'LOW_CONFIDENCE';
+  }
+  if (reporting === 'running' || (artifacts.hasAnalytics && !artifacts.hasFinalReport)) {
+    return 'GENERATING_REPORT';
+  }
+  if (analysis === 'running' || (artifacts.hasCanonicalValidated && !artifacts.hasAnalytics)) {
+    return 'ANALYZING';
+  }
+  if (extraction === 'running' || (artifacts.hasCanonicalRaw && !artifacts.hasCanonicalValidated)) {
+    return 'EXTRACTING';
+  }
+  return artifacts.hasUploadedFile ? 'UPLOADED' : 'PENDING';
 }
 
 async function startPipeline(reportId, filePath) {
@@ -189,19 +320,34 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawStages, uploadedFile, rawConfidence] = await Promise.all([
+    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, finalReportRaw] = await Promise.all([
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
       redis.get(`report:${reportId}:confidence`),
+      redis.get(`report:${reportId}:canonical_raw`),
+      redis.get(`report:${reportId}:canonical_validated`),
+      redis.get(`report:${reportId}:ratios`),
+      redis.get(`report:${reportId}:patterns`),
+      redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:final_report`),
     ]);
 
     const stageState = parseJson(rawStages, {});
     const confidence = parseJson(rawConfidence, null);
-    const stages = mapLegacyStages(stageState, Boolean(uploadedFile));
+    const artifacts = {
+      hasCanonicalRaw: Boolean(canonicalRaw),
+      hasCanonicalValidated: Boolean(canonicalValidated),
+      hasAnalytics: Boolean(ratiosRaw || patternsRaw || sectorRaw),
+      hasFinalReport: Boolean(finalReportRaw),
+    };
+    const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts);
 
     return res.json({
       report_id: reportId,
-      workflow_state: deriveWorkflowState(stageState, confidence),
+      workflow_state: deriveWorkflowStateFromArtifacts(stageState, {
+        ...artifacts,
+        hasUploadedFile: Boolean(uploadedFile),
+      }, confidence),
       stages,
     });
   } catch (error) {
@@ -236,7 +382,20 @@ router.get('/pipeline/:reportId/validated', async (req, res, next) => {
     const redis = await getRedis();
     const reportId = req.params.reportId;
     const validated = parseJson(await redis.get(`report:${reportId}:canonical_validated`), null);
-    return res.json({ report_id: reportId, validated });
+    const validatedRows = buildValidatedRows(validated);
+    const qualityScore = deriveQualityScore(
+      validatedRows,
+      Array.isArray(validated?.validation_issues) ? validated.validation_issues : [],
+      validated?.deterministic_checks || {}
+    );
+    return res.json({
+      report_id: reportId,
+      validated: {
+        ...(validated || {}),
+        validated_rows: validatedRows,
+        overall_data_quality_score: qualityScore,
+      },
+    });
   } catch (error) {
     return next(error);
   }
@@ -267,19 +426,50 @@ router.get('/pipeline/:reportId/errors', async (req, res, next) => {
     const redis = await getRedis();
     const reportId = req.params.reportId;
     const validated = parseJson(await redis.get(`report:${reportId}:canonical_validated`), {});
-    const validationIssues = validated?.validation_issues || [];
+    const validationIssues = Array.isArray(validated?.validation_issues) ? validated.validation_issues : [];
+    const normalizedIssues = validationIssues.map((issue) => {
+      if (typeof issue === 'string') return issue;
+      const code = issue?.code ? String(issue.code) : 'validation_issue';
+      const message = issue?.message ? String(issue.message) : 'Validation issue';
+      return `${code}: ${message}`;
+    });
+
+    const financialStatements = validated?.financial_statements || {};
+    const flattenedItems = [
+      ...(Array.isArray(financialStatements.income_statement) ? financialStatements.income_statement : []),
+      ...(Array.isArray(financialStatements.balance_sheet) ? financialStatements.balance_sheet : []),
+      ...(Array.isArray(financialStatements.cashflow) ? financialStatements.cashflow : []),
+      ...(Array.isArray(financialStatements.equity) ? financialStatements.equity : []),
+    ];
+    const missingValues = flattenedItems
+      .filter((item) => item?.value == null)
+      .slice(0, 50)
+      .map((item, index) => ({
+        row_id: `missing-${index}`,
+        flags: ['missing_value'],
+        canonical_label: item?.label || 'unknown',
+      }));
+
+    const weakDataEntries = flattenedItems
+      .filter((item) => typeof item?.value === 'number' && Number.isNaN(item.value))
+      .slice(0, 50)
+      .map((item) => ({
+        canonical_label: item?.label || 'unknown',
+        confidence_score: 0.3,
+      }));
+
     return res.json({
       report_id: reportId,
-      error_catalog: validationIssues,
-      missing_values: [],
+      error_catalog: normalizedIssues,
+      missing_values: missingValues,
       validation_summary: {
-        failed_rule_count: validationIssues.length,
+        failed_rule_count: normalizedIssues.length,
       },
       confidence_distribution: null,
-      weak_data_entries: [],
-      total_errors: validationIssues.length,
-      total_missing: 0,
-      total_weak: 0,
+      weak_data_entries: weakDataEntries,
+      total_errors: normalizedIssues.length,
+      total_missing: missingValues.length,
+      total_weak: weakDataEntries.length,
     });
   } catch (error) {
     return next(error);
@@ -290,18 +480,81 @@ router.get('/reports/:reportId', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawMeta, rawStages] = await Promise.all([
+    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, confidenceStr, finalReportStr] = await Promise.all([
       redis.get(`report:${reportId}:meta`),
       redis.get(`report:${reportId}:pipeline_stages`),
+      redis.get(`report:${reportId}:uploaded_file`),
+      redis.get(`report:${reportId}:canonical_raw`),
+      redis.get(`report:${reportId}:canonical_validated`),
+      redis.get(`report:${reportId}:ratios`),
+      redis.get(`report:${reportId}:patterns`),
+      redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:confidence`),
+      redis.get(`report:${reportId}:final_report`),
     ]);
+
     const meta = parseJson(rawMeta, {});
     const stageState = parseJson(rawStages, {});
+    const canonicalRaw = parseJson(canonicalRawStr, null);
+    const validated = parseJson(validatedStr, null);
+    const ratios = parseJson(ratiosStr, {});
+    const patterns = parseJson(patternsStr, []);
+    const sector = parseJson(sectorStr, {});
+    const confidence = parseJson(confidenceStr, null);
+    const finalReport = parseJson(finalReportStr, null);
+
+    const artifacts = {
+      hasUploadedFile: Boolean(uploadedFile),
+      hasCanonicalRaw: Boolean(canonicalRaw),
+      hasCanonicalValidated: Boolean(validated),
+      hasAnalytics: Boolean(ratiosStr || patternsStr || sectorStr),
+      hasFinalReport: Boolean(finalReport),
+    };
+    const workflowState = deriveWorkflowStateFromArtifacts(stageState, artifacts, confidence);
+    const pipelineTracker = mapLegacyStages(stageState, artifacts.hasUploadedFile, artifacts);
+
+    const validatedRows = buildValidatedRows(validated);
+    const qualityScore = deriveQualityScore(
+      validatedRows,
+      Array.isArray(validated?.validation_issues) ? validated.validation_issues : [],
+      validated?.deterministic_checks || {}
+    );
+
+    const narratives = {
+      governance: Array.isArray(canonicalRaw?.narrative_sections?.governance) ? canonicalRaw.narrative_sections.governance : [],
+      risk: Array.isArray(canonicalRaw?.narrative_sections?.risk) ? canonicalRaw.narrative_sections.risk : [],
+      esg: Array.isArray(canonicalRaw?.narrative_sections?.esg) ? canonicalRaw.narrative_sections.esg : [],
+      strategy: Array.isArray(canonicalRaw?.narrative_sections?.notes) ? canonicalRaw.narrative_sections.notes : [],
+    };
+
     return res.json({
       id: reportId,
       symbol: meta.symbol || 'UNKNOWN',
       name: meta.name || 'Unknown Company',
       sector: meta.sector || 'Diversified',
-      workflow_state: deriveWorkflowState(stageState, null),
+      workflow_state: workflowState,
+      pipeline_tracker: pipelineTracker,
+      data_views: {
+        raw_data: canonicalRaw || null,
+        cleaned_data: canonicalRaw || null,
+        validated_data: validated
+          ? {
+              ...validated,
+              validated_rows: validatedRows,
+              overall_data_quality_score: qualityScore,
+            }
+          : null,
+      },
+      analytics: {
+        ratios,
+        patterns,
+        sector_kpis: sector,
+      },
+      confidence: confidence || {
+        overall_data_quality_score: qualityScore,
+      },
+      narratives,
+      pdf_path: finalReport ? `/results/${reportId}` : null,
     });
   } catch (error) {
     return next(error);

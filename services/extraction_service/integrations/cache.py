@@ -1,13 +1,15 @@
+import os
 from typing import Optional
 import redis.asyncio as redis
 
 _redis: Optional[redis.Redis] = None
 
 
-def get_redis(url: str = "redis://localhost:6379/0") -> redis.Redis:
+def get_redis(url: Optional[str] = None) -> redis.Redis:
     global _redis
     if _redis is None:
-        _redis = redis.from_url(url)
+        redis_url = url or os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+        _redis = redis.from_url(redis_url)
     return _redis
 
 
