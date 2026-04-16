@@ -2,10 +2,13 @@ import requests
 from pathlib import Path
 import time
 import sys
+import os
 
-URL = "http://127.0.0.1:8110/submit"
-STATUS_URL = "http://127.0.0.1:8110/status/{}"
-RESULT_URL = "http://127.0.0.1:8110/result/{}"
+PIPELINE_PORT = int(os.getenv("PIPELINE_ORCHESTRATOR_PORT", "8100"))
+BASE_URL = f"http://127.0.0.1:{PIPELINE_PORT}"
+URL = f"{BASE_URL}/submit"
+STATUS_URL = f"{BASE_URL}/status/{{}}"
+RESULT_URL = f"{BASE_URL}/result/{{}}"
 DATA_DIR = Path("services/data")
 OUT_DIR = Path("data/eval")
 OUT_DIR.mkdir(parents=True, exist_ok=True)

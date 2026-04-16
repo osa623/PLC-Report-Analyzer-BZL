@@ -17,10 +17,11 @@ import importlib
 from pathlib import Path
 from datetime import datetime
 
-# Load environment variables
+# Load environment variables from the repository-level .env only.
 dotenv_module = importlib.import_module("dotenv") if importlib.util.find_spec("dotenv") else None
 if dotenv_module is not None:
-    dotenv_module.load_dotenv()
+    repo_root = Path(__file__).resolve().parents[2]
+    dotenv_module.load_dotenv(dotenv_path=repo_root / ".env", override=False)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -784,9 +785,11 @@ if __name__ == '__main__':
     logger.info("Starting FD Extractor API Server...")
     logger.info(f"Upload directory: {UPLOAD_DIR}")
 
+    port = int(os.getenv("ANNUAL_REPORT_BACKEND_PORT", os.getenv("PORT", "5000")))
+
     app.run(
         host='0.0.0.0',
-        port=5000,
+        port=port,
         debug=True,
         threaded=True,
     )

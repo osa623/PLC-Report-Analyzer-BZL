@@ -1,8 +1,10 @@
 import requests
 from pathlib import Path
 import sys
+import os
 
-URL = "http://127.0.0.1:8110/submit"
+PIPELINE_PORT = int(os.getenv("PIPELINE_ORCHESTRATOR_PORT", "8100"))
+URL = f"http://127.0.0.1:{PIPELINE_PORT}/submit"
 DATA_DIR = Path("services/data")
 
 if not DATA_DIR.exists():
