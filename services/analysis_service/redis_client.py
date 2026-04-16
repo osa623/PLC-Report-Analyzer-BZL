@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from redis import Redis
 
-from config import get_config
+from .config import get_config
 from platform_core.shared_infra.redis_client import get_redis_client
 
 

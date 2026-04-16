@@ -2,8 +2,7 @@ import asyncio
 import json
 import time
 from typing import Dict, Any
-from .integrations.document_ai_client import call_document_ai, compute_pdf_hash
-from .integrations.textract_client import call_textract
+from .integrations.paddleocr_client import call_paddleocr, compute_pdf_hash
 from .integrations.gemini_normalizer import call_gemini_normalizer
 from .integrations.cache import get_cached, set_cached
 from .integrations.telemetry import PIPELINE_DURATION, CACHE_HITS, CACHE_MISSES
@@ -48,19 +47,16 @@ async def extract_pdf_to_structured(
 
     CACHE_MISSES.inc()
 
-    # Step 1: call Document AI
-    primary = await call_document_ai(pdf_bytes)
+    # Step 1: call PaddleOCR (free, offline extraction)
+    primary = await call_paddleocr(pdf_bytes)
 
-    # Step 2: fallback if confidence low
-    if primary.get("confidence", 0.0) < OCR_CONFIDENCE_THRESHOLD:
-        fallback = await call_textract(pdf_bytes)
-    else:
-        fallback = {
-            "raw_text": None,
-            "structured": None,
-            "confidence": 0.0,
-            "engine": None,
-        }
+    # No fallback needed - PaddleOCR is reliable and free
+    fallback = {
+        "raw_text": None,
+        "structured": None,
+        "confidence": 0.0,
+        "processor": None,
+    }
 
     merged = await _merge_ocr_results(primary, fallback)
 

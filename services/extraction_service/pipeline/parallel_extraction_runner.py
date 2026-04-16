@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from extractors import (
+from ..extractors import (
     balance_sheet,
     cashflow,
     equity,

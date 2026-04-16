@@ -5,21 +5,21 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from aggregation.canonical_builder import build_canonical
-from analytics.kpi_engine import compute_kpis
-from analytics.pattern_engine import compute_patterns
-from analytics.ratio_engine import compute_ratios
-from analytics.sector_comparison import compare_sector
-from confidence.confidence_score import compute_confidence
-from config import get_config
-from redis_client import get_redis
-from storage.analytics_repository import save_analytics
-from storage.canonical_validated_repository import save_canonical_validated
-from validation.accounting_validator import validate_accounting
-from validation.anomaly_detector import detect_anomalies
-from validation.cross_statement_validator import validate_cross_statement
-from validation.schema_validator import validate_schema
-from validation.self_correction_loop import run_self_correction_loop
+from .aggregation.canonical_builder import build_canonical
+from .analytics.kpi_engine import compute_kpis
+from .analytics.pattern_engine import compute_patterns
+from .analytics.ratio_engine import compute_ratios
+from .analytics.sector_comparison import compare_sector
+from .confidence.confidence_score import compute_confidence
+from .config import get_config
+from .redis_client import get_redis
+from .storage.analytics_repository import save_analytics
+from .storage.canonical_validated_repository import save_canonical_validated
+from .validation.accounting_validator import validate_accounting
+from .validation.anomaly_detector import detect_anomalies
+from .validation.cross_statement_validator import validate_cross_statement
+from .validation.schema_validator import validate_schema
+from .validation.self_correction_loop import run_self_correction_loop
 
 app = FastAPI(title="analysis-service", version="1.0.0")
 cfg = get_config()

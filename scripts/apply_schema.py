@@ -31,10 +31,9 @@ def main():
         cur = conn.cursor()
 
         # Create role if not exists
-        cur.execute(
-            sql.SQL("DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = {role}) THEN CREATE ROLE {role} WITH LOGIN PASSWORD {pw}; END IF; END $$;")
-            .format(role=sql.Literal(DB_ADMIN), pw=sql.Literal(DB_ADMIN_PW))
-        )
+        cur.execute("SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = %s", (DB_ADMIN,))
+        if not cur.fetchone():
+            cur.execute(sql.SQL("CREATE ROLE {} WITH LOGIN PASSWORD %s").format(sql.Identifier(DB_ADMIN)), (DB_ADMIN_PW,))
 
         # Create database if not exists
         cur.execute(

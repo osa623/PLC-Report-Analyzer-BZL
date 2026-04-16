@@ -1,0 +1,11 @@
+flask
+flask-cors
+python-dotenv
+google-generativeai
+openpyxl
+python-docx
+reportlab
+PyPDF2
+pdfplumber
+camelot-py
+tabula-py

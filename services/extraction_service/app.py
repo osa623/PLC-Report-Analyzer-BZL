@@ -5,14 +5,14 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from config import get_config
-from job_manager import mark_failed, mark_running, mark_success
-from pipeline.chunker import chunk_pages
-from pipeline.parallel_extraction_runner import run_parallel_extraction
-from pipeline.pdf_loader import load_pdf_pages
-from pipeline.structure_detector import detect_structure
-from redis_client import get_redis
-from storage.canonical_raw_repository import save_canonical_raw
+from .config import get_config
+from .job_manager import mark_failed, mark_running, mark_success
+from .pipeline.chunker import chunk_pages
+from .pipeline.parallel_extraction_runner import run_parallel_extraction
+from .pipeline.pdf_loader import load_pdf_pages
+from .pipeline.structure_detector import detect_structure
+from .redis_client import get_redis
+from .storage.canonical_raw_repository import save_canonical_raw
 
 app = FastAPI(title="extraction-service", version="1.0.0")
 cfg = get_config()
