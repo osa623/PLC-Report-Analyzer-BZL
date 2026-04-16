@@ -9,6 +9,8 @@ import {
 
 const navItems = [
   { label: 'Home', path: '/home', icon: HomeIcon },
+  { label: 'Pipeline', path: '/pipeline', icon: BoltIcon },
+  { label: 'Engineering', path: '/engineering', icon: BoltIcon },
   { label: 'Pricing', path: '/pricing', icon: BoltIcon },
   { label: 'Settings', path: '/settings', icon: Cog6ToothIcon },
 ];

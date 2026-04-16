@@ -12,6 +12,8 @@ import {
 
 const breadcrumbMap = {
   '/home': ['Home'],
+  '/pipeline': ['Pipeline'],
+  '/engineering': ['Engineering'],
   '/settings': ['Settings'],
   '/pricing': ['Pricing'],
 };

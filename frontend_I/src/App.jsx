@@ -14,6 +14,8 @@ import MFAsetupForm from './pages/MFAsetupForm';
 import MFAverifyForm from './pages/MFAverifyForm';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import PipelineApp from './legacy/PipelineApp';
+import EngineeringDashboard from './legacy/DashboardApp';
 
 // Contexts
 import AuthProvider from './utils/AuthContext';
@@ -44,12 +46,15 @@ function App() {
             <Route path="/pricing" element={<WithLayout><Pricing /></WithLayout>} />
             <Route path="/settings" element={<WithLayout><Settings /></WithLayout>} />
             <Route path="/profile/:userId" element={<WithLayout><Profile /></WithLayout>} />
+            <Route path="/pipeline" element={<WithLayout><PipelineApp /></WithLayout>} />
+            <Route path="/engineering" element={<WithLayout><EngineeringDashboard /></WithLayout>} />
 
             {/* ─── Redirect old routes ─── */}
             <Route path="/extract" element={<Navigate to="/home" replace />} />
             <Route path="/extraction-hub" element={<Navigate to="/home" replace />} />
             <Route path="/report-sections" element={<Navigate to="/home" replace />} />
             <Route path="/report-sections/:sectionKey" element={<Navigate to="/home" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/engineering" replace />} />
           </Routes>
         </Router>
       </CreditProvider>

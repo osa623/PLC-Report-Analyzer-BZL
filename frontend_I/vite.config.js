@@ -7,6 +7,10 @@ export default defineConfig({
     port: 3002,
     proxy: {
       '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      '/annual-api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
       }
