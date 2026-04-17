@@ -278,12 +278,23 @@ router.post('/reports', upload.array('report', 20), async (req, res, next) => {
 
     void startPipeline(reportId, uploadedPaths.length === 1 ? uploadedPaths[0] : uploadedPaths).catch(async (error) => {
       const failedStage = inferFailedStage(error);
+      let stages = {};
+      try {
+        const redis = await getRedis();
+        const raw = await redis.get(`report:${reportId}:pipeline_stages`);
+        stages = raw ? JSON.parse(raw) : {};
+      } catch (e) {}
+
       const state = {
-        EXTRACTION: { status: failedStage === 'EXTRACTION' ? 'failed' : 'completed', diagnostics: { error: error.message } },
-        ANALYSIS: { status: failedStage === 'ANALYSIS' ? 'failed' : (failedStage === 'EXTRACTION' ? 'pending' : 'completed'), diagnostics: { error: error.message } },
-        REPORTING: { status: failedStage === 'REPORTING' ? 'failed' : 'pending', diagnostics: { error: error.message } },
+        EXTRACTION: { ...stages.EXTRACTION, status: failedStage === 'EXTRACTION' ? 'failed' : 'completed', diagnostics: { error: error.message } },
+        ANALYSIS: { ...stages.ANALYSIS, status: failedStage === 'ANALYSIS' ? 'failed' : (failedStage === 'EXTRACTION' ? 'pending' : 'completed'), diagnostics: { error: error.message } },
+        REPORTING: { ...stages.REPORTING, status: failedStage === 'REPORTING' ? 'failed' : 'pending', diagnostics: { error: error.message } },
       };
-      await redis.set(`report:${reportId}:pipeline_stages`, JSON.stringify(state));
+      
+      try {
+        const redis = await getRedis();
+        await redis.set(`report:${reportId}:pipeline_stages`, JSON.stringify(state));
+      } catch (e) {}
     });
 
     return res.status(201).json({
@@ -473,6 +484,27 @@ router.get('/pipeline/:reportId/errors', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
+    const extractionFailure = parseJson(await redis.get(`report:${reportId}:extraction_failure`), null);
+
+    if (extractionFailure) {
+      return res.json({
+        report_id: reportId,
+        extraction_failure: extractionFailure,
+        error_catalog: [
+          'EXTRACTION_FAILED: deterministic extraction gate not satisfied',
+        ],
+        missing_values: [],
+        validation_summary: {
+          failed_rule_count: 1,
+        },
+        confidence_distribution: null,
+        weak_data_entries: [],
+        total_errors: 1,
+        total_missing: 0,
+        total_weak: 0,
+      });
+    }
+
     const validated = parseJson(await redis.get(`report:${reportId}:canonical_validated`), {});
     const validationIssues = Array.isArray(validated?.validation_issues) ? validated.validation_issues : [];
     const normalizedIssues = validationIssues.map((issue) => {
@@ -528,7 +560,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr] = await Promise.all([
+    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr, extractionFailureStr] = await Promise.all([
       redis.get(`report:${reportId}:meta`),
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
@@ -540,6 +572,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
       redis.get(`report:${reportId}:risk`),
       redis.get(`report:${reportId}:confidence`),
       redis.get(`report:${reportId}:final_report`),
+      redis.get(`report:${reportId}:extraction_failure`),
     ]);
 
     const meta = parseJson(rawMeta, {});
@@ -552,6 +585,21 @@ router.get('/reports/:reportId', async (req, res, next) => {
     const risk = parseJson(riskStr, {});
     const confidence = parseJson(confidenceStr, null);
     const finalReport = parseJson(finalReportStr, null);
+    const extractionFailure = parseJson(extractionFailureStr, null);
+
+    if (extractionFailure) {
+      return res.status(422).json({
+        id: reportId,
+        workflow_state: 'FAILED',
+        extraction_failure: extractionFailure,
+        transparency: {
+          documents_uploaded: Number(meta.document_count || extractionFailure.pdfs_processed || 1),
+          detected_reporting_years: Array.isArray(extractionFailure.years_detected) ? extractionFailure.years_detected : [],
+          analysis_executed: ['extraction'],
+          analysis_limited: ['Analysis stopped because mandatory extraction metrics were not met'],
+        },
+      });
+    }
 
     const artifacts = {
       hasUploadedFile: Boolean(uploadedFile),

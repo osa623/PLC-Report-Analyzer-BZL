@@ -7,7 +7,7 @@ EPSILON = 1e-6
 
 
 def _index(items: list) -> dict[str, float]:
-    return {item.label.lower(): float(item.value) for item in items}
+    return {item.label.lower(): float(item.value) for item in items if item.value is not None}
 
 
 def validate_accounting(canonical: CanonicalRawReport, with_checks: bool = False):

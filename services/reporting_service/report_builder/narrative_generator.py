@@ -23,9 +23,18 @@ def generate_narrative(
     year_text = ", ".join(years) if years else "latest reporting period"
     current_ratio = ratio_source.get("current_ratio")
     current_ratio_text = f"{float(current_ratio):.2f}" if isinstance(current_ratio, (int, float)) else "not available"
+    ratio_status = ratios.get("status") if isinstance(ratios, dict) else None
+    risk_status = risk.get("status") if isinstance(risk, dict) else None
+
+    if ratio_status == "blocked":
+        executive_summary = "Financial metrics were extracted, but ratio analytics were gated because required statement coverage was below the mandatory threshold."
+    elif risk_status == "blocked":
+        executive_summary = "Ratio analytics were generated, while risk outputs were gated due to insufficient ratio coverage for reliable risk scoring."
+    else:
+        executive_summary = "Analysis completed using extracted financial metrics from uploaded documents with data-scope transparency."
 
     return {
-        "executive_summary": "Analysis completed successfully using all available uploaded financial data.",
+        "executive_summary": executive_summary,
         "financial_health_overview": f"Current ratio: {current_ratio_text}. Detected periods: {year_text}.",
         "ratio_analysis": ratios,
         "risk_analysis": risk,

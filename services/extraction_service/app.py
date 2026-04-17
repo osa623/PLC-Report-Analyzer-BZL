@@ -11,12 +11,12 @@ from pydantic import BaseModel
 
 from .config import get_config
 from .job_manager import mark_failed, mark_running, mark_success
-from .pipeline.chunker import chunk_pages
-from .pipeline.parallel_extraction_runner import run_parallel_extraction
 from .pipeline.pdf_loader import load_pdf_pages
-from .pipeline.structure_detector import detect_structure
+from .pipeline.gemini_statement_extractor import extract_financial_statements_from_text
 from .redis_client import get_redis
 from .storage.canonical_raw_repository import save_canonical_raw
+from platform_core.shared_infra.redis_client import set_json
+from platform_core.temp_financial_repository import insert_temporary_financial_statement
 
 app = FastAPI(title="extraction-service", version="1.0.0")
 cfg = get_config()
@@ -36,41 +36,64 @@ def _resolve_input_paths(request: ExtractRequest) -> list[str]:
     return []
 
 
-def _merge_extractions(extractions: list[dict[str, Any]]) -> dict[str, Any]:
-    merged_financial = {
-        "income_statement": [],
-        "balance_sheet": [],
-        "cashflow": [],
-        "equity": [],
-    }
-    merged_narrative = {
-        "notes": [],
-        "risk": [],
-        "governance": [],
-        "esg": [],
-        "segment": [],
-    }
-    structures: list[dict[str, Any]] = []
+def _to_canonical_line_items(extractions: list[dict[str, Any]]) -> dict[str, Any]:
+    income_statement: list[dict[str, Any]] = []
+    balance_sheet: list[dict[str, Any]] = []
+    cashflow: list[dict[str, Any]] = []
+
+    def add_item(target: list[dict[str, Any]], label: str, value: Any, year: int | None) -> None:
+        if not isinstance(value, (int, float)):
+            return
+        target.append(
+            {
+                "label": label,
+                "value": float(value),
+                "period": str(year) if isinstance(year, int) else "latest",
+                "currency": "LKR",
+            }
+        )
 
     for extraction in extractions:
-        financial = extraction.get("financial_statements") or {}
-        narrative = extraction.get("narrative_sections") or {}
-        for key in merged_financial:
-            values = financial.get(key)
-            if isinstance(values, list):
-                merged_financial[key].extend(values)
-        for key in merged_narrative:
-            values = narrative.get(key)
-            if isinstance(values, list):
-                merged_narrative[key].extend(values)
-        structure = extraction.get("structure")
-        if isinstance(structure, dict):
-            structures.append(structure)
+        year = extraction.get("document_year")
+        statements = extraction.get("statements") if isinstance(extraction.get("statements"), dict) else {}
+        bs = statements.get("balance_sheet") if isinstance(statements.get("balance_sheet"), dict) else {}
+        inc = statements.get("income_statement") if isinstance(statements.get("income_statement"), dict) else {}
+        cf = statements.get("cashflow_statement") if isinstance(statements.get("cashflow_statement"), dict) else {}
+
+        add_item(balance_sheet, "Total Assets", bs.get("total_assets"), year)
+        add_item(balance_sheet, "Total Liabilities", bs.get("total_liabilities"), year)
+        add_item(balance_sheet, "Total Equity", bs.get("total_equity"), year)
+        add_item(balance_sheet, "Current Assets", bs.get("current_assets"), year)
+        add_item(balance_sheet, "Current Liabilities", bs.get("current_liabilities"), year)
+        add_item(balance_sheet, "Debt", bs.get("borrowings"), year)
+        add_item(balance_sheet, "Cash and Equivalents", bs.get("cash_and_equivalents"), year)
+
+        add_item(income_statement, "Revenue", inc.get("revenue_or_interest_income"), year)
+        add_item(income_statement, "Cost of Revenue", inc.get("cost_of_revenue"), year)
+        add_item(income_statement, "Gross Profit", inc.get("gross_profit"), year)
+        add_item(income_statement, "Operating Expenses", inc.get("operating_expenses"), year)
+        add_item(income_statement, "Operating Profit", inc.get("operating_profit"), year)
+        add_item(income_statement, "Net Income", inc.get("net_profit"), year)
+
+        add_item(cashflow, "Operating Cash Flow", cf.get("operating_cash_flow"), year)
+        add_item(cashflow, "Investing Cash Flow", cf.get("investing_cash_flow"), year)
+        add_item(cashflow, "Financing Cash Flow", cf.get("financing_cash_flow"), year)
+        add_item(cashflow, "Net Cash Flow", cf.get("net_cash_change"), year)
 
     return {
-        "financial_statements": merged_financial,
-        "narrative_sections": merged_narrative,
-        "structure": {"documents": structures},
+        "financial_statements": {
+            "income_statement": income_statement,
+            "balance_sheet": balance_sheet,
+            "cashflow": cashflow,
+            "equity": [],
+        },
+        "narrative_sections": {
+            "notes": [],
+            "risk": [],
+            "governance": [],
+            "esg": [],
+            "segment": [],
+        },
     }
 
 
@@ -92,20 +115,54 @@ def _extract_single_file(redis, report_id: str, file_path: str, ttl_seconds: int
     start = time.perf_counter()
     _set_document_status(redis, report_id, file_path, ttl_seconds, "running")
     pages = load_pdf_pages(file_path)
-    chunks = chunk_pages(pages)
-    structure = detect_structure(chunks)
-    output = run_parallel_extraction(chunks, structure, cfg)
+    full_text = "\n\n".join(pages)
+    output = extract_financial_statements_from_text(full_text, file_path, report_id)
     elapsed_ms = int((time.perf_counter() - start) * 1000)
+
+    if output.get("status") == "failed":
+        statements = output.get("statements") if isinstance(output.get("statements"), dict) else {}
+        bs = statements.get("balance_sheet") if isinstance(statements.get("balance_sheet"), dict) else {}
+        inc = statements.get("income_statement") if isinstance(statements.get("income_statement"), dict) else {}
+        diagnostic = {
+            "file_path": file_path,
+            "failure_reason": output.get("failure_reason") or "extraction failed",
+            "document_year": output.get("document_year"),
+            "detected_years": output.get("detected_years", []),
+            "metrics_extracted_count": int(output.get("metrics_extracted_count", 0)),
+            "missing_required_metrics": output.get("missing_required_metrics", []),
+            "quality_issues": output.get("quality_issues", []),
+            "critical_values": {
+                "total_assets": bs.get("total_assets"),
+                "total_liabilities": bs.get("total_liabilities"),
+                "total_equity": bs.get("total_equity"),
+                "revenue_or_interest_income": inc.get("revenue_or_interest_income"),
+                "net_profit": inc.get("net_profit"),
+            },
+        }
+        _set_document_status(
+            redis,
+            report_id,
+            file_path,
+            ttl_seconds,
+            "failed",
+            duration_ms=elapsed_ms,
+            error=diagnostic["failure_reason"],
+            diagnostics=diagnostic,
+        )
+        raise RuntimeError(json.dumps(diagnostic, ensure_ascii=True))
+
     _set_document_status(
         redis,
         report_id,
         file_path,
         ttl_seconds,
         "completed",
-        chunk_count=len(chunks),
+        page_count=len(pages),
         duration_ms=elapsed_ms,
+        document_year=output.get("document_year"),
+        metrics_extracted_count=output.get("metrics_extracted_count", 0),
     )
-    return output, len(chunks)
+    return output, len(pages)
 
 
 @app.post("/extract")
@@ -122,7 +179,7 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
             _set_document_status(redis, request.report_id, file_path, cfg.redis_ttl_seconds, "queued")
 
         extraction_outputs_by_path: dict[str, dict[str, Any]] = {}
-        total_chunks = 0
+        total_pages = 0
         file_errors: list[dict[str, str]] = []
 
         max_workers = min(len(input_paths), max(1, os.cpu_count() or 1), 8)
@@ -135,19 +192,62 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
             for future in as_completed(future_to_path):
                 file_path = future_to_path[future]
                 try:
-                    output, chunk_count = future.result()
+                    output, page_count = future.result()
                     extraction_outputs_by_path[file_path] = output
-                    total_chunks += chunk_count
+                    total_pages += page_count
+                    year = output.get("document_year")
+                    if not isinstance(year, int):
+                        raise RuntimeError("document_year not detected")
+                    insert_temporary_financial_statement(
+                        {
+                            "report_id": request.report_id,
+                            "year": year,
+                            "balance_sheet": output["statements"].get("balance_sheet", {}),
+                            "income_statement": output["statements"].get("income_statement", {}),
+                            "cashflow_statement": output["statements"].get("cashflow_statement", {}),
+                            "source_file": file_path,
+                            "extraction_confidence": output.get("extraction_confidence", 0.0),
+                            "metrics_extracted_count": int(output.get("metrics_extracted_count", 0)),
+                        }
+                    )
                 except Exception as exc:
+                    parsed_error: dict[str, Any] | None = None
+                    try:
+                        candidate = json.loads(str(exc))
+                        if isinstance(candidate, dict):
+                            parsed_error = candidate
+                    except Exception:
+                        parsed_error = None
+
                     _set_document_status(
                         redis,
                         request.report_id,
                         file_path,
                         cfg.redis_ttl_seconds,
                         "failed",
-                        error=str(exc),
+                        error=(parsed_error or {}).get("failure_reason", str(exc)),
                     )
-                    file_errors.append({"file_path": file_path, "error": str(exc)})
+                    file_errors.append(
+                        {
+                            "file_path": file_path,
+                            "error": (parsed_error or {}).get("failure_reason", str(exc)),
+                            "document_year": (parsed_error or {}).get("document_year"),
+                            "detected_years": (parsed_error or {}).get("detected_years", []),
+                            "metrics_extracted_count": int((parsed_error or {}).get("metrics_extracted_count", 0)),
+                            "missing_required_metrics": (parsed_error or {}).get(
+                                "missing_required_metrics",
+                                [
+                                    "balance_sheet.total_assets",
+                                    "balance_sheet.total_liabilities",
+                                    "balance_sheet.total_equity",
+                                    "income_statement.revenue_or_interest_income",
+                                    "income_statement.net_profit",
+                                ],
+                            ),
+                            "quality_issues": (parsed_error or {}).get("quality_issues", []),
+                            "critical_values": (parsed_error or {}).get("critical_values", {}),
+                        }
+                    )
 
         extraction_outputs = [
             extraction_outputs_by_path[p]
@@ -156,21 +256,69 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
         ]
 
         if not extraction_outputs:
-            raise RuntimeError("Extraction failed for all uploaded documents")
+            missing_union: set[str] = set()
+            years_detected: set[int] = set()
+            metrics_extracted_total = 0
+            for item in file_errors:
+                metrics_extracted_total += int(item.get("metrics_extracted_count", 0) or 0)
+                for missing in item.get("missing_required_metrics", []):
+                    if isinstance(missing, str):
+                        missing_union.add(missing)
+                year = item.get("document_year")
+                if isinstance(year, int):
+                    years_detected.add(year)
+                for detected in item.get("detected_years", []):
+                    if isinstance(detected, int):
+                        years_detected.add(detected)
 
-        extraction_output = _merge_extractions(extraction_outputs)
+            failure_report = {
+                "status": "extraction_failed",
+                "report_id": request.report_id,
+                "pdfs_processed": len(input_paths),
+                "years_detected": sorted(years_detected),
+                "metrics_extracted_count": metrics_extracted_total,
+                "missing_required_metrics": sorted(missing_union),
+                "document_errors": file_errors,
+            }
+            set_json(redis, f"report:{request.report_id}:extraction_failure", failure_report, cfg.redis_ttl_seconds)
+            raise HTTPException(status_code=422, detail=failure_report)
+
+        extraction_output = _to_canonical_line_items(extraction_outputs)
         payload = save_canonical_raw(
             redis, request.report_id, extraction_output, cfg.redis_ttl_seconds
         )
+
+        years_detected = sorted(
+            {
+                int(item.get("document_year"))
+                for item in extraction_outputs
+                if isinstance(item.get("document_year"), int)
+            }
+        )
+        coverage = {
+            "pdfs_processed": len(input_paths),
+            "valid_pdfs": len(extraction_outputs),
+            "years_detected": years_detected,
+            "metrics_extracted_count": int(
+                sum(int(item.get("metrics_extracted_count", 0)) for item in extraction_outputs)
+            ),
+            "avg_extraction_confidence": (
+                sum(float(item.get("extraction_confidence", 0.0)) for item in extraction_outputs) / len(extraction_outputs)
+            ),
+            "document_errors": file_errors,
+        }
+        set_json(redis, f"report:{request.report_id}:extraction_coverage", coverage, cfg.redis_ttl_seconds)
         mark_success(redis, request.report_id)
         return {
             "status": "completed",
             "report_id": request.report_id,
             "artifact": f"report:{request.report_id}:canonical_raw",
-            "chunk_count": total_chunks,
+            "page_count": total_pages,
             "document_count": len(extraction_outputs),
             "document_errors": file_errors,
             "schema_version": payload.schema_version,
+            "years_detected": years_detected,
+            "coverage": coverage,
         }
     except Exception as exc:
         mark_failed(redis, request.report_id, str(exc))

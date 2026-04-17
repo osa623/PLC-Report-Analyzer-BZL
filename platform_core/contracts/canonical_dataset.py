@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 class StatementLineItem(BaseModel):
     label: str
-    value: float
+    value: float | None = None
     period: str | None = None
     currency: str = "BDT"
     source_chunk_id: str | None = None

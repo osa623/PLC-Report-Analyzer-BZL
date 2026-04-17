@@ -3,7 +3,8 @@ import { Upload, ChevronRight, Loader2 } from 'lucide-react';
 
 export default function UploadCard({ onUpload, isUploading }) {
   const [files, setFiles] = useState([]);
-    const totalSizeMb = (files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(1);
+  const totalSizeMb = (files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(1);
+  const hasFiles = files.length > 0;
 
   const [symbol, setSymbol] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -27,7 +28,7 @@ export default function UploadCard({ onUpload, isUploading }) {
         {/* File drop zone */}
         <div
           className={`relative rounded-2xl border-2 border-dashed text-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
-            ${file ? 'border-green-300 bg-green-50/30' : 'border-slate-200 bg-slate-50/30 hover:border-slate-300 hover:bg-white'}`}
+            ${hasFiles ? 'border-green-300 bg-green-50/30' : 'border-slate-200 bg-slate-50/30 hover:border-slate-300 hover:bg-white'}`}
           style={{ padding: '32px 24px' }}
         >
           <input
@@ -39,8 +40,8 @@ export default function UploadCard({ onUpload, isUploading }) {
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
           <div className={`w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-3 transition-colors duration-200
-            ${file ? 'bg-green-100 border border-green-200/60' : 'bg-slate-100 border border-slate-200/60'}`}>
-            <Upload size={20} className={file ? 'text-green-600' : 'text-slate-400'} />
+            ${hasFiles ? 'bg-green-100 border border-green-200/60' : 'bg-slate-100 border border-slate-200/60'}`}>
+            <Upload size={20} className={hasFiles ? 'text-green-600' : 'text-slate-400'} />
           </div>
           <div className="text-[13px] font-semibold text-slate-800 tracking-[-0.01em]">
             {files.length === 0 ? 'Drop PDF files here or click to select' : `${files.length} file${files.length > 1 ? 's' : ''} selected`}

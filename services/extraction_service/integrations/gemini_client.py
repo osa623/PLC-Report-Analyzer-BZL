@@ -2,6 +2,9 @@ import asyncio
 import logging
 import os
 from typing import Dict, Any
+from urllib import request, parse
+
+import json
 
 from tenacity import (
     retry,
@@ -33,44 +36,69 @@ else:
 def _sync_call_gemini(prompt: str, max_output_tokens: int = 1024) -> Dict[str, Any]:
     GEMINI_CALLS.inc()
     start = time.time()
-    # Minimal, production-oriented placeholder for calling Gemini via Google Generative API.
-    # Configure via environment variables: GEMINI_PROVIDER=google and GOOGLE_API_KEY or application default creds
+    # Configure via environment variables: GEMINI_API (preferred) or GOOGLE_API_KEY.
     provider = os.environ.get("GEMINI_PROVIDER", "google")
     if provider != "google":
         raise NotImplementedError(
             "Only 'google' provider implemented for gemini_client"
         )
 
-    try:
-        # Import locally to avoid hard dependency at module import time
-        import google.generativeai as genai
-    except Exception:
-        raise RuntimeError(
-            "google.generativeai library is required for Gemini calls (install google-generative-ai)"
-        )
+    api_key = (
+        os.environ.get("GEMINI_API")
+        or os.environ.get("GOOGLE_API_KEY")
+        or os.environ.get("LLM_API_KEY")
+    )
+    if not api_key:
+        raise RuntimeError("GEMINI_API, GOOGLE_API_KEY, or LLM_API_KEY is required for Gemini extraction")
 
-    api_key = os.environ.get("GOOGLE_API_KEY")
-    if api_key:
-        genai.configure(api_key=api_key)
+    model = os.environ.get("LLM_MODEL", "gemini-2.0-flash")
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    url = f"{endpoint}?{parse.urlencode({'key': api_key})}"
 
-    # Example call (synchronous)
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0,
+            "maxOutputTokens": int(max_output_tokens),
+        },
+    }
+    body = json.dumps(payload).encode("utf-8")
+
+    req = request.Request(
+        url,
+        data=body,
+        method="POST",
+        headers={"Content-Type": "application/json"},
+    )
+
     try:
         if "pybreaker" in globals() and GEMINI_BREAKER is not None:
-            response = GEMINI_BREAKER.call(
-                genai.generate_text,
-                model="gemini-pro-1",
-                prompt=prompt,
-                max_output_tokens=max_output_tokens,
-            )
+            with GEMINI_BREAKER.call(request.urlopen, req, timeout=60) as resp:
+                raw = resp.read().decode("utf-8", errors="ignore")
         else:
-            response = genai.generate_text(
-                model="gemini-pro-1", prompt=prompt, max_output_tokens=max_output_tokens
-            )
+            with request.urlopen(req, timeout=60) as resp:
+                raw = resp.read().decode("utf-8", errors="ignore")
     finally:
         GEMINI_LATENCY.observe(time.time() - start)
 
-    # Response parsing depends on model output format; expect JSON string or structured text
-    return {"text": getattr(response, "text", str(response)), "raw": response}
+    parsed: Dict[str, Any]
+    try:
+        parsed = json.loads(raw)
+    except Exception:
+        parsed = {"raw": raw}
+
+    text = ""
+    candidates = parsed.get("candidates") if isinstance(parsed, dict) else None
+    if isinstance(candidates, list) and candidates:
+        parts = (
+            candidates[0]
+            .get("content", {})
+            .get("parts", [])
+        )
+        if isinstance(parts, list):
+            text = "".join(part.get("text", "") for part in parts if isinstance(part, dict))
+
+    return {"text": text, "raw": parsed}
 
 
 async def call_gemini(prompt: str, max_output_tokens: int = 1024) -> Dict[str, Any]:

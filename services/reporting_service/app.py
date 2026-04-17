@@ -12,7 +12,8 @@ from .report_builder.narrative_generator import generate_narrative
 from .report_builder.section_composer import compose_sections
 from .storage.final_report_repository import save_final_report
 from .workflow.job_status_tracker import mark_failed, mark_running, mark_success
-from platform_core.shared_infra.redis_client import get_json
+from platform_core.shared_infra.redis_client import get_json, set_json
+from platform_core.temp_financial_repository import delete_temporary_financial_statements
 
 app = FastAPI()
 cfg = get_config()
@@ -83,6 +84,8 @@ async def generate_report(request: GenerateReportRequest):
         sector = get_json(redis, f"report:{report_id}:sector_comparison", default={})
         risk = get_json(redis, f"report:{report_id}:risk", default={})
         meta = get_json(redis, f"report:{report_id}:meta", default={})
+        analysis_coverage = get_json(redis, f"report:{report_id}:analysis_coverage", default={})
+        extraction_coverage = get_json(redis, f"report:{report_id}:extraction_coverage", default={})
 
         if not validated:
             raise HTTPException(status_code=404, detail="canonical_validated not found")
@@ -92,6 +95,9 @@ async def generate_report(request: GenerateReportRequest):
         transparency = {
             "documents_uploaded": int(meta.get("document_count", 1) or 1),
             "detected_reporting_years": numeric_years,
+            "metrics_coverage": analysis_coverage,
+            "extraction_coverage": extraction_coverage,
+            "confidence_score": confidence,
             "analysis_executed": [
                 "extraction",
                 "normalization",
@@ -120,6 +126,16 @@ async def generate_report(request: GenerateReportRequest):
             "transparency": transparency,
         }
 
+        deleted_count = delete_temporary_financial_statements(report_id)
+        lifecycle_log = {
+            "report_id": report_id,
+            "temporary_storage_collection": "temporary_financial_statements",
+            "deleted_documents": deleted_count,
+            "status": "deleted_after_report_generation",
+        }
+        set_json(redis, f"report:{report_id}:temporary_storage_lifecycle", lifecycle_log, cfg.redis_ttl_seconds)
+
+        report_payload["temporary_storage_lifecycle"] = lifecycle_log
         save_final_report(redis, report_id, report_payload, cfg.redis_ttl_seconds)
         mark_success(redis, report_id)
         return report_payload
