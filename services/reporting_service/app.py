@@ -25,6 +25,21 @@ class GenerateReportRequest(BaseModel):
     report_id: str
 
 
+def _trend_limitations(year_count: int) -> list[str]:
+    if year_count >= 3:
+        return []
+    if year_count <= 1:
+        return [
+            "Trend analysis limited due to single reporting year",
+            "Multi-year pattern detection not available for current dataset",
+            "Structural financial snapshot generated from available data",
+        ]
+    return [
+        "Long-horizon trend detection is limited because fewer than three reporting years were detected",
+        "Structural financial snapshot generated from available data",
+    ]
+
+
 @app.get("/healthz")
 async def healthz():
     return {"status": "ok"}
@@ -66,11 +81,30 @@ async def generate_report(request: GenerateReportRequest):
         patterns = get_json(redis, f"report:{report_id}:patterns", default=[])
         confidence = get_json(redis, f"report:{report_id}:confidence", default={})
         sector = get_json(redis, f"report:{report_id}:sector_comparison", default={})
+        risk = get_json(redis, f"report:{report_id}:risk", default={})
+        meta = get_json(redis, f"report:{report_id}:meta", default={})
 
         if not validated:
             raise HTTPException(status_code=404, detail="canonical_validated not found")
 
-        narrative = generate_narrative(validated, ratios, patterns, confidence, sector)
+        years = ratios.get("detected_years") if isinstance(ratios.get("detected_years"), list) else []
+        numeric_years = [y for y in years if isinstance(y, str) and y.isdigit()]
+        transparency = {
+            "documents_uploaded": int(meta.get("document_count", 1) or 1),
+            "detected_reporting_years": numeric_years,
+            "analysis_executed": [
+                "extraction",
+                "normalization",
+                "validation",
+                "ratio_engine",
+                "risk_analysis",
+                "pattern_logic",
+                "report_generation",
+            ],
+            "analysis_limited": _trend_limitations(len(numeric_years)),
+        }
+
+        narrative = generate_narrative(validated, ratios, patterns, confidence, sector, risk, transparency)
         chart_data = build_chart_data(ratios)
         sections = compose_sections(narrative, chart_data)
 
@@ -79,9 +113,11 @@ async def generate_report(request: GenerateReportRequest):
             "status": "completed",
             "sections": sections,
             "ratios": ratios,
+            "risk": risk,
             "patterns": patterns,
             "confidence": confidence,
             "sector_comparison": sector,
+            "transparency": transparency,
         }
 
         save_final_report(redis, report_id, report_payload, cfg.redis_ttl_seconds)

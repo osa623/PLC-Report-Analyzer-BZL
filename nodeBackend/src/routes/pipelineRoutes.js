@@ -191,10 +191,45 @@ function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confi
   return artifacts.hasUploadedFile ? 'UPLOADED' : 'PENDING';
 }
 
+function trendLimitations(yearCount) {
+  if (yearCount >= 3) {
+    return [];
+  }
+  if (yearCount <= 1) {
+    return [
+      'Trend analysis limited due to single reporting year',
+      'Multi-year pattern detection not available for current dataset',
+      'Structural financial snapshot generated from available data',
+    ];
+  }
+  return [
+    'Long-horizon trend detection is limited because fewer than three reporting years were detected',
+    'Structural financial snapshot generated from available data',
+  ];
+}
+
 async function startPipeline(reportId, filePath) {
   await triggerExtract(reportId, filePath);
   await triggerAnalyze(reportId);
   await triggerGenerateReport(reportId);
+}
+
+function extractUploadedPaths(req, fieldName) {
+  const files = Array.isArray(req.files) ? req.files : [];
+  const fromArray = files
+    .filter((file) => !fieldName || file.fieldname === fieldName)
+    .map((file) => file.path)
+    .filter(Boolean);
+
+  if (fromArray.length > 0) {
+    return fromArray;
+  }
+
+  if (req.file?.path) {
+    return [req.file.path];
+  }
+
+  return [];
 }
 
 function inferFailedStage(error) {
@@ -219,15 +254,17 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
   }
 });
 
-router.post('/reports', upload.single('report'), async (req, res, next) => {
+router.post('/reports', upload.array('report', 20), async (req, res, next) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'PDF file is required' });
+    const uploadedPaths = extractUploadedPaths(req, 'report');
+    if (uploadedPaths.length === 0) {
+      return res.status(400).json({ error: 'At least one PDF file is required' });
     }
 
     const reportId = uuidv4();
     const redis = await getRedis();
-    await redis.set(`report:${reportId}:uploaded_file`, req.file.path);
+    await redis.set(`report:${reportId}:uploaded_file`, uploadedPaths[0]);
+    await redis.set(`report:${reportId}:uploaded_files`, JSON.stringify(uploadedPaths));
     await redis.set(
       `report:${reportId}:meta`,
       JSON.stringify({
@@ -235,10 +272,11 @@ router.post('/reports', upload.single('report'), async (req, res, next) => {
         symbol: req.body.symbol || 'UNKNOWN',
         name: req.body.name || 'Unknown Company',
         sector: req.body.sector || 'Diversified',
+        document_count: uploadedPaths.length,
       })
     );
 
-    void startPipeline(reportId, req.file.path).catch(async (error) => {
+    void startPipeline(reportId, uploadedPaths.length === 1 ? uploadedPaths[0] : uploadedPaths).catch(async (error) => {
       const failedStage = inferFailedStage(error);
       const state = {
         EXTRACTION: { status: failedStage === 'EXTRACTION' ? 'failed' : 'completed', diagnostics: { error: error.message } },
@@ -263,10 +301,14 @@ router.post('/extract', async (req, res, next) => {
     const { reportId } = req.body;
     const redis = await getRedis();
     const filePath = await redis.get(`report:${reportId}:uploaded_file`);
-    if (!filePath) {
+    const filePathsRaw = await redis.get(`report:${reportId}:uploaded_files`);
+    const filePaths = parseJson(filePathsRaw, []);
+    const inputPaths = Array.isArray(filePaths) && filePaths.length > 0 ? filePaths : (filePath ? [filePath] : []);
+
+    if (inputPaths.length === 0) {
       return res.status(404).json({ error: 'Uploaded file not found for reportId' });
     }
-    const response = await triggerExtract(reportId, filePath);
+    const response = await triggerExtract(reportId, inputPaths.length === 1 ? inputPaths[0] : inputPaths);
     return res.json(response.data);
   } catch (error) {
     return next(error);
@@ -296,7 +338,10 @@ router.post('/generate-report', async (req, res, next) => {
 router.post('/pipeline/start', async (req, res, next) => {
   try {
     const { reportId } = req.body;
-    const extract = await triggerExtract(reportId, req.body.filePath);
+    const fileInput = Array.isArray(req.body.filePaths) && req.body.filePaths.length > 0
+      ? req.body.filePaths
+      : req.body.filePath;
+    const extract = await triggerExtract(reportId, fileInput);
     const analyze = await triggerAnalyze(reportId);
     const report = await triggerGenerateReport(reportId);
     return res.json({ extract: extract.data, analyze: analyze.data, report: report.data });
@@ -320,7 +365,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, finalReportRaw] = await Promise.all([
+    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, riskRaw, finalReportRaw] = await Promise.all([
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
       redis.get(`report:${reportId}:confidence`),
@@ -329,6 +374,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
       redis.get(`report:${reportId}:ratios`),
       redis.get(`report:${reportId}:patterns`),
       redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:risk`),
       redis.get(`report:${reportId}:final_report`),
     ]);
 
@@ -337,7 +383,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
     const artifacts = {
       hasCanonicalRaw: Boolean(canonicalRaw),
       hasCanonicalValidated: Boolean(canonicalValidated),
-      hasAnalytics: Boolean(ratiosRaw || patternsRaw || sectorRaw),
+      hasAnalytics: Boolean(ratiosRaw || patternsRaw || sectorRaw || riskRaw),
       hasFinalReport: Boolean(finalReportRaw),
     };
     const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts);
@@ -405,15 +451,17 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [ratiosRaw, patternsRaw, sectorRaw] = await Promise.all([
+    const [ratiosRaw, patternsRaw, sectorRaw, riskRaw] = await Promise.all([
       redis.get(`report:${reportId}:ratios`),
       redis.get(`report:${reportId}:patterns`),
       redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:risk`),
     ]);
     return res.json({
       report_id: reportId,
       ratios: parseJson(ratiosRaw, {}),
       patterns: parseJson(patternsRaw, []),
+      risk: parseJson(riskRaw, {}),
       sector_kpis: parseJson(sectorRaw, {}),
     });
   } catch (error) {
@@ -480,7 +528,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, confidenceStr, finalReportStr] = await Promise.all([
+    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr] = await Promise.all([
       redis.get(`report:${reportId}:meta`),
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
@@ -489,6 +537,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
       redis.get(`report:${reportId}:ratios`),
       redis.get(`report:${reportId}:patterns`),
       redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:risk`),
       redis.get(`report:${reportId}:confidence`),
       redis.get(`report:${reportId}:final_report`),
     ]);
@@ -500,6 +549,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
     const ratios = parseJson(ratiosStr, {});
     const patterns = parseJson(patternsStr, []);
     const sector = parseJson(sectorStr, {});
+    const risk = parseJson(riskStr, {});
     const confidence = parseJson(confidenceStr, null);
     const finalReport = parseJson(finalReportStr, null);
 
@@ -507,7 +557,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
       hasUploadedFile: Boolean(uploadedFile),
       hasCanonicalRaw: Boolean(canonicalRaw),
       hasCanonicalValidated: Boolean(validated),
-      hasAnalytics: Boolean(ratiosStr || patternsStr || sectorStr),
+      hasAnalytics: Boolean(ratiosStr || patternsStr || sectorStr || riskStr),
       hasFinalReport: Boolean(finalReport),
     };
     const workflowState = deriveWorkflowStateFromArtifacts(stageState, artifacts, confidence);
@@ -525,6 +575,24 @@ router.get('/reports/:reportId', async (req, res, next) => {
       risk: Array.isArray(canonicalRaw?.narrative_sections?.risk) ? canonicalRaw.narrative_sections.risk : [],
       esg: Array.isArray(canonicalRaw?.narrative_sections?.esg) ? canonicalRaw.narrative_sections.esg : [],
       strategy: Array.isArray(canonicalRaw?.narrative_sections?.notes) ? canonicalRaw.narrative_sections.notes : [],
+    };
+
+    const detectedYears = Array.isArray(ratios?.detected_years)
+      ? ratios.detected_years.filter((y) => typeof y === 'string' && /^\d{4}$/.test(y))
+      : [];
+    const transparency = {
+      documents_uploaded: Number(meta.document_count || 1),
+      detected_reporting_years: detectedYears,
+      analysis_executed: [
+        'extraction',
+        'normalization',
+        'validation',
+        'ratio_engine',
+        'risk_analysis',
+        'pattern_logic',
+        'report_generation',
+      ],
+      analysis_limited: trendLimitations(detectedYears.length),
     };
 
     return res.json({
@@ -548,12 +616,14 @@ router.get('/reports/:reportId', async (req, res, next) => {
       analytics: {
         ratios,
         patterns,
+        risk,
         sector_kpis: sector,
       },
       confidence: confidence || {
         overall_data_quality_score: qualityScore,
       },
       narratives,
+      transparency,
       pdf_path: finalReport ? `/results/${reportId}` : null,
     });
   } catch (error) {
@@ -588,6 +658,27 @@ router.get('/results/:reportId', async (req, res, next) => {
       return res.status(404).json({ error: 'final_report not found' });
     }
     return res.json(JSON.parse(finalReport));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/pipeline/:reportId/documents', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const reportId = req.params.reportId;
+    const rawStatuses = await redis.hGetAll(`report:${reportId}:document_statuses`);
+
+    const documents = Object.values(rawStatuses || {}).map((raw) => parseJson(raw, null)).filter(Boolean);
+    const counts = {
+      queued: documents.filter((d) => d.status === 'queued').length,
+      running: documents.filter((d) => d.status === 'running').length,
+      completed: documents.filter((d) => d.status === 'completed').length,
+      failed: documents.filter((d) => d.status === 'failed').length,
+      total: documents.length,
+    };
+
+    return res.json({ report_id: reportId, documents, counts });
   } catch (error) {
     return next(error);
   }

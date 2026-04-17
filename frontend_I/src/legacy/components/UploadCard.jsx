@@ -2,19 +2,21 @@ import React, { useState } from 'react';
 import { Upload, ChevronRight, Loader2 } from 'lucide-react';
 
 export default function UploadCard({ onUpload, isUploading }) {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
+    const totalSizeMb = (files.reduce((acc, f) => acc + f.size, 0) / 1024 / 1024).toFixed(1);
+
   const [symbol, setSymbol] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [sector, setSector] = useState('Diversified');
 
   const handleSubmit = () => {
-    if (!file || isUploading) return;
-    onUpload(file, { symbol: symbol || 'UNKNOWN', name: companyName || 'Unknown', sector });
+    if (files.length === 0 || isUploading) return;
+    onUpload(files, { symbol: symbol || 'UNKNOWN', name: companyName || 'Unknown', sector });
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles(Array.from(e.target.files));
     }
   };
 
@@ -31,6 +33,7 @@ export default function UploadCard({ onUpload, isUploading }) {
           <input
             type="file"
             accept=".pdf"
+            multiple
             onChange={handleFileChange}
             id="file-upload-input"
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -40,10 +43,10 @@ export default function UploadCard({ onUpload, isUploading }) {
             <Upload size={20} className={file ? 'text-green-600' : 'text-slate-400'} />
           </div>
           <div className="text-[13px] font-semibold text-slate-800 tracking-[-0.01em]">
-            {file ? file.name : 'Drop PDF here or click to select'}
+            {files.length === 0 ? 'Drop PDF files here or click to select' : `${files.length} file${files.length > 1 ? 's' : ''} selected`}
           </div>
           <div className="text-[11px] text-slate-400 mt-1 tracking-[-0.01em]">
-            {file ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : 'Max 50MB • PDF only'}
+            {files.length > 0 ? `${totalSizeMb} MB total` : 'Max 50MB per file • PDF only • Multi-file supported'}
           </div>
         </div>
 
@@ -98,10 +101,10 @@ export default function UploadCard({ onUpload, isUploading }) {
         {/* Submit button */}
         <button
           onClick={handleSubmit}
-          disabled={!file || isUploading}
+          disabled={files.length === 0 || isUploading}
           id="start-analysis-btn"
           className={`w-full mt-4 py-3 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 transition-all duration-200 tracking-[-0.01em]
-            ${!file || isUploading
+            ${files.length === 0 || isUploading
               ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
               : 'bg-slate-900 text-white hover:bg-slate-800 shadow-sm hover:shadow-md cursor-pointer'}`}
         >

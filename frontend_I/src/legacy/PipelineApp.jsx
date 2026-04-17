@@ -16,6 +16,7 @@ import {
   fetchValidated,
   fetchAnalytics,
   fetchErrors,
+  fetchDocumentStatuses,
   downloadReportUrl,
 } from './api';
 
@@ -37,6 +38,7 @@ export default function PipelineApp() {
   const [validatedData, setValidatedData] = useState(null);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [errorsData, setErrorsData] = useState(null);
+  const [documentStatuses, setDocumentStatuses] = useState(null);
 
   // ─── Context tab ───────────────────────────────────────────
   const [contextTab, setContextTab] = useState('Pipeline Overview');
@@ -101,6 +103,11 @@ export default function PipelineApp() {
           let errorsPayloadLoaded = errorsLoadedRef.current;
           let analyticsPayloadLoaded = analyticsLoadedRef.current;
 
+          try {
+            const docs = await fetchDocumentStatuses(id);
+            setDocumentStatuses(docs);
+          } catch (_) {}
+
           const validationDone = stages.stages?.some(
             (s) => s.stage === 'VALIDATION' && s.status === 'completed'
           );
@@ -147,7 +154,8 @@ export default function PipelineApp() {
           const canStopLowConfidence =
             wf === 'LOW_CONFIDENCE' &&
             validationPayloadLoaded &&
-            errorsPayloadLoaded;
+            errorsPayloadLoaded &&
+            analyticsPayloadLoaded;
 
           if (wf === 'FAILED' || canStopCompleted || canStopLowConfidence) {
             clearInterval(pollRef.current);
@@ -198,23 +206,25 @@ export default function PipelineApp() {
   }, [reportId, companyInfo, contextTab, clearPipelineSession, persistPipelineSession]);
 
   // ─── Upload handler ────────────────────────────────────────
-  const handleUpload = async (file, company) => {
+  const handleUpload = async (files, company) => {
     setIsUploading(true);
     setUploadError(null);
     setStagesData(null);
     setValidatedData(null);
     setAnalyticsData(null);
     setErrorsData(null);
+    setDocumentStatuses(null);
 
     try {
-      const result = await uploadReport(file, company);
+      const result = await uploadReport(files, company);
       const id = result.report_id;
+      const fileCount = Array.isArray(files) ? files.length : 1;
       setReportId(id);
-      setCompanyInfo(`${company.name} — ${company.sector}`);
+      setCompanyInfo(`${company.name} — ${company.sector} • ${fileCount} file${fileCount > 1 ? 's' : ''}`);
       setContextTab('Pipeline Overview');
       persistPipelineSession({
         reportId: id,
-        companyInfo: `${company.name} — ${company.sector}`,
+        companyInfo: `${company.name} — ${company.sector} • ${fileCount} file${fileCount > 1 ? 's' : ''}`,
         contextTab: 'Pipeline Overview',
       });
       startPolling(id);
@@ -236,6 +246,42 @@ export default function PipelineApp() {
     <div className="space-y-5 fade-in">
       <PipelineStepper stages={stages} />
 
+      {Array.isArray(documentStatuses?.documents) && documentStatuses.documents.length > 0 && (
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="text-[14px] font-semibold text-slate-900 tracking-[-0.025em]">Document Processing Threads</div>
+            <div className="text-[11px] text-slate-500 tracking-[-0.01em]">
+              {documentStatuses?.counts?.completed || 0}/{documentStatuses?.counts?.total || 0} completed
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {documentStatuses.documents.map((doc, idx) => {
+              const status = doc.status || 'queued';
+              const badgeClass =
+                status === 'completed' ? 'bg-green-50/80 text-green-700 border-green-200/60' :
+                status === 'running' ? 'bg-slate-900 text-white border-slate-900' :
+                status === 'failed' ? 'bg-red-50/80 text-red-700 border-red-200/60' :
+                'bg-slate-50 text-slate-500 border-slate-200/80';
+
+              const shortName = String(doc.file_path || `document-${idx + 1}`).split(/[/\\]/).pop();
+              return (
+                <div key={`${doc.file_path || 'doc'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-[12px] font-medium text-slate-700 truncate tracking-[-0.01em]">{shortName}</div>
+                    <span className={`text-[10px] uppercase font-semibold px-2 py-0.5 rounded-lg border tracking-wide ${badgeClass}`}>{status}</span>
+                  </div>
+                  <div className="mt-1 text-[11px] text-slate-400 tracking-[-0.01em]">
+                    {typeof doc.chunk_count === 'number' ? `${doc.chunk_count} chunks` : 'Waiting for chunking'}
+                    {typeof doc.duration_ms === 'number' ? ` · ${(doc.duration_ms / 1000).toFixed(1)}s` : ''}
+                    {doc.error ? ` · ${doc.error}` : ''}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Three-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr_0.8fr] gap-4 items-start">
         <ValidatedDataTable data={validatedData} />
@@ -252,7 +298,7 @@ export default function PipelineApp() {
       <TrendCharts validatedData={validatedData} />
 
       {/* Download section */}
-      {workflowState === 'COMPLETED' && reportId && (
+      {(workflowState === 'COMPLETED' || workflowState === 'LOW_CONFIDENCE') && reportId && (
         <div className="card p-4 flex justify-end">
           <a
             href={downloadReportUrl(reportId)}
@@ -271,10 +317,10 @@ export default function PipelineApp() {
           <span className="text-2xl">⚠️</span>
           <div>
             <div className="text-[13px] font-semibold text-amber-800 tracking-[-0.01em]">
-              Low Confidence — Analytics & Report Skipped
+              Low Confidence — Analysis Completed With Limited Data Coverage
             </div>
             <div className="text-[12px] text-amber-700 mt-1 tracking-[-0.01em]">
-              The overall data quality score is below the threshold. Review errors and validated data to diagnose issues.
+              Pipeline execution completed. Review extraction diagnostics, validated data, and analytics to improve data coverage.
             </div>
           </div>
         </div>

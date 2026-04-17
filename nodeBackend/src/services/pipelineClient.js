@@ -1,8 +1,16 @@
 const axios = require('axios');
 const config = require('../config');
 
-async function triggerExtract(reportId, filePath) {
-  return axios.post(`${config.extractionServiceUrl}/extract`, { report_id: reportId, file_path: filePath });
+async function triggerExtract(reportId, fileInput) {
+  const payload = { report_id: reportId };
+
+  if (Array.isArray(fileInput)) {
+    payload.file_paths = fileInput;
+  } else {
+    payload.file_path = fileInput;
+  }
+
+  return axios.post(`${config.extractionServiceUrl}/extract`, payload);
 }
 
 async function triggerAnalyze(reportId) {

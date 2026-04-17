@@ -14,9 +14,13 @@ export async function checkHealth() {
 }
 
 // ─── Upload ──────────────────────────────────────────────────
-export async function uploadReport(file, company = {}) {
+export async function uploadReport(fileOrFiles, company = {}) {
   const formData = new FormData();
-  formData.append('report', file);
+  if (Array.isArray(fileOrFiles)) {
+    fileOrFiles.forEach((file) => formData.append('report', file));
+  } else {
+    formData.append('report', fileOrFiles);
+  }
   formData.append('symbol', company.symbol || 'UNKNOWN');
   formData.append('name', company.name || 'Unknown Company');
   formData.append('sector', company.sector || 'Diversified');
@@ -57,6 +61,11 @@ export async function fetchAnalytics(reportId) {
 
 export async function fetchErrors(reportId) {
   const res = await http.get(`/pipeline/${reportId}/errors`);
+  return res.data;
+}
+
+export async function fetchDocumentStatuses(reportId) {
+  const res = await http.get(`/pipeline/${reportId}/documents`);
   return res.data;
 }
 

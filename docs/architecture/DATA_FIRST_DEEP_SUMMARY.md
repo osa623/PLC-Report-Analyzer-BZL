@@ -7,8 +7,8 @@ The platform is now organized around a strict data-quality spine:
 1. Extract first.
 2. Aggregate into a canonical raw dataset.
 3. Validate and score confidence.
-4. Gate analytics by quality threshold.
-5. Generate outputs only from validated data.
+4. Compute analytics from validated data with data-depth-aware fallbacks.
+5. Generate outputs for every run, including single-document runs.
 
 This architecture shifts correctness responsibility from prompts to deterministic validation and traceable contracts.
 
@@ -55,13 +55,15 @@ Validation responsibilities:
 
 Output becomes report:{report_id}:canonical_validated with confidence and error catalog.
 
-### 5) Analytics Gating
+### 5) Analytics Continuity and Depth-Aware Logic
 
-- Gate compares overall_data_quality_score against ANALYTICS_QUALITY_THRESHOLD.
-- If below threshold: transition to LOW_CONFIDENCE terminal path.
-- If above threshold: run ratios, sector KPIs, and patterns.
+- Analytics must execute for every run and never block on low upload count.
+- Ratio engine computes every ratio possible from available fields.
+- Risk analysis is mandatory and always generated, including one-document runs.
+- Growth and long-horizon trend signals are generated only when enough yearly depth exists.
+- If yearly depth is limited, outputs include transparent limitation flags instead of failing.
 
-This prevents contaminated analytics from weak extraction sets.
+This preserves continuity while keeping uncertainty explicit.
 
 ### 6) Report Generation and UI Transparency
 
@@ -110,7 +112,7 @@ The architecture should be considered fully compliant when all of the following 
 
 1. Analytics never read report:{report_id} directly.
 2. All analytics are sourced from canonical_validated rows only.
-3. LOW_CONFIDENCE is implemented as a terminal quality path, not FAILED.
+3. Low confidence does not block execution; outputs include transparent quality and depth limitations.
 4. Frontend displays stage status, confidence, and provenance drilldown.
 5. Comparative analysis stores eligibility and exclusion reasons with confidence context.
 
