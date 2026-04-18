@@ -18,7 +18,22 @@ def compose_sections(narrative: dict, chart_data: dict) -> dict:
     }
 
     investor_report = narrative.get("investor_report") if isinstance(narrative.get("investor_report"), dict) else {}
+    ordered = {
+        "Data Reliability & Restatement Report": investor_report.get("Data Coverage & Report Quality Assessment", {}),
+        "Financial Ratio Tables (Year-wise)": investor_report.get("Ratio Analysis Dashboard", {}),
+        "Multi-Year Trend Analysis": investor_report.get("Multi-Year Trend Analysis", investor_report.get("Structural Health Analysis", {})),
+        "Forensic & Anomaly Findings": investor_report.get("Risk & Red Flag Detection", {}),
+        "Risk Scoring Dashboard": investor_report.get("Final Risk Score & Verdict", {}),
+        "Investor-Grade Analytical Narrative": {
+            "executive_summary": investor_report.get("Executive Summary", ""),
+            "investment_perspective": investor_report.get("Investment Perspective (Bull vs Bear case)", {}),
+            "sector_interpretation": investor_report.get("Sector-Aware Interpretation", {}),
+            "annual_report_derived_insights": investor_report.get("Annual Report Derived Insights", {}),
+            "external_context_insights": investor_report.get("External Context Insights", {}),
+        },
+    }
     return {
         "investor_grade_report": investor_report,
+        "institutional_research_report": ordered,
         **legacy,
     }

@@ -9,6 +9,7 @@ import ConfidenceChart from './components/ConfidenceChart';
 import QualitySummary from './components/QualitySummary';
 import UploadCard from './components/UploadCard';
 import TrendCharts from './components/TrendCharts';
+import { AlertTriangle, X } from 'lucide-react';
 import {
   checkHealth,
   uploadReport,
@@ -42,6 +43,9 @@ export default function PipelineApp() {
 
   // ─── Context tab ───────────────────────────────────────────
   const [contextTab, setContextTab] = useState('Pipeline Overview');
+
+  // Widget state
+  const [showIssuesWidget, setShowIssuesWidget] = useState(false);
 
   // ─── Polling ref ───────────────────────────────────────────
   const pollRef = useRef(null);
@@ -241,6 +245,13 @@ export default function PipelineApp() {
   const stages = stagesData?.stages || [];
   const workflowState = stagesData?.workflow_state || null;
 
+  // Check if we have active issues to show a red icon
+  const hasIssues = errorsData && (
+    (errorsData.error_catalog && errorsData.error_catalog.length > 0) ||
+    (errorsData.missing_values && errorsData.missing_values.length > 0) ||
+    (errorsData.extraction_failure && errorsData.extraction_failure.document_errors?.length > 0)
+  );
+
   // ─── Render helpers ────────────────────────────────────────
   const renderPipelineOverview = () => (
     <div className="space-y-5 fade-in">
@@ -285,7 +296,7 @@ export default function PipelineApp() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
             {documentStatuses.documents.map((doc, idx) => {
               const status = doc.status || 'queued';
               const badgeClass =
@@ -296,15 +307,14 @@ export default function PipelineApp() {
 
               const shortName = String(doc.file_path || `document-${idx + 1}`).split(/[/\\]/).pop();
               return (
-                <div key={`${doc.file_path || 'doc'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[12px] font-medium text-slate-700 truncate tracking-[-0.01em]">{shortName}</div>
-                    <span className={`text-[10px] uppercase font-semibold px-2 py-0.5 rounded-lg border tracking-wide ${badgeClass}`}>{status}</span>
+                <div key={`${doc.file_path || 'doc'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 flex flex-col justify-between">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="text-[12px] font-medium text-slate-700 truncate tracking-[-0.01em]" title={shortName}>{shortName}</div>
+                    <span className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap ${badgeClass}`}>{status}</span>
                   </div>
-                  <div className="mt-1 text-[11px] text-slate-400 tracking-[-0.01em]">
-                    {typeof doc.chunk_count === 'number' ? `${doc.chunk_count} chunks` : 'Waiting for chunking'}
-                    {typeof doc.duration_ms === 'number' ? ` · ${(doc.duration_ms / 1000).toFixed(1)}s` : ''}
-                    {doc.error ? ` · ${doc.error}` : ''}
+                  <div className="mt-auto text-[10px] text-slate-400 tracking-[-0.01em] flex justify-between">
+                    <span>{typeof doc.chunk_count === 'number' ? `${doc.chunk_count} chunks` : 'Waiting'}</span>
+                    <span>{typeof doc.duration_ms === 'number' ? `${(doc.duration_ms / 1000).toFixed(1)}s` : ''}</span>
                   </div>
                 </div>
               );
@@ -313,11 +323,10 @@ export default function PipelineApp() {
         </div>
       )}
 
-      {/* Three-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr_0.8fr] gap-4 items-start">
+      {/* Responsive overview grid — Compacted to 2 columns by moving Errors out */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         <ValidatedDataTable data={validatedData} />
         <AnalyticsCards analytics={analyticsData} />
-        <ErrorsPanel errors={errorsData} />
       </div>
 
       {/* Bottom row: charts */}
@@ -326,7 +335,7 @@ export default function PipelineApp() {
         <QualitySummary validatedData={validatedData} errors={errorsData} />
       </div>
 
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
 
       {/* Download section */}
       {(workflowState === 'COMPLETED' || workflowState === 'LOW_CONFIDENCE') && reportId && (
@@ -362,14 +371,14 @@ export default function PipelineApp() {
   const renderValidatedDataTab = () => (
     <div className="space-y-5 fade-in">
       <ValidatedDataTable data={validatedData} />
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
     </div>
   );
 
   const renderAnalyticsTab = () => (
     <div className="space-y-5 fade-in">
       <AnalyticsCards analytics={analyticsData} />
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
     </div>
   );
 
@@ -401,7 +410,7 @@ export default function PipelineApp() {
 
   // ─── Main layout ───────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 relative overflow-x-hidden">
       <Navbar activeTab={globalTab} onTabChange={setGlobalTab} connected={connected} />
 
       {reportId && (
@@ -414,7 +423,7 @@ export default function PipelineApp() {
         />
       )}
 
-      <main className="max-w-[1340px] mx-auto px-6 lg:px-8 py-6 pb-16">
+      <main className="max-w-[1340px] mx-auto px-6 lg:px-8 py-6 pb-24">
         {/* Dashboard tab */}
         {globalTab === 'Dashboard' && (
           <>
@@ -521,6 +530,40 @@ export default function PipelineApp() {
           </div>
         )}
       </main>
+
+      {/* ── Issues pop-out button Widget ────────────────────────────── */}
+      <div className="fixed bottom-6 right-6 z-50">
+         <button 
+            onClick={() => setShowIssuesWidget(!showIssuesWidget)}
+            className={`flex items-center gap-2 px-4 py-3 rounded-full font-semibold text-[13px] shadow-lg border transition-all duration-300
+               ${hasIssues ? 'bg-red-50/90 hover:bg-red-100 text-red-700 border-red-200/80 shadow-red-500/10' : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200 shadow-slate-200/20'}
+            `}
+         >
+            <AlertTriangle size={16} className={hasIssues ? 'text-red-500' : 'text-slate-400'} />
+            <span>Issues & Warnings</span>
+         </button>
+      </div>
+
+      {/* ── Issues Panel ────────────────────────────────────────────── */}
+      <div className={`fixed top-0 right-0 h-full w-[440px] max-w-[90vw] bg-slate-50 border-l border-slate-200 shadow-[0_0_40px_rgba(0,0,0,0.1)] z-[60] transform transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col ${showIssuesWidget ? 'translate-x-0' : 'translate-x-full'}`}>
+         <div className="h-16 border-b border-slate-200/80 flex items-center justify-between px-6 bg-white shrink-0 shadow-sm">
+            <h3 className="text-[14px] font-bold text-slate-800 flex items-center gap-2 tracking-[-0.01em]">
+               <AlertTriangle size={18} className={hasIssues ? 'text-red-500' : 'text-slate-400'} />
+               System Log & Diagnostics
+            </h3>
+            <button onClick={() => setShowIssuesWidget(false)} className="text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-lg hover:bg-slate-100">
+               <X size={20} />
+            </button>
+         </div>
+         <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 no-scrollbar relative">
+            <ErrorsPanel errors={errorsData} />
+         </div>
+      </div>
+      
+      {/* Overlay backdrop */}
+      {showIssuesWidget && (
+         <div className="fixed inset-0 bg-slate-900/10 z-[55] backdrop-blur-[2px] transition-opacity duration-300" onClick={() => setShowIssuesWidget(false)}></div>
+      )}
     </div>
   );
 }

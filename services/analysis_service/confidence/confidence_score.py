@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 
-def compute_confidence(issues: list, ratios: dict[str, float], kpis: dict[str, float]) -> dict:
-    # Base quality starts conservative and rises with evidence completeness.
-    score = 0.35
-    issue_penalty = min(len(issues) * 0.08, 0.5)
+def compute_confidence(
+    issues: list,
+    ratios: dict,
+    kpis: dict,
+    merged: dict | None = None,
+    extraction_coverage: dict | None = None,
+) -> dict:
+    score = 0.20
+    issue_penalty = min(len(issues) * 0.04, 0.30)
 
     latest_metrics = ratios
     if isinstance(ratios.get("latest_year"), str) and isinstance(ratios.get("by_year"), dict):
@@ -16,6 +21,8 @@ def compute_confidence(issues: list, ratios: dict[str, float], kpis: dict[str, f
     ratio_coverage = min(1.0, numeric_ratio_count / 20.0)
 
     years = ratios.get("detected_years") if isinstance(ratios.get("detected_years"), list) else []
+    if not years and isinstance(merged, dict):
+        years = merged.get("years") if isinstance(merged.get("years"), list) else []
     numeric_years = [y for y in years if isinstance(y, str) and y.isdigit()]
     year_coverage = min(1.0, len(numeric_years) / 3.0)
 
@@ -41,10 +48,40 @@ def compute_confidence(issues: list, ratios: dict[str, float], kpis: dict[str, f
     if isinstance(latest_metrics, dict):
         completeness = sum(1 for key in required_keys if isinstance(latest_metrics.get(key), (int, float))) / float(len(required_keys))
 
-    score += 0.20 * ratio_coverage
-    score += 0.20 * year_coverage
+    # Unit consistency component from merged per-year metadata.
+    unit_consistency = 0.0
+    if isinstance(merged, dict):
+        financials = merged.get("financials") if isinstance(merged.get("financials"), dict) else {}
+        currencies = {
+            (financials.get(y, {}) or {}).get("currency")
+            for y in merged.get("years", [])
+            if (financials.get(y, {}) or {}).get("currency")
+        }
+        multipliers = {
+            (financials.get(y, {}) or {}).get("unit_multiplier")
+            for y in merged.get("years", [])
+            if isinstance((financials.get(y, {}) or {}).get("unit_multiplier"), int)
+        }
+        unit_consistency = 1.0 if len(currencies) <= 1 and len(multipliers) <= 1 else 0.0
+
+    # Multi-year continuity component from hard-validation gate result.
+    continuity = 0.0
+    if gates:
+        continuity = 1.0 if bool(gates.get("gate_4_multi_year_continuity")) else 0.0
+
+    # Re-extraction success proxy: lower retries imply higher confidence.
+    re_extraction_success = 0.5
+    if isinstance(extraction_coverage, dict):
+        avg_attempts = float(extraction_coverage.get("avg_re_extraction_attempts", 1.0) or 1.0)
+        re_extraction_success = max(0.0, min(1.0, 1.0 - ((avg_attempts - 1.0) / 3.0)))
+
     score += 0.20 * completeness
-    score += 0.25 * validation_pass_rate
+    score += 0.20 * validation_pass_rate
+    score += 0.15 * unit_consistency
+    score += 0.15 * continuity
+    score += 0.15 * year_coverage
+    score += 0.10 * re_extraction_success
+    score += 0.05 * ratio_coverage
     score -= issue_penalty
 
     if not ratios:
@@ -64,4 +101,7 @@ def compute_confidence(issues: list, ratios: dict[str, float], kpis: dict[str, f
         "validation_pass_rate": validation_pass_rate,
         "statement_completeness": completeness,
         "year_coverage": year_coverage,
+        "unit_consistency": unit_consistency,
+        "multi_year_continuity": continuity,
+        "re_extraction_success_rate": re_extraction_success,
     }

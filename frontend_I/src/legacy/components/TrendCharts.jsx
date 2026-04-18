@@ -23,6 +23,37 @@ function extractTrendData(rows) {
   return trends;
 }
 
+function extractRatioTrends(analytics) {
+  const byYear = analytics?.ratios?.by_year;
+  if (!byYear || typeof byYear !== 'object') return [];
+
+  const years = Object.keys(byYear).sort((a, b) => a.localeCompare(b));
+  if (years.length < 2) return [];
+
+  const preferredMetrics = [
+    { key: 'net_margin', label: 'Net Margin', color: '#0f766e' },
+    { key: 'roe', label: 'ROE', color: '#0ea5e9' },
+    { key: 'current_ratio', label: 'Current Ratio', color: '#d97706' },
+    { key: 'debt_to_equity', label: 'Debt to Equity', color: '#be123c' },
+    { key: 'operating_cashflow_to_net_profit', label: 'OCF to Net Profit', color: '#334155' },
+  ];
+
+  return preferredMetrics
+    .map((metric) => {
+      const data = years
+        .map((year) => ({ year, value: byYear[year]?.[metric.key] }))
+        .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
+      if (data.length < 2) return null;
+      return {
+        key: `ratio_${metric.key}`,
+        label: `${metric.label} Trend`,
+        color: metric.color,
+        data,
+      };
+    })
+    .filter(Boolean);
+}
+
 function MiniBarChart({ data, color }) {
   const maxVal = Math.max(...data.map((d) => Math.abs(d.value)), 1);
   return (
@@ -49,10 +80,11 @@ function formatLargeNum(val) {
   return val.toLocaleString();
 }
 
-export default function TrendCharts({ validatedData }) {
+export default function TrendCharts({ validatedData, analytics }) {
   const rows = validatedData?.validated?.validated_rows || [];
   const trends = useMemo(() => extractTrendData(rows), [rows]);
-  const trendEntries = Object.values(trends);
+  const ratioTrends = useMemo(() => extractRatioTrends(analytics), [analytics]);
+  const trendEntries = [...Object.values(trends), ...ratioTrends];
 
   if (trendEntries.length === 0) return null;
 
@@ -60,10 +92,10 @@ export default function TrendCharts({ validatedData }) {
     <div className="card fade-in">
       <div className="card-header">Financial Trends (Validated Data)</div>
       <div className="card-body">
-        <div className="grid gap-5" style={{ gridTemplateColumns: `repeat(${Math.min(trendEntries.length, 3)}, 1fr)` }}>
+        <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           {trendEntries.map((trend) => (
-            <div key={trend.key}>
-              <div className="text-[12px] font-semibold text-slate-500 mb-2 tracking-[-0.01em]">{trend.label}</div>
+            <div className='border-2 p-4 shadow-xl' key={trend.key}>
+              <div className="text-[12px] font-semibold text-slate-500 mb-8 tracking-[-0.01em]">{trend.label}</div>
               <MiniBarChart data={trend.data} color={trend.color} />
               <div className="mt-1.5 flex justify-between">
                 {trend.data.map((d, i) => (

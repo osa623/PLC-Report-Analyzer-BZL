@@ -156,8 +156,15 @@ export default function PipelineApp() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
       <PipelineStepper stages={stages} />
 
-      {/* Three-column grid: table + metrics + errors */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 0.8fr', gap: 16, alignItems: 'start' }}>
+      {/* Responsive grid: table + metrics + errors */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 16,
+          alignItems: 'start',
+        }}
+      >
         <ValidatedDataTable data={validatedData} />
         <AnalyticsCards analytics={analyticsData} />
         <ErrorsPanel errors={errorsData} />
@@ -170,7 +177,7 @@ export default function PipelineApp() {
       </div>
 
       {/* Trend charts */}
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
 
       {/* Download section */}
       {workflowState === 'COMPLETED' && reportId && (
@@ -228,14 +235,14 @@ export default function PipelineApp() {
   const renderValidatedDataTab = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
       <ValidatedDataTable data={validatedData} />
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
     </div>
   );
 
   const renderAnalyticsTab = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }} className="fade-in">
       <AnalyticsCards analytics={analyticsData} />
-      <TrendCharts validatedData={validatedData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
     </div>
   );
 

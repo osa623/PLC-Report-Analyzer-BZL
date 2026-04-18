@@ -110,6 +110,12 @@ def compute_risk_signals(ratios: dict) -> dict:
     return {
         "overall_risk_score": weighted_score_100,
         "overall_risk_level": weighted_band,
+        "profitability_score": round((1.0 - profitability_score) * 100.0, 2),
+        "liquidity_score": round((1.0 - liquidity_score) * 100.0, 2),
+        "solvency_score": round((1.0 - debt_score) * 100.0, 2),
+        "earnings_quality_score": round((1.0 - accounting_flag_score) * 100.0, 2),
+        "growth_stability_score": round((1.0 - growth_stability_score) * 100.0, 2),
+        "final_financial_health_score": round((1.0 - weighted_score_0_1) * 100.0, 2),
         "risk_scores": risk_scores,
         "risk_levels": risk_levels,
         "risk_flags": flags,

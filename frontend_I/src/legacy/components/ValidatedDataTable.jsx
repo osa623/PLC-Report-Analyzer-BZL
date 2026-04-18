@@ -69,11 +69,11 @@ export default function ValidatedDataTable({ data }) {
           <span className="text-[11px] text-slate-400 ml-2 tracking-[-0.01em]">{filteredRows.length} / {rows.length} rows</span>
         </div>
       </div>
-      <div className="overflow-x-auto max-h-[420px]">
+      <div className="overflow-x-auto max-h-full">
         <table className="data-table">
           <thead>
             <tr>
-              {['canonical_label', 'value', 'year', 'statement_type', 'confidence_score', 'page_number'].map((col) => (
+              {['canonical_label', 'value', 'year', 'statement_type', 'confidence_score'].map((col) => (
                 <th key={col} onClick={() => handleSort(col)} className="cursor-pointer select-none">
                   {col === 'canonical_label' ? 'Label' : col === 'value' ? 'Value' : col === 'year' ? 'Year' : col === 'statement_type' ? 'Statement' : col === 'confidence_score' ? 'Confidence' : 'Page'}
                   {sortCol === col && (sortAsc ? ' ▲' : ' ▼')}
@@ -89,7 +89,6 @@ export default function ValidatedDataTable({ data }) {
                 <td>{row.year || '—'}</td>
                 <td><span className="text-[11px] bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-lg tracking-[-0.01em]">{row.statement_type || '—'}</span></td>
                 <td><span className={`confidence-badge ${confidenceClass(row.confidence_score || 0)}`}>{((row.confidence_score || 0) * 100).toFixed(0)}%</span></td>
-                <td className="text-slate-500">{row.page_number ?? '—'}</td>
               </tr>
             ))}
           </tbody>

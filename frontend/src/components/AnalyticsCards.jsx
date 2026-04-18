@@ -25,6 +25,127 @@ function toTitleCase(text) {
     .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+function formatFinancialValue(value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  const abs = Math.abs(value);
+  if (abs >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `${(value / 1e3).toFixed(1)}K`;
+  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function isRatioLikeMetric(key = '') {
+  const k = String(key).toLowerCase();
+  return (
+    k.includes('ratio') ||
+    k.includes('margin') ||
+    k.includes('growth') ||
+    k.includes('return') ||
+    k.includes('yoy') ||
+    k.includes('score') ||
+    k.includes('rate') ||
+    k.includes('days') ||
+    k.includes('cycle') ||
+    k.includes('multiple') ||
+    k.includes('turnover')
+  );
+}
+
+function formatMetricByName(key, value) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  if (isRatioLikeMetric(key)) {
+    if (key.toLowerCase().includes('score')) return value.toFixed(2);
+    if (key.toLowerCase().includes('days')) return value.toFixed(1);
+    if (Math.abs(value) <= 1.5) return formatPercent(value, 1);
+    return formatDisplayNumber(value, 2);
+  }
+  return formatFinancialValue(value);
+}
+
+function extractAllNumericMetrics(analytics) {
+  const ratios = analytics?.ratios && typeof analytics.ratios === 'object' ? analytics.ratios : {};
+  const byYear = ratios.by_year && typeof ratios.by_year === 'object' ? ratios.by_year : {};
+
+  const years = Object.keys(byYear).sort((a, b) => a.localeCompare(b));
+  const latestYear = typeof ratios.latest_year === 'string' ? ratios.latest_year : years[years.length - 1] || null;
+  const latestValues = latestYear && byYear[latestYear] && typeof byYear[latestYear] === 'object'
+    ? byYear[latestYear]
+    : ratios;
+
+  const latestNumericMetrics = Object.entries(latestValues || {})
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
+    .map(([key, value]) => ({
+      key,
+      label: toTitleCase(key),
+      value,
+      display: formatMetricByName(key, value),
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+
+  const metricKeys = Array.from(
+    new Set(
+      years.flatMap((year) =>
+        Object.entries(byYear[year] || {})
+          .filter(([, v]) => typeof v === 'number' && Number.isFinite(v))
+          .map(([key]) => key)
+      )
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const yearlyTable = metricKeys.map((metricKey) => ({
+    key: metricKey,
+    label: toTitleCase(metricKey),
+    values: years.map((year) => {
+      const raw = byYear[year]?.[metricKey];
+      return {
+        year,
+        raw,
+        display: formatMetricByName(metricKey, raw),
+      };
+    }),
+  }));
+
+  const trendCandidates = yearlyTable
+    .map((row) => ({
+      ...row,
+      numericValues: row.values
+        .filter((item) => typeof item.raw === 'number' && Number.isFinite(item.raw))
+        .map((item) => ({ year: item.year, value: item.raw })),
+    }))
+    .filter((row) => row.numericValues.length >= 2)
+    .slice(0, 8);
+
+  return {
+    latestYear,
+    latestNumericMetrics,
+    years,
+    yearlyTable,
+    trendCandidates,
+  };
+}
+
+function TinyTrendBars({ points }) {
+  const maxAbs = Math.max(...points.map((p) => Math.abs(p.value)), 1);
+  return (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', height: 46 }}>
+      {points.map((point) => (
+        <div key={`${point.year}-${point.value}`} style={{ flex: 1, minWidth: 10 }}>
+          <div
+            style={{
+              width: '100%',
+              borderRadius: 4,
+              background: '#475569',
+              opacity: 0.75,
+              height: Math.max(6, (Math.abs(point.value) / maxAbs) * 40),
+            }}
+            title={`${point.year}: ${formatFinancialValue(point.value)}`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function extractKeyMetrics(analytics) {
   if (!analytics) return [];
 
@@ -44,7 +165,7 @@ function extractKeyMetrics(analytics) {
         const lower = k.toLowerCase();
         for (const [name, val] of Object.entries(map)) {
           if (name.toLowerCase().includes(lower))
-            return typeof val === 'object' ? (val.value ?? val) : val;
+            return (val && typeof val === 'object') ? (val.value ?? val) : val;
         }
       }
       return null;
@@ -171,8 +292,14 @@ function riskTone(level) {
 export default function AnalyticsCards({ analytics }) {
   const metrics = extractKeyMetrics(analytics);
   const details = extractDetailedAnalytics(analytics);
+  const numeric = extractAllNumericMetrics(analytics);
 
-  if (metrics.length === 0 && details.periodRatios.length === 0 && details.riskSignals.length === 0) {
+  if (
+    metrics.length === 0 &&
+    details.periodRatios.length === 0 &&
+    details.riskSignals.length === 0 &&
+    numeric.latestNumericMetrics.length === 0
+  ) {
     return (
       <div className="card">
         <div className="card-header">Key Analytics Metrics</div>
@@ -268,6 +395,86 @@ export default function AnalyticsCards({ analytics }) {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {numeric.latestNumericMetrics.length > 0 && (
+          <div className="mt-4 metric-card" style={{ padding: 14 }}>
+            <div className="metric-card-label">All Numeric Calculations {numeric.latestYear ? `(Latest: ${numeric.latestYear})` : ''}</div>
+            <div
+              style={{
+                marginTop: 10,
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                gap: 10,
+              }}
+            >
+              {numeric.latestNumericMetrics.map((item) => (
+                <div
+                  key={item.key}
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    {item.label}
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a', marginTop: 3 }}>{item.display}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {numeric.trendCandidates.length > 0 && (
+          <div className="mt-4 metric-card" style={{ padding: 14 }}>
+            <div className="metric-card-label">Metric Trend Bars</div>
+            <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+              {numeric.trendCandidates.map((row) => (
+                <div key={row.key} style={{ border: '1px solid #e2e8f0', borderRadius: 8, padding: 10, background: '#ffffff' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#334155', marginBottom: 8 }}>{row.label}</div>
+                  <TinyTrendBars points={row.numericValues} />
+                  <div style={{ marginTop: 6, fontSize: 10, color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    {row.numericValues.map((p) => (
+                      <span key={`${row.key}-${p.year}`}>{p.year}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {numeric.yearlyTable.length > 0 && (
+          <div className="mt-4 metric-card" style={{ padding: 14 }}>
+            <div className="metric-card-label">Year-wise Numeric Matrix</div>
+            <div style={{ marginTop: 10, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', fontSize: 11, color: '#64748b', padding: '8px 10px', borderBottom: '1px solid #e2e8f0' }}>Metric</th>
+                    {numeric.years.map((year) => (
+                      <th key={year} style={{ textAlign: 'right', fontSize: 11, color: '#64748b', padding: '8px 10px', borderBottom: '1px solid #e2e8f0' }}>{year}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {numeric.yearlyTable.map((row, idx) => (
+                    <tr key={row.key} style={{ background: idx % 2 ? '#ffffff' : '#f8fafc' }}>
+                      <td style={{ fontSize: 12, color: '#334155', padding: '7px 10px', borderBottom: '1px solid #e2e8f0' }}>{row.label}</td>
+                      {row.values.map((item) => (
+                        <td key={`${row.key}-${item.year}`} style={{ textAlign: 'right', fontSize: 12, color: '#0f172a', fontWeight: 600, padding: '7px 10px', borderBottom: '1px solid #e2e8f0' }}>
+                          {item.display}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

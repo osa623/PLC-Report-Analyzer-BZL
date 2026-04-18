@@ -77,6 +77,45 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
                 debt_points.append(float(value))
         if len(debt_points) >= 3 and debt_points[-1] > debt_points[0]:
             patterns.append("Rising debt dependency pattern detected")
+
+        # Stage 7 forensic pattern checks.
+        years = sorted(by_year.keys())
+        if len(years) >= 2:
+            prev = by_year.get(years[-2], {}) if isinstance(by_year.get(years[-2]), dict) else {}
+            latest = by_year.get(years[-1], {}) if isinstance(by_year.get(years[-1]), dict) else {}
+
+            prev_profit = prev.get("net_margin")
+            latest_profit = latest.get("net_margin")
+            prev_ocf_np = prev.get("operating_cashflow_to_net_profit")
+            latest_ocf_np = latest.get("operating_cashflow_to_net_profit")
+            if all(isinstance(v, (int, float)) for v in [prev_profit, latest_profit, prev_ocf_np, latest_ocf_np]):
+                if float(latest_profit) > float(prev_profit) and float(latest_ocf_np) < float(prev_ocf_np):
+                    patterns.append("Profit rising while cash conversion is weakening")
+
+            prev_asset_turnover = prev.get("asset_turnover")
+            latest_asset_turnover = latest.get("asset_turnover")
+            prev_rev_growth = prev.get("revenue_growth_yoy")
+            latest_rev_growth = latest.get("revenue_growth_yoy")
+            if all(isinstance(v, (int, float)) for v in [prev_asset_turnover, latest_asset_turnover, prev_rev_growth, latest_rev_growth]):
+                if float(latest_rev_growth) > float(prev_rev_growth) and float(latest_asset_turnover) > float(prev_asset_turnover):
+                    patterns.append("Revenue acceleration with improved asset productivity")
+
+            prev_de = prev.get("debt_to_equity")
+            latest_de = latest.get("debt_to_equity")
+            if all(isinstance(v, (int, float)) for v in [prev_de, latest_de, prev_rev_growth, latest_rev_growth]):
+                if float(latest_de) > float(prev_de) and float(latest_rev_growth) <= float(prev_rev_growth):
+                    patterns.append("Debt rising faster than revenue momentum")
+
+        # Volatility spike marker from growth series.
+        growth_points = [
+            float(by_year.get(y, {}).get("revenue_growth_yoy"))
+            for y in years
+            if isinstance(by_year.get(y, {}).get("revenue_growth_yoy"), (int, float))
+        ]
+        if len(growth_points) >= 3:
+            span = max(growth_points) - min(growth_points)
+            if span > 0.8:
+                patterns.append("Volatility spike detected in revenue growth trajectory")
     else:
         if len(numeric_years) <= 1:
             patterns.append("Trend analysis limited due to single reporting year")

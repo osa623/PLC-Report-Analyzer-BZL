@@ -32,16 +32,56 @@ FIELD_SYNONYMS: dict[str, list[str]] = {
     "income_statement.operating_expenses": ["operating expenses", "operating expense"],
     "income_statement.operating_profit": ["operating profit", "operating income"],
     "income_statement.profit_before_tax": ["profit before tax", "profit before taxation", "pbt"],
+    "income_statement.tax_expense": ["income tax expense", "tax expense", "taxation", "income tax", "tax charge"],
     "income_statement.interest_expense": ["interest expense", "finance cost", "finance expense"],
     "income_statement.net_profit": ["net profit", "profit for the year", "net income", "profit attributable"],
-    "cashflow_statement.operating_cash_flow": ["net cash from operating activities", "operating cash flow", "cash from operations"],
-    "cashflow_statement.investing_cash_flow": ["net cash used in investing activities", "investing cash flow"],
-    "cashflow_statement.financing_cash_flow": ["net cash from financing activities", "financing cash flow"],
-    "cashflow_statement.net_cash_change": ["net increase in cash", "net decrease in cash", "net cash flow"],
-    "cashflow_statement.opening_cash": ["opening cash", "cash at beginning", "cash and cash equivalents at beginning"],
-    "cashflow_statement.closing_cash": ["closing cash", "cash at end", "cash and cash equivalents at end"],
-    "cashflow_statement.net_income": ["net income", "profit for the year"],
-    "equity_statement.net_income": ["net income", "profit for the year"],
+    "cashflow_statement.operating_cash_flow": [
+        "net cash from operating activities",
+        "net cash generated from operating activities",
+        "cash generated from operations",
+        "cash generated from operating activities",
+        "operating cash flow",
+        "cash from operations",
+    ],
+    "cashflow_statement.investing_cash_flow": [
+        "net cash used in investing activities",
+        "net cash from investing activities",
+        "cash used in investing activities",
+        "investing cash flow",
+    ],
+    "cashflow_statement.financing_cash_flow": [
+        "net cash from financing activities",
+        "net cash used in financing activities",
+        "cash from financing activities",
+        "financing cash flow",
+    ],
+    "cashflow_statement.net_cash_change": [
+        "net increase in cash",
+        "net decrease in cash",
+        "net increase/(decrease) in cash and cash equivalents",
+        "increase/(decrease) in cash and cash equivalents",
+        "net movement in cash and cash equivalents",
+        "net change in cash and cash equivalents",
+        "net cash flow",
+    ],
+    "cashflow_statement.opening_cash": [
+        "opening cash",
+        "cash at beginning",
+        "cash and cash equivalents at beginning",
+        "cash and cash equivalents at beginning of the year",
+        "cash and cash equivalents at the beginning of the year",
+        "cash and cash equivalents at beginning of period",
+    ],
+    "cashflow_statement.closing_cash": [
+        "closing cash",
+        "cash at end",
+        "cash and cash equivalents at end",
+        "cash and cash equivalents at end of the year",
+        "cash and cash equivalents at the end of the year",
+        "cash and cash equivalents at end of period",
+    ],
+    "cashflow_statement.net_income": ["net income", "profit for the year", "profit after tax", "profit after taxation"],
+    "equity_statement.net_income": ["net income", "profit for the year", "profit after tax", "profit after taxation"],
     "equity_statement.change_in_retained_earnings": ["change in retained earnings", "retained earnings movement"],
 }
 
@@ -100,21 +140,21 @@ def _coerce_float(raw: Any) -> float | None:
     return -value if negative else value
 
 
-def _normalize_unit_multiplier(full_text: str) -> tuple[str, int]:
+def _normalize_unit_multiplier(full_text: str) -> tuple[str, int, str, float]:
     lowered = full_text.lower()
 
     has_lkr = any(token in lowered for token in [" lkr", "rs.", "rs ", "rupees", "lkr ", "rs/"])
     has_usd = "usd" in lowered or "us$" in lowered
     if has_usd and not has_lkr:
-        return "USD", 1
+        return "USD", 1, "units", 0.9
 
     # Use explicit accounting notations only; avoid broad keyword inference from narrative text.
     if re.search(r"\b(rs\.?|lkr)\s*'?000\b", lowered):
-        return "LKR", 1_000
+        return "LKR", 1_000, "thousands", 0.95
     if re.search(r"\b(rs\.?|lkr)\s*(mn|million)\b", lowered):
-        return "LKR", 1_000_000
+        return "LKR", 1_000_000, "millions", 0.95
     if re.search(r"\b(rs\.?|lkr)\s*(bn|billion)\b", lowered):
-        return "LKR", 1_000_000_000
+        return "LKR", 1_000_000_000, "billions", 0.95
 
     multiplier = 1
 
@@ -122,7 +162,7 @@ def _normalize_unit_multiplier(full_text: str) -> tuple[str, int]:
     if has_lkr:
         multiplier = 1
 
-    return "LKR", multiplier
+    return "LKR", multiplier, "units", 0.7 if has_lkr else 0.5
 
 
 def _extract_detected_years(full_text: str) -> list[int]:
@@ -366,6 +406,41 @@ def _coalesce_statement_sources(model: dict[str, Any], section: dict[str, Any], 
     return merged
 
 
+def _build_value_trace(
+    merged: dict[str, Any],
+    table_model: dict[str, Any],
+    vision_model: dict[str, Any],
+    section_model: dict[str, Any],
+    fallback_model: dict[str, Any],
+    unit_label: str,
+    confidence_unit: float,
+) -> dict[str, Any]:
+    trace: dict[str, Any] = {}
+    for field_path in FIELD_SYNONYMS.keys():
+        section_key, field_key = field_path.split(".", 1)
+        selected = (merged.get(section_key) or {}).get(field_key) if isinstance(merged.get(section_key), dict) else None
+        candidates = {
+            "table_pass": (table_model.get(section_key) or {}).get(field_key) if isinstance(table_model.get(section_key), dict) else None,
+            "vision_pass": (vision_model.get(section_key) or {}).get(field_key) if isinstance(vision_model.get(section_key), dict) else None,
+            "section_pass": (section_model.get(section_key) or {}).get(field_key) if isinstance(section_model.get(section_key), dict) else None,
+            "fallback_pass": (fallback_model.get(section_key) or {}).get(field_key) if isinstance(fallback_model.get(section_key), dict) else None,
+        }
+        selected_reason = "selected_from_available_candidates"
+        for source_name, source_value in candidates.items():
+            if isinstance(source_value, (int, float)) and isinstance(selected, (int, float)) and float(source_value) == float(selected):
+                selected_reason = f"selected_{source_name}"
+                break
+        trace[field_path] = {
+            "value_raw": selected,
+            "value_normalized": selected,
+            "unit_detected": unit_label,
+            "confidence_unit": confidence_unit,
+            "value_candidates": candidates,
+            "value_selected_reason": selected_reason,
+        }
+    return trace
+
+
 def _repair_balance_identity(statements: dict[str, Any]) -> dict[str, Any]:
     bs = statements.get("balance_sheet")
     if not isinstance(bs, dict):
@@ -411,6 +486,261 @@ def _repair_balance_identity(statements: dict[str, Any]) -> dict[str, Any]:
     repaired_bs = dict(bs)
     repaired_bs[field_name] = repaired_value
     repaired["balance_sheet"] = repaired_bs
+    return repaired
+
+
+def _cashflow_field_candidates(full_text: str) -> dict[str, list[float]]:
+    lines = [ln.strip() for ln in full_text.splitlines() if ln and ln.strip()]
+    window = _extract_section_window(lines, "cashflow_statement")
+    if not window:
+        return {}
+
+    candidates: dict[str, list[float]] = {
+        "opening_cash": [],
+        "net_cash_change": [],
+        "closing_cash": [],
+    }
+    for field in candidates.keys():
+        synonyms = FIELD_SYNONYMS.get(f"cashflow_statement.{field}", [])
+        for line in window:
+            lowered = line.lower()
+            if not any(s in lowered for s in synonyms):
+                continue
+            for value in _extract_line_number_candidates(line):
+                if not isinstance(value, (int, float)):
+                    continue
+                # Opening and closing cash should be positive in normal cases.
+                if field in {"opening_cash", "closing_cash"} and float(value) <= 0:
+                    continue
+                candidates[field].append(float(value))
+
+    return candidates
+
+
+def _repair_cashflow_consistency(statements: dict[str, Any], full_text: str) -> dict[str, Any]:
+    repaired = dict(statements)
+    cf = repaired.get("cashflow_statement") if isinstance(repaired.get("cashflow_statement"), dict) else {}
+    inc = repaired.get("income_statement") if isinstance(repaired.get("income_statement"), dict) else {}
+    eq = repaired.get("equity_statement") if isinstance(repaired.get("equity_statement"), dict) else {}
+
+    cf_out = dict(cf)
+    candidates = _cashflow_field_candidates(full_text)
+
+    oc = cf_out.get("opening_cash")
+    nc = cf_out.get("net_cash_change")
+    cc = cf_out.get("closing_cash")
+
+    # If at least two values exist, infer the third deterministically.
+    if isinstance(oc, (int, float)) and isinstance(nc, (int, float)) and not isinstance(cc, (int, float)):
+        inferred = float(oc) + float(nc)
+        if inferred > 0:
+            cf_out["closing_cash"] = inferred
+            cc = inferred
+    if isinstance(oc, (int, float)) and isinstance(cc, (int, float)) and not isinstance(nc, (int, float)):
+        cf_out["net_cash_change"] = float(cc) - float(oc)
+        nc = cf_out["net_cash_change"]
+    if isinstance(nc, (int, float)) and isinstance(cc, (int, float)) and not isinstance(oc, (int, float)):
+        inferred = float(cc) - float(nc)
+        if inferred > 0:
+            cf_out["opening_cash"] = inferred
+            oc = inferred
+
+    def _unique(values: list[float]) -> list[float]:
+        out: list[float] = []
+        seen: set[int] = set()
+        for value in values:
+            bucket = int(round(float(value) / 1000.0))
+            if bucket in seen:
+                continue
+            seen.add(bucket)
+            out.append(float(value))
+        return out
+
+    def _rel_gap(ocv: float, ncv: float, ccv: float) -> float:
+        lhs = float(ocv) + float(ncv)
+        denom = max(abs(lhs), abs(float(ccv)), 1.0)
+        return abs(lhs - float(ccv)) / denom
+
+    # Equation-first candidate search for all cases (including inconsistent full triples).
+    oc_candidates = [float(v) for v in candidates.get("opening_cash", []) if float(v) > 0]
+    nc_candidates = [float(v) for v in candidates.get("net_cash_change", [])]
+    cc_candidates = [float(v) for v in candidates.get("closing_cash", []) if float(v) > 0]
+
+    if isinstance(oc, (int, float)):
+        oc_candidates = [float(oc)] + oc_candidates
+    if isinstance(nc, (int, float)):
+        nc_candidates = [float(nc), -float(nc)] + nc_candidates
+    if isinstance(cc, (int, float)):
+        cc_candidates = [float(cc)] + cc_candidates
+
+    # Add implied values from pairwise equations to recover from row/column misalignment.
+    if isinstance(oc, (int, float)) and isinstance(cc, (int, float)):
+        nc_candidates.append(float(cc) - float(oc))
+    if isinstance(oc, (int, float)) and isinstance(nc, (int, float)):
+        implied_cc = float(oc) + float(nc)
+        if implied_cc > 0:
+            cc_candidates.append(implied_cc)
+    if isinstance(nc, (int, float)) and isinstance(cc, (int, float)):
+        implied_oc = float(cc) - float(nc)
+        if implied_oc > 0:
+            oc_candidates.append(implied_oc)
+
+    oc_candidates = _unique(oc_candidates)[:12]
+    nc_candidates = _unique(nc_candidates)[:12]
+    cc_candidates = _unique(cc_candidates)[:12]
+
+    current_rel = 10.0
+    if all(isinstance(v, (int, float)) for v in [oc, nc, cc]):
+        current_rel = _rel_gap(float(oc), float(nc), float(cc))
+
+    if oc_candidates and nc_candidates and cc_candidates:
+        best: tuple[float, float, float] | None = None
+        best_score = 10.0
+        for ocv in oc_candidates:
+            for ncv in nc_candidates:
+                for ccv in cc_candidates:
+                    rel = _rel_gap(ocv, ncv, ccv)
+                    # Prefer stable selections close to existing extracted values where possible.
+                    stability_penalty = 0.0
+                    if isinstance(oc, (int, float)):
+                        stability_penalty += min(0.05, abs(float(ocv) - float(oc)) / max(abs(float(oc)), 1.0) * 0.02)
+                    if isinstance(nc, (int, float)):
+                        stability_penalty += min(0.05, abs(float(ncv) - float(nc)) / max(abs(float(nc)), 1.0) * 0.02)
+                    if isinstance(cc, (int, float)):
+                        stability_penalty += min(0.05, abs(float(ccv) - float(cc)) / max(abs(float(cc)), 1.0) * 0.02)
+                    score = rel + stability_penalty
+                    if score < best_score:
+                        best_score = score
+                        best = (ocv, ncv, ccv)
+
+        # Apply repair if values were missing or if reconciliation materially improves.
+        if best is not None and (
+            not all(isinstance(v, (int, float)) for v in [oc, nc, cc])
+            or _rel_gap(best[0], best[1], best[2]) + 1e-6 < max(0.03, current_rel - 0.005)
+        ):
+            cf_out["opening_cash"] = best[0]
+            cf_out["net_cash_change"] = best[1]
+            cf_out["closing_cash"] = best[2]
+
+    # Improve cross-statement linkage for net income when not explicitly captured in cashflow/equity sections.
+    ni_inc = inc.get("net_profit") if isinstance(inc.get("net_profit"), (int, float)) else None
+    if not isinstance(cf_out.get("net_income"), (int, float)) and isinstance(ni_inc, (int, float)):
+        cf_out["net_income"] = float(ni_inc)
+
+    eq_out = dict(eq)
+    ni_cf = cf_out.get("net_income") if isinstance(cf_out.get("net_income"), (int, float)) else None
+    if not isinstance(eq_out.get("net_income"), (int, float)) and isinstance(ni_cf, (int, float)):
+        eq_out["net_income"] = float(ni_cf)
+    if not isinstance(eq_out.get("change_in_retained_earnings"), (int, float)) and isinstance(ni_inc, (int, float)):
+        eq_out["change_in_retained_earnings"] = float(ni_inc)
+
+    repaired["cashflow_statement"] = cf_out
+    repaired["equity_statement"] = eq_out
+    return repaired
+
+
+def _safe_rel_gap(a: float, b: float) -> float:
+    denom = max(abs(a), abs(b), 1.0)
+    return abs(a - b) / denom
+
+
+def _income_tax_candidates(full_text: str) -> list[float]:
+    lines = [ln.strip() for ln in full_text.splitlines() if ln and ln.strip()]
+    window = _extract_section_window(lines, "income_statement")
+    if not window:
+        return []
+
+    synonyms = FIELD_SYNONYMS.get("income_statement.tax_expense", [])
+    out: list[float] = []
+    for line in window:
+        lowered = line.lower()
+        if not any(s in lowered for s in synonyms):
+            continue
+        picked = _pick_financial_value_from_line(line)
+        if isinstance(picked, (int, float)):
+            out.append(float(picked))
+    return out
+
+
+def _normalize_net_income_linkage(statements: dict[str, Any], full_text: str) -> dict[str, Any]:
+    repaired = dict(statements)
+    inc = repaired.get("income_statement") if isinstance(repaired.get("income_statement"), dict) else {}
+    cf = repaired.get("cashflow_statement") if isinstance(repaired.get("cashflow_statement"), dict) else {}
+    eq = repaired.get("equity_statement") if isinstance(repaired.get("equity_statement"), dict) else {}
+
+    inc_out = dict(inc)
+    cf_out = dict(cf)
+    eq_out = dict(eq)
+
+    pbt = inc_out.get("profit_before_tax") if isinstance(inc_out.get("profit_before_tax"), (int, float)) else None
+    tax = inc_out.get("tax_expense") if isinstance(inc_out.get("tax_expense"), (int, float)) else None
+
+    bridge_candidates: list[float] = []
+    if isinstance(pbt, (int, float)) and isinstance(tax, (int, float)):
+        c1 = float(pbt) - float(tax)
+        c2 = float(pbt) + float(tax)
+        for c in (c1, c2):
+            if abs(c) <= max(abs(float(pbt)) * 2.0, 1.0):
+                bridge_candidates.append(c)
+
+    if isinstance(pbt, (int, float)):
+        for tx in _income_tax_candidates(full_text)[:6]:
+            c1 = float(pbt) - float(tx)
+            c2 = float(pbt) + float(tx)
+            for c in (c1, c2):
+                if abs(c) <= max(abs(float(pbt)) * 2.0, 1.0):
+                    bridge_candidates.append(c)
+
+    observed_values = [
+        float(v)
+        for v in [
+            inc_out.get("net_profit"),
+            cf_out.get("net_income"),
+            eq_out.get("net_income"),
+            eq_out.get("change_in_retained_earnings"),
+        ]
+        if isinstance(v, (int, float))
+    ]
+
+    candidate_values = observed_values + bridge_candidates
+    if not candidate_values:
+        repaired["income_statement"] = inc_out
+        repaired["cashflow_statement"] = cf_out
+        repaired["equity_statement"] = eq_out
+        return repaired
+
+    unique_candidates: list[float] = []
+    seen: set[int] = set()
+    for value in candidate_values:
+        bucket = int(round(float(value) * 100.0))
+        if bucket in seen:
+            continue
+        seen.add(bucket)
+        unique_candidates.append(float(value))
+
+    best_candidate = unique_candidates[0]
+    best_score = 10.0
+    for cand in unique_candidates:
+        score = 0.0
+        for observed in observed_values:
+            score += _safe_rel_gap(float(cand), float(observed))
+        # Prefer values already present in extracted statements.
+        if not any(_safe_rel_gap(float(cand), float(v)) <= 0.02 for v in observed_values):
+            score += 0.05
+        if score < best_score:
+            best_score = score
+            best_candidate = float(cand)
+
+    # Canonicalize net-income related fields to a single reconciled value to enforce
+    # deterministic cross-statement linkage for mixed-format annual report layouts.
+    inc_out["net_profit"] = float(best_candidate)
+    cf_out["net_income"] = float(best_candidate)
+    eq_out["net_income"] = float(best_candidate)
+    eq_out["change_in_retained_earnings"] = float(best_candidate)
+
+    repaired["income_statement"] = inc_out
+    repaired["cashflow_statement"] = cf_out
+    repaired["equity_statement"] = eq_out
     return repaired
 
 
@@ -497,7 +827,7 @@ def _build_gemini_prompt(full_text: str, detected_years: list[int]) -> str:
         "{\"document_year\": 2023, \"statements\": {\"balance_sheet\": {...}, \"income_statement\": {...}, \"cashflow_statement\": {...}}}. "
         "If a field is missing use null. "
         "Balance sheet keys: total_assets,total_liabilities,total_equity,current_assets,current_liabilities,borrowings,cash_and_equivalents. "
-        "Income keys: revenue_or_interest_income,cost_of_revenue,gross_profit,operating_expenses,operating_profit,profit_before_tax,interest_expense,net_profit. "
+        "Income keys: revenue_or_interest_income,cost_of_revenue,gross_profit,operating_expenses,operating_profit,profit_before_tax,tax_expense,interest_expense,net_profit. "
         "Cashflow keys: operating_cash_flow,investing_cash_flow,financing_cash_flow,net_cash_change,opening_cash,closing_cash,net_income. "
         "Equity keys: net_income,change_in_retained_earnings. "
         f"Detected year candidates: {years_hint}. "
@@ -802,7 +1132,7 @@ def extract_financial_statements_from_text(
     detected_years = _extract_detected_years(full_text)
     doc_year = _document_year(full_text)
 
-    currency, multiplier = _normalize_unit_multiplier(full_text)
+    currency, multiplier, unit_label, confidence_unit = _normalize_unit_multiplier(full_text)
     if currency != "LKR":
         return {
             "status": "failed",
@@ -832,10 +1162,24 @@ def extract_financial_statements_from_text(
     merged_statements = _normalize_mandatory_magnitude(merged_statements, multiplier)
     merged_statements = _clamp_income_outliers(merged_statements)
     merged_statements = _repair_balance_identity(merged_statements)
+    merged_statements = _repair_cashflow_consistency(merged_statements, full_text)
+    merged_statements = _normalize_net_income_linkage(merged_statements, full_text)
     merged_statements, downscale_factor = _maybe_downscale_unrealistic_values(merged_statements)
+    value_trace = _build_value_trace(
+        merged_statements,
+        normalized_model_table,
+        normalized_model_vision,
+        normalized_section,
+        normalized_fallback,
+        unit_label,
+        confidence_unit,
+    )
 
-    if doc_year is None and isinstance(model_payload.get("document_year"), int):
-        doc_year = int(model_payload.get("document_year"))
+    if doc_year is None:
+        if isinstance(model_payload_table.get("document_year"), int):
+            doc_year = int(model_payload_table.get("document_year"))
+        elif isinstance(model_payload_vision.get("document_year"), int):
+            doc_year = int(model_payload_vision.get("document_year"))
 
     extracted_count, missing = _mandatory_metrics_coverage(merged_statements)
     quality_issues = _extract_quality_issues(merged_statements, doc_year)
@@ -860,7 +1204,10 @@ def extract_financial_statements_from_text(
         "detected_years": detected_years,
         "currency": currency,
         "unit_multiplier": multiplier,
+        "unit_detected": unit_label,
+        "confidence_unit": confidence_unit,
         "statements": merged_statements,
+        "value_trace": value_trace,
         "metrics_extracted_count": extracted_count,
         "missing_required_metrics": missing,
         "quality_issues": quality_issues,

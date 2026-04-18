@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const { v4: uuidv4 } = require('uuid');
+const fs = require('fs');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
 const { triggerExtract, triggerAnalyze, triggerGenerateReport } = require('../services/pipelineClient');
@@ -462,18 +463,27 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [ratiosRaw, patternsRaw, sectorRaw, riskRaw] = await Promise.all([
+    const [ratiosRaw, patternsRaw, sectorRaw, riskRaw, confidenceRaw, analysisCoverageRaw, finalReportRaw] = await Promise.all([
       redis.get(`report:${reportId}:ratios`),
       redis.get(`report:${reportId}:patterns`),
       redis.get(`report:${reportId}:sector_comparison`),
       redis.get(`report:${reportId}:risk`),
+      redis.get(`report:${reportId}:confidence`),
+      redis.get(`report:${reportId}:analysis_coverage`),
+      redis.get(`report:${reportId}:final_report`),
     ]);
+
+    const finalReport = parseJson(finalReportRaw, null);
     return res.json({
       report_id: reportId,
       ratios: parseJson(ratiosRaw, {}),
       patterns: parseJson(patternsRaw, []),
       risk: parseJson(riskRaw, {}),
       sector_kpis: parseJson(sectorRaw, {}),
+      confidence: parseJson(confidenceRaw, {}),
+      analysis_coverage: parseJson(analysisCoverageRaw, {}),
+      sections: finalReport?.sections || {},
+      transparency: finalReport?.transparency || {},
     });
   } catch (error) {
     return next(error);
@@ -688,9 +698,14 @@ router.get('/reports/:reportId/download', async (req, res, next) => {
       return res.status(404).json({ error: 'final_report not found' });
     }
 
+    const pdfPath = finalReport?.pdf_report_path;
+    if (pdfPath && fs.existsSync(pdfPath)) {
+      return res.download(pdfPath, `analysis_${reportId}.pdf`);
+    }
+
     const content = finalReport.content || JSON.stringify(finalReport, null, 2);
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="analysis_${reportId}.txt"`);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="analysis_${reportId}.json"`);
     return res.send(content);
   } catch (error) {
     return next(error);

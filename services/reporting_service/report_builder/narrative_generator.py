@@ -154,6 +154,23 @@ def generate_narrative(
             "risk_level": final_level,
             "verdict": verdict,
         },
+        "Annual Report Derived Insights": {
+            "source": "annual_reports_only",
+            "insights": {
+                "ratios": ratio_source,
+                "patterns": patterns,
+                "risk": risk,
+                "confidence": confidence,
+            },
+        },
+        "External Context Insights": {
+            "source": "external_optional",
+            "enabled": False,
+            "notes": [
+                "No external market data was required for this run.",
+                "If enabled, external inputs are limited to inflation adjustment, industry comparison, and risk-free rate context.",
+            ],
+        },
     }
 
     return {
