@@ -94,7 +94,7 @@ export default function TrendCharts({ validatedData, analytics }) {
       <div className="card-body">
         <div className="grid gap-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
           {trendEntries.map((trend) => (
-            <div className='border-2 p-4 shadow-xl' key={trend.key}>
+            <div className='border-2 p-4 shadow-xl rounded-lg' key={trend.key}>
               <div className="text-[12px] font-semibold text-slate-500 mb-8 tracking-[-0.01em]">{trend.label}</div>
               <MiniBarChart data={trend.data} color={trend.color} />
               <div className="mt-1.5 flex justify-between">

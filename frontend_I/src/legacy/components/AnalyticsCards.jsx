@@ -125,24 +125,38 @@ function extractAllNumericMetrics(analytics) {
 }
 
 function TinyTrendBars({ points, color = '#3b82f6' }) {
-  const maxAbs = Math.max(...points.map((p) => Math.abs(p.value)), 1);
+  const maxAbs = Math.max(...points.map((p) => Math.abs(p.value)), 0.0001);
+  const hasNegative = points.some(p => p.value < 0);
+  
   return (
-    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 75 }}>
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 100, position: 'relative' }}>
+      <div style={{ 
+        position: 'absolute', 
+        [hasNegative ? 'top' : 'bottom']: hasNegative ? '50%' : 0, 
+        left: 0, right: 0, height: 1, background: '#e2e8f0', zIndex: 0 
+      }} />
+      
       {points.map((point) => {
-        const heightPx = Math.max(6, (Math.abs(point.value) / maxAbs) * 46);
         const isNegative = point.value < 0;
+        const maxBarPx = hasNegative ? 34 : 70;
+        const heightPx = Math.max(3, (Math.abs(point.value) / maxAbs) * maxBarPx);
+        
         return (
-          <div key={`${point.year}-${point.value}`} style={{ flex: 1, minWidth: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
-            <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600, marginBottom: 4, whiteSpace: 'nowrap' }}>
-              {point.display}
-            </span>
+          <div key={`${point.year}-${point.value}`} style={{ flex: 1, minWidth: 20, position: 'relative', height: '100%', zIndex: 1 }}>
+            
             <div
               style={{
-                width: '100%',
-                borderRadius: '4px 4px 0 0',
+                position: 'absolute',
+                left: 0,
+                right: 0,
                 background: isNegative ? '#ef4444' : color,
                 opacity: 0.85,
                 height: heightPx,
+                ...(hasNegative 
+                   ? (isNegative 
+                       ? { top: '50%', borderRadius: '0 0 4px 4px' } 
+                       : { bottom: '50%', borderRadius: '4px 4px 0 0' })
+                   : { bottom: 0, borderRadius: '4px 4px 0 0' }),
                 transition: 'opacity 0.2s',
                 cursor: 'pointer'
               }}
@@ -150,6 +164,25 @@ function TinyTrendBars({ points, color = '#3b82f6' }) {
               onMouseOver={(e) => (e.currentTarget.style.opacity = 1)}
               onMouseOut={(e) => (e.currentTarget.style.opacity = 0.85)}
             />
+            
+            <div style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: 10, 
+              color: isNegative ? '#ef4444' : '#64748b', 
+              fontWeight: 600, 
+              whiteSpace: 'nowrap',
+              ...(hasNegative
+                 ? (isNegative 
+                     ? { top: `calc(50% + ${heightPx}px + 4px)` }
+                     : { bottom: `calc(50% + ${heightPx}px + 4px)` })
+                 : { bottom: `calc(${heightPx}px + 4px)` }
+              )
+            }}>
+              {point.display}
+            </div>
+            
           </div>
         );
       })}
@@ -435,7 +468,7 @@ export default function AnalyticsCards({ analytics }) {
             <div className="metric-card-label">Metric Trend Bars</div>
             <div style={{ marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
               {numeric.trendCandidates.map((row, idx) => {
-                const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#6366f1'];
+                const colors = ['#0f172a', '#1e293b', '#334155', '#475569', '#64748b', '#94a3b8'];
                 const cardColor = colors[idx % colors.length];
                 return (
                   <div key={row.key} style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 14, background: '#ffffff', display: 'flex', flexDirection: 'column', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
