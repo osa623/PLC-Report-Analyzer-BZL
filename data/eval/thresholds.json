@@ -1,6 +1,6 @@
 {
-  "field_precision": 0.75,
-  "field_recall": 0.75,
-  "numeric_exact_match": 0.75,
-  "table_structure_correctness": 1.0
+  "golden_benchmark": {
+    "min_pass_rate": 0.5,
+    "require_normalized": true
+  }
 }

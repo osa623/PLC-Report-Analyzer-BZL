@@ -1,485 +1,326 @@
-# Current Project Flow (Data-First, Validation-Driven)
+# Current Project Flow and Intelligence Contract
 
-This document defines the target end-to-end architecture for financial report analysis. It supersedes prior analytics-first behavior and formalizes a data-first pipeline where validation and confidence govern downstream analytics and reporting.
+Last updated: 2026-04-16
 
-## 1. Final System Flow (Canonical)
+This document defines the required behavior of the financial document intelligence engine and maps that behavior to the current repository architecture.
 
-PDF Upload
--> document_parser
--> structure_detector
--> extractors (parallel)
--> aggregation_service (new)
--> validation_engine (new)
--> canonical_dataset (new)
--> analytics layer
--> frontend inspection system
--> report_generator
+## 1) Core Execution Principle
 
-## 2. Architecture Principles
-
-1. Analytics must never run on raw extracted data.
-2. Validation is a hard gate before analytics and report generation.
-3. Every analytical value must be traceable to validated source rows.
-4. Confidence is a first-class field at row level and output level.
-5. The UI is data-observable: operators debug pipeline state through datasets, not logs.
-6. Batch comparative analysis uses only validated, high-confidence data.
+The platform must always execute end-to-end regardless of upload count.
 
-## 3. Runtime Topology
+1. Never block execution due to low document count.
+2. Never require additional files in order to proceed.
+3. Always extract, normalize, analyze, and report maximum possible value from available data.
+4. When data depth is limited, continue pipeline execution and report limitations transparently.
 
-### 3.1 Orchestrator
+## 2) Supported Input Variants
 
-- Node orchestrator manages upload, report lifecycle, workflow state transitions, and service invocation.
-- Postgres stores durable report/company metadata and workflow status.
-- Redis stores stage datasets, validation artifacts, confidence scores, analytics outputs, and final report payload.
+Users may upload:
 
-### 3.2 Services
+1. One PDF.
+2. Multiple PDFs from the same company.
+3. Multiple PDFs across different years.
+4. Inconsistently formatted files.
+5. Scanned or text-native PDFs.
 
-- Ingestion: `document_parser`, `structure_detector`
-- Extraction: domain extractors + narrative extractors (parallel)
-- Data quality: `aggregation_service` (new), `validation_engine` (new)
-- Analytics: `ratio_calculator`, `kpi_sector_engine`, `pattern_detection`
-- Generation: `report_generator`
-- Batch comparative: `comparative_analysis` (validated/high-confidence input only)
+For every file, the system attempts to detect:
 
-## 4. Single Report Data Flow
+1. Company identity.
+2. Reporting year.
+3. Currency and scaling.
+4. Statement sections and tables.
+5. Narrative sections and audit text.
 
-### 4.1 Ingestion Layer
+## 3) Runtime Components
 
-#### A) document_parser
+1. nodeBackend (Express): public orchestration API and consolidated report retrieval.
+2. extraction_service (FastAPI): PDF parsing, chunking, structure detection, extraction, canonical raw output.
+3. analysis_service (FastAPI): canonical normalization, validation, ratio computation, pattern logic, risk signals, confidence scoring.
+4. reporting_service (FastAPI): investor-style narrative assembly and final report payload creation.
+5. pipeline_orchestrator plus worker (FastAPI plus Redis queue): async queue-based extraction lane.
+6. Redis: runtime artifact store and pipeline stage state store.
+7. Postgres: infrastructure dependency for broader platform features.
 
-- Input: `file_path`
-- Output key: `report:{report_id}:document_chunks`
-- Output contract:
-  - `chunk_id`
-  - `text`
-  - `page_number`
-  - `token_count`
-  - `bbox` (optional)
+## 4) Processing Pipeline Contract
 
-#### B) structure_detector
+### 4.1 Document Intake
 
-- Input key: `report:{report_id}:document_chunks`
-- Output key: `report:{report_id}:structure`
-- Output contract:
-  - `sections[]`
-  - `detected_tables[]`
-  - `statement_regions`
-  - `narrative_regions`
+For each uploaded PDF, extraction must attempt:
 
-### 4.2 Extraction Layer (Parallel)
+1. Text extraction.
+2. Table extraction and reconstruction.
+3. Financial statement capture.
+4. Notes to accounts capture.
+5. Auditor and management narrative capture.
 
-All extractors must:
+Pipeline resilience requirements:
 
-- Read from:
-  - `report:{report_id}:document_chunks`
-  - `report:{report_id}:structure`
-- Execute in parallel using bounded async worker pools.
-- Return normalized rows with mandatory provenance metadata.
+1. OCR fallback for scanned content.
+2. Multi-column handling.
+3. Broken or merged row repair heuristics.
+4. Best-effort extraction even when structure quality varies.
 
-Extractors:
+Output per file:
 
-- `income_statement_extractor`
-- `balance_sheet_extractor`
-- `cashflow_statement_extractor`
-- `income_notes_extractor`
-- `segment_extractor`
-- `governance_extractor`
-- `risk_extractor`
-- `esg_extractor`
-- `strategy_nlp`
+1. Structured JSON payload with extracted raw financial and narrative data.
 
-Financial output writes:
+### 4.2 Financial Normalization
 
-- merged into `report:{report_id}`
+Normalize into canonical financial schema:
 
-Narrative output writes:
+1. Currency symbols and units.
+2. Thousand/million/billion scaling.
+3. Fiscal year labels.
+4. Statement naming variations.
 
-- `report:{report_id}:governance`
-- `report:{report_id}:risk`
-- `report:{report_id}:esg`
-- `report:{report_id}:strategy`
+Canonical fields targeted:
 
-Mandatory extracted row schema:
+1. Income statement core metrics.
+2. Balance sheet core metrics.
+3. Cash flow core metrics.
 
-- `label`
-- `value`
-- `year`
-- `entity_type`
-- `statement_type`
-- `source_chunk_id`
-- `page_number`
+### 4.3 Multi-Year Aggregation
 
-Recommended additional fields:
+Aggregate all extracted documents into a chronologically aligned dataset.
 
-- `unit`
-- `currency`
-- `raw_text`
-- `extractor_name`
-- `extraction_method`
+If only one year exists:
 
-## 5. Aggregation Layer (New)
+1. Build single-year dataset.
+2. Skip multi-year trend math only.
+3. Mark trend outputs as limited by single-year scope.
+4. Continue all other analytics and reporting stages.
 
-Service: `aggregation_service`
+If multiple years exist:
 
-Input:
+1. Order chronologically.
+2. Align fiscal labels.
+3. Detect missing-year gaps.
 
-- `report:{report_id}` (merged financial extraction payload)
+### 4.4 Ratio Engine
 
-Responsibilities:
+Always compute any ratio that can be computed from available data.
 
-1. Merge all statement rows from all financial extractors.
-2. Remove duplicates across overlapping sources.
-3. Normalize labels using canonical taxonomy (for example, "Total Revenue" -> `revenue`).
-4. Align multi-year rows by canonical year axis.
-5. Standardize schema and units.
-6. Preserve lineage to original extraction rows.
+1. Profitability ratios.
+2. Liquidity ratios.
+3. Solvency ratios.
+4. Efficiency ratios.
+5. Growth ratios only when sufficient multi-year data exists.
 
-Output key:
+If multi-year inputs are unavailable:
 
-- `report:{report_id}:canonical_raw`
+1. Return per-year available ratios.
+2. Mark growth metrics as not available for current data scope.
 
-Canonical raw row contract:
+### 4.5 Pattern and Trend Logic
 
-- `row_id`
-- `canonical_label`
-- `original_label`
-- `value`
-- `year`
-- `entity_type`
-- `statement_type`
-- `unit`
-- `currency`
-- `source_chunk_id`
-- `page_number`
-- `lineage` (array of source row references)
+If three or more years are available:
 
-## 6. Validation Layer (New)
+1. Detect directional and volatility trends.
+2. Detect structural changes.
+3. Detect acceleration or slowdown signals.
 
-Service: `validation_engine`
+If fewer than three years are available:
 
-Input key:
+1. Skip long-horizon trend detection.
+2. Produce structural financial snapshot.
+3. Produce ratio interpretation and single-period risk context.
 
-- `report:{report_id}:canonical_raw`
+### 4.6 Risk Analysis
 
-Responsibilities:
+Risk analysis is mandatory for every run, including single-document runs.
 
-### 6.1 Financial Validation Rules
+Evaluate at minimum:
 
-- Balance check: `assets ~= liabilities + equity` within configured tolerance.
-- Profitability sanity: `revenue >= net_profit` unless explicit exception flags.
-- Cashflow consistency checks (operating + investing + financing + fx + other adjustments align with net cash movement).
+1. Liquidity risk.
+2. Leverage risk.
+3. Profitability risk.
+4. Cash flow risk.
+5. Concentration risk.
+6. Growth sustainability risk.
 
-### 6.2 Cross-Statement Linking
+### 4.7 Transparency Layer
 
-- `net_income` <-> retained earnings movement.
-- Cash closing balance in balance sheet <-> cashflow closing balance.
-- Debt metrics <-> liabilities composition.
+All outputs must state:
 
-### 6.3 Data Cleaning
+1. Number of uploaded PDFs.
+2. Detected reporting years.
+3. Which analyses were executed.
+4. Which analyses were limited by data depth.
 
-- Remove structurally invalid rows.
-- Flag anomalies (outlier changes, impossible signs, label/value mismatches).
-- Normalize units and scale (for example, thousands vs millions).
+Required language style:
 
-### 6.4 Confidence Scoring
+1. Never blame users for low volume.
+2. Never require additional uploads to continue.
+3. Use neutral limitation text such as trend analysis limited due to single reporting year.
 
-Each row must include:
+## 5) Required Output Layers
 
-- `confidence_score` in [0, 1]
-- `validation_flags[]`
+### 5.1 Machine Output
 
-Row confidence should combine:
+Structured data including:
 
-- extraction confidence
-- schema confidence
-- rule-pass ratio
-- cross-source agreement
-- provenance quality
+1. Extracted raw data.
+2. Normalized dataset.
+3. Ratios.
+4. Risk scores or risk flags.
+5. Trend flags where applicable.
 
-### 6.5 Global Quality Score
+### 5.2 Analytical Output
 
-Generate:
+Human-readable interpretation including:
 
-- `overall_data_quality_score`
+1. Financial health summary.
+2. Ratio interpretation.
+3. Risk interpretation.
+4. Year-over-year comparison when available.
 
-Score is computed from:
+### 5.3 Report Output
 
-- coverage completeness
-- critical-rule pass ratio
-- conflict density
-- unresolved anomaly burden
+Investor-ready narrative including:
 
-Output key:
+1. Executive summary.
+2. Company performance overview.
+3. Financial analysis.
+4. Risk analysis.
+5. Data scope and limitation disclosure.
 
-- `report:{report_id}:canonical_validated`
+## 6) Current Node-Orchestrated Flow
 
-Output payload must include:
+Primary entry:
 
-- `validated_rows[]`
-- `overall_data_quality_score`
-- `validation_summary`
-- `error_catalog`
-- `missing_value_index`
-- `confidence_distribution`
+1. POST /reports (multipart field: report).
 
-## 7. Canonical Dataset Contract (New)
+Execution sequence:
 
-The canonical dataset for downstream services is `report:{report_id}:canonical_validated`.
+1. nodeBackend stores report metadata and uploaded file location.
+2. nodeBackend triggers extraction_service POST /extract.
+3. extraction_service writes report:{report_id}:canonical_raw.
+4. nodeBackend triggers analysis_service POST /analyze.
+5. analysis_service writes report:{report_id}:canonical_validated and analytics artifacts.
+6. nodeBackend triggers reporting_service POST /generate-report.
+7. reporting_service writes report:{report_id}:final_report.
+8. nodeBackend returns consolidated payload through GET /reports/:reportId.
 
-Required row fields:
+Retrieval endpoints:
 
-- `canonical_label`
-- `value`
-- `year`
-- `entity_type`
-- `statement_type`
-- `confidence_score`
-- `validation_flags`
-- `source_chunk_id`
-- `page_number`
+1. GET /reports/:reportId
+2. GET /reports/:reportId/download
+3. GET /results/:reportId
+4. GET /pipeline/:reportId/stages
+5. GET /pipeline/:reportId/raw
+6. GET /pipeline/:reportId/canonical
+7. GET /pipeline/:reportId/validated
+8. GET /pipeline/:reportId/analytics
+9. GET /pipeline/:reportId/errors
 
-Consumers must treat this dataset as the single source of truth.
+## 7) Workflow State Model
 
-## 8. Analytics Gating (Critical)
+workflow_state values derived from stage and artifact evidence:
 
-Before any analytics service starts:
+1. FAILED
+2. COMPLETED
+3. LOW_CONFIDENCE
+4. GENERATING_REPORT
+5. ANALYZING
+6. EXTRACTING
+7. UPLOADED
+8. PENDING
 
-- Read `overall_data_quality_score`.
-- Compare to configured threshold `ANALYTICS_QUALITY_THRESHOLD`.
+Frontend stage tracker:
 
-Gate logic:
+1. UPLOAD
+2. PARSING
+3. STRUCTURE
+4. EXTRACTION
+5. AGGREGATION
+6. VALIDATION
+7. ANALYTICS
+8. REPORT
 
-1. If `overall_data_quality_score < threshold`:
-   - stop analytics execution
-   - mark report status as `LOW_CONFIDENCE`
-   - persist gating reason and remediation hints
-2. Else:
-   - continue to analytics layer
+## 8) Redis Artifact Keys
 
-Mandatory rule:
+Single report keys:
 
-- No analytics may consume `report:{report_id}` or `report:{report_id}:canonical_raw`.
-
-## 9. Analytics Layer (Confidence-Aware)
-
-Input key:
-
-- `report:{report_id}:canonical_validated`
-
-Services:
-
-- `ratio_calculator`
-- `kpi_sector_engine`
-- `pattern_detection`
-
-Execution rules:
-
-1. Ignore rows below `MIN_ROW_CONFIDENCE_FOR_ANALYTICS`.
-2. Propagate confidence into each computed metric/pattern.
-3. Emit supporting evidence references to validated rows.
-
-Output keys:
-
-- `report:{report_id}:ratios`
-- `report:{report_id}:sector_kpis`
-- `report:{report_id}:patterns`
-
-Output fields (minimum):
-
-- `metric_or_pattern_name`
-- `value`
-- `confidence_score`
-- `supporting_row_ids[]`
-- `notes`
-
-## 10. Frontend Inspection Layer (Mandatory)
-
-The frontend must expose full pipeline transparency and dataset observability.
-
-### 10.1 Pipeline Tracker
-
-Display stage progression:
-
-Upload -> Parsing -> Structure -> Extraction -> Aggregation -> Validation -> Analytics -> Report
-
-Each stage must show:
-
-- status (`pending|running|completed|failed|skipped`)
-- start/end timestamps
-- duration
-- stage diagnostics
-
-### 10.2 Data Views
-
-1. Raw Data: `report:{report_id}`
-2. Cleaned Data: `report:{report_id}:canonical_raw`
-3. Validated Data: `report:{report_id}:canonical_validated`
-
-The UI must support per-row drilldown to provenance (`source_chunk_id`, `page_number`, source snippet).
-
-### 10.3 Confidence Display
-
-- per-row `confidence_score`
-- report-level `overall_data_quality_score`
-- confidence filters and thresholds in the table view
-
-### 10.4 Error Panel
-
-Show:
-
-- validation errors
-- cross-statement inconsistencies
-- missing critical values
-- unresolved anomalies
-
-### 10.5 Charts and Analytics Views
-
-- Trends, comparisons, and ratio charts may render only from validated data.
-- Charts must annotate confidence at series and point level where available.
-
-### 10.6 Pattern Panel
-
-For each detected pattern show:
-
-- pattern description
-- supporting data references
-- confidence score
-- rule/evidence trace
-
-## 11. Report Generation Layer
-
-Service: `report_generator`
-
-Inputs:
-
-- validated financial dataset
-- confidence-aware ratios
-- confidence-aware patterns
-- validated narrative payloads (`governance`, `risk`, `esg`, `strategy`)
-
-Rules:
-
-1. Exclude low-confidence sections based on configured thresholds.
-2. Include confidence indicators on all major sections and key figures.
-3. Include a data quality summary and unresolved issue appendix.
-
-Outputs:
-
-- Redis: `report:{report_id}:final_report`
-- File: generated PDF path saved in orchestration metadata
-
-## 12. Batch Flow (Extended)
-
-For batch upload:
-
-1. Run the full single-report pipeline independently per report.
-2. Enforce aggregation + validation + analytics gating per report.
-3. Collect only reports with valid `canonical_validated` datasets.
-4. Feed eligible reports into `comparative_analysis`.
-
-Comparative analysis must use:
-
-- only validated rows
-- only rows and metrics meeting high-confidence thresholds
-
-Comparative outputs must include:
-
-- report eligibility summary
-- excluded-report reasons
-- confidence-weighted comparative metrics
-
-## 13. Data Contracts and Redis Keyspace
-
-Core keys:
-
-- `report:{report_id}:document_chunks`
-- `report:{report_id}:structure`
-- `report:{report_id}`
-- `report:{report_id}:governance`
-- `report:{report_id}:risk`
-- `report:{report_id}:esg`
-- `report:{report_id}:strategy`
-- `report:{report_id}:canonical_raw`
-- `report:{report_id}:canonical_validated`
-- `report:{report_id}:ratios`
-- `report:{report_id}:sector_kpis`
-- `report:{report_id}:patterns`
-- `report:{report_id}:final_report`
+1. report:{report_id}:document_chunks
+2. report:{report_id}:structure
+3. report:{report_id}
+4. report:{report_id}:governance
+5. report:{report_id}:risk
+6. report:{report_id}:esg
+7. report:{report_id}:strategy
+8. report:{report_id}:canonical_raw
+9. report:{report_id}:canonical_validated
+10. report:{report_id}:ratios
+11. report:{report_id}:sector_kpis
+12. report:{report_id}:patterns
+13. report:{report_id}:final_report
 
 Batch keys:
 
-- `report:batch:{batch_id}:comparative`
-- `report:batch:{batch_id}:eligibility`
+1. report:batch:{batch_id}:comparative
+2. report:batch:{batch_id}:eligibility
 
-Recommended metadata:
+Support keys:
 
-- `schema_version`
-- `generated_at`
-- `service_version`
-- `source_report_id`
+1. report:{report_id}:uploaded_file
+2. report:{report_id}:meta
+3. report:{report_id}:pipeline_stages
+4. report:{report_id}:confidence
+5. report:{report_id}:sector_comparison
 
-## 14. Workflow State Model (Updated)
+## 9) Parallel Queue Lane
 
-Suggested state sequence:
+Queue-based API:
 
-1. `UPLOADED`
-2. `PARSING`
-3. `STRUCTURE_DETECTED`
-4. `EXTRACTING`
-5. `AGGREGATING`
-6. `VALIDATING`
-7. `LOW_CONFIDENCE` (terminal non-analytics path)
-8. `ANALYZING`
-9. `GENERATING_REPORT`
-10. `COMPLETED`
-11. `FAILED`
+1. POST /submit
+2. GET /status/{job_id}
+3. GET /result/{job_id}
 
-State rules:
+Queue sequence:
 
-- `LOW_CONFIDENCE` is not `FAILED`; it is a quality-gated terminal path.
-- Transition to `ANALYZING` requires validation gate pass.
+1. Store uploaded PDF in PIPELINE_TMP.
+2. Push job to pipeline:jobs.
+3. Persist QUEUED status.
+4. Worker processes extraction and writes JSON output.
+5. Persist COMPLETED with output path, or FAILED.
 
-## 15. Observability by Data (Not Logs)
+## 10) Non-Blocking Behavior Rules
 
-The platform must be debuggable via persisted stage data.
+Prohibited response patterns:
 
-Minimum per-stage artifacts:
+1. Upload more PDFs.
+2. Insufficient data to proceed.
+3. Analysis cannot be done.
 
-- stage input snapshot reference
-- stage output key
-- quality summary
-- confidence summary
-- error catalog
+Required response patterns:
 
-Debug UX requirement:
+1. Trend analysis limited due to single reporting year.
+2. Multi-year pattern detection not available for current dataset.
+3. Ratios and risk signals generated from available data.
 
-- Any report issue should be diagnosable by traversing stored datasets in order, without requiring backend logs.
+## 11) Environment Variables
 
-## 16. Configuration Surface (New)
+Core:
 
-Recommended environment variables:
+1. REDIS_URL
+2. EXTRACTION_SERVICE_URL
+3. ANALYSIS_SERVICE_URL
+4. REPORTING_SERVICE_URL
+5. NODE_BACKEND_PORT
+6. EXTRACTION_SERVICE_PORT
+7. ANALYSIS_SERVICE_PORT
+8. REPORTING_SERVICE_PORT
 
-- `ANALYTICS_QUALITY_THRESHOLD` (for report-level gate)
-- `MIN_ROW_CONFIDENCE_FOR_ANALYTICS`
-- `REPORT_SECTION_CONFIDENCE_THRESHOLD`
-- `VALIDATION_TOLERANCE_BALANCE_SHEET`
-- `VALIDATION_TOLERANCE_CASHFLOW`
-- `CANONICAL_SCHEMA_VERSION`
+Queue lane:
 
-## 17. Critical Rules (Mandatory)
+1. PIPELINE_ORCHESTRATOR_PORT
+2. PIPELINE_TMP
 
-1. No analytics on raw extracted data.
-2. All analytics must use validated dataset.
-3. All dataset rows must carry `confidence_score` (or explicit non-applicable marker for pre-validation stages).
-4. Frontend must expose full pipeline transparency.
-5. System must be debuggable via data, not logs.
+## 12) Source of Truth
 
-## 18. Final Expectation
+This file is the canonical contract and flow reference.
+When behavior changes, update this file together with:
 
-The system is considered compliant when:
-
-- extraction is modular and parallel
-- aggregation and validation are mandatory pre-analytics stages
-- analytics are confidence-aware and validation-gated
-- frontend exposes full data pipeline visibility
-- report accuracy is driven by validated data, not raw extraction
+1. README.md
+2. docs/architecture/DATA_FIRST_PROJECT_STRUCTURE.md
+3. docs/architecture/DATA_FIRST_DEEP_SUMMARY.md

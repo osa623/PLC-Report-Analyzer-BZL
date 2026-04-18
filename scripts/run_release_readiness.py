@@ -1,96 +1,100 @@
-from __future__ import annotations
-
 import argparse
 import json
+import sys
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
-
-DEFAULT_BENCHMARK_REPORT = "data/eval/last_benchmark_report.json"
-DEFAULT_BETA_REPORT = "data/eval/last_beta_readiness_report.json"
-DEFAULT_READINESS_SNAPSHOT = "data/eval/release_readiness_snapshot.json"
-DEFAULT_OUTPUT = "data/eval/last_release_readiness_report.json"
+from typing import Any, Dict, List
 
 
-def _load_json(path: Path) -> dict[str, Any]:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def _write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2)
-        handle.write("\n")
+def _load_json(path: Path) -> Dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def evaluate_public_launch_readiness(
-    benchmark_report: dict[str, Any],
-    beta_report: dict[str, Any],
-    readiness_snapshot: dict[str, Any],
-) -> dict[str, Any]:
-    blockers: list[str] = []
+    benchmark_report: Dict[str, Any],
+    beta_report: Dict[str, Any],
+    readiness_snapshot: Dict[str, Any],
+) -> Dict[str, Any]:
+    blockers: List[str] = []
 
     if not benchmark_report.get("regression_gate_passed", False):
         blockers.append("benchmark_gate_failed")
 
     if not beta_report.get("beta_ready", False):
-        blockers.append("beta_gate_failed")
+        blockers.append("beta_readiness_gate_failed")
 
-    checks = {
-        "async_processing_stable": "async_multi_file_not_stable",
-        "cost_abuse_controls_active": "cost_abuse_controls_not_active",
-        "monitoring_runbooks_live": "monitoring_or_runbooks_not_live",
-        "data_retention_privacy_implemented": "retention_privacy_not_implemented",
-        "rollback_strategy_tested": "rollback_strategy_not_tested",
-    }
+    if readiness_snapshot.get("stage") != "limited_beta":
+        blockers.append("rollout_stage_not_limited_beta")
 
-    for field, blocker in checks.items():
-        if not bool(readiness_snapshot.get(field, False)):
-            blockers.append(blocker)
+    if not readiness_snapshot.get("async_processing_stable", False):
+        blockers.append("async_processing_not_stable")
+
+    if not readiness_snapshot.get("cost_abuse_controls_active", False):
+        blockers.append("cost_abuse_controls_not_active")
+
+    if not readiness_snapshot.get("monitoring_runbooks_live", False):
+        blockers.append("monitoring_or_runbooks_not_live")
+
+    if not readiness_snapshot.get("data_retention_privacy_implemented", False):
+        blockers.append("data_retention_or_privacy_not_implemented")
+
+    if not readiness_snapshot.get("rollback_strategy_tested", False):
+        blockers.append("rollback_strategy_not_tested")
 
     return {
         "launch_ready": len(blockers) == 0,
         "blockers": blockers,
-        "criteria": {
-            "benchmark_gate_passed": bool(benchmark_report.get("regression_gate_passed", False)),
-            "beta_gate_passed": bool(beta_report.get("beta_ready", False)),
-            "async_processing_stable": bool(readiness_snapshot.get("async_processing_stable", False)),
-            "cost_abuse_controls_active": bool(readiness_snapshot.get("cost_abuse_controls_active", False)),
-            "monitoring_runbooks_live": bool(readiness_snapshot.get("monitoring_runbooks_live", False)),
-            "data_retention_privacy_implemented": bool(
-                readiness_snapshot.get("data_retention_privacy_implemented", False)
-            ),
-            "rollback_strategy_tested": bool(readiness_snapshot.get("rollback_strategy_tested", False)),
+        "checked_at": datetime.now(timezone.utc).isoformat(),
+        "inputs": {
+            "benchmark_report": benchmark_report,
+            "beta_report": beta_report,
+            "readiness_snapshot": readiness_snapshot,
         },
-        "stage": readiness_snapshot.get("stage", "unknown"),
     }
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Evaluate public launch readiness gates")
+    parser.add_argument("--benchmark-report", required=True, help="Path to benchmark report JSON")
+    parser.add_argument("--beta-report", required=True, help="Path to beta readiness report JSON")
+    parser.add_argument("--readiness-snapshot", required=True, help="Path to release readiness snapshot JSON")
+    parser.add_argument("--output", required=True, help="Path to write release readiness report JSON")
+    parser.add_argument(
+        "--fail-on-blocker",
+        action="store_true",
+        help="Exit with code 1 when any blockers are found",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run Step 14 public launch readiness gate.")
-    parser.add_argument("--benchmark-report", default=DEFAULT_BENCHMARK_REPORT)
-    parser.add_argument("--beta-report", default=DEFAULT_BETA_REPORT)
-    parser.add_argument("--readiness-snapshot", default=DEFAULT_READINESS_SNAPSHOT)
-    parser.add_argument("--output", default=DEFAULT_OUTPUT)
-    parser.add_argument("--fail-on-blocker", action="store_true")
-    args = parser.parse_args()
+    args = parse_args()
 
-    benchmark_report = _load_json(Path(args.benchmark_report))
-    beta_report = _load_json(Path(args.beta_report))
-    readiness_snapshot = _load_json(Path(args.readiness_snapshot))
+    benchmark_path = Path(args.benchmark_report)
+    beta_path = Path(args.beta_report)
+    readiness_path = Path(args.readiness_snapshot)
+    output_path = Path(args.output)
 
-    report = evaluate_public_launch_readiness(benchmark_report, beta_report, readiness_snapshot)
-    _write_json(Path(args.output), report)
+    benchmark_report = _load_json(benchmark_path)
+    beta_report = _load_json(beta_path)
+    readiness_snapshot = _load_json(readiness_path)
 
-    print(f"launch_ready={report['launch_ready']}")
-    if report["blockers"]:
-        print("blockers:")
-        for blocker in report["blockers"]:
-            print(f"- {blocker}")
+    report = evaluate_public_launch_readiness(
+        benchmark_report=benchmark_report,
+        beta_report=beta_report,
+        readiness_snapshot=readiness_snapshot,
+    )
 
-    if args.fail_on_blocker and report["blockers"]:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    if args.fail_on_blocker and not report["launch_ready"]:
         raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except FileNotFoundError as exc:
+        print(f"Missing input file: {exc}", file=sys.stderr)
+        raise SystemExit(2) from exc

@@ -1,37 +1,7 @@
-x-common-python-service: &common-python-service
-  restart: unless-stopped
-  depends_on:
-    postgres:
-      condition: service_healthy
-    redis:
-      condition: service_healthy
-  networks:
-    - cse-network
-
+version: '3.8'
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: cse-postgres
-    environment:
-      POSTGRES_DB: cse_finance
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d cse_finance"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - cse-network
-
   redis:
     image: redis:7-alpine
-    container_name: cse-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -39,182 +9,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - cse-network
 
-  node_orchestrator:
-    build:
-      context: ./nodeBackend
-      dockerfile: Dockerfile
-    container_name: cse-node-orchestrator
-    env_file:
-      - ./nodeBackend/.env.example
+  postgres:
+    image: postgres:15-alpine
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cse_finance
-    depends_on:
-      postgres:
-        condition: service_healthy
+      POSTGRES_USER: plc
+      POSTGRES_PASSWORD: plc
+      POSTGRES_DB: plc
     ports:
-      - "3000:3000"
+      - "5432:5432"
     volumes:
-      - report_uploads:/tmp/reports
-    networks:
-      - cse-network
-
-  document_parser:
-    <<: *common-python-service
-    build: ./document_parser
-    container_name: cse-document-parser
-    ports:
-      - "8001:8001"
-
-  structure_detector:
-    <<: *common-python-service
-    build: ./structure_detector
-    container_name: cse-structure-detector
-    ports:
-      - "8002:8002"
-
-  financial_statement_extractor:
-    <<: *common-python-service
-    build: ./income_statement_extractor
-    container_name: cse-financial-statement-extractor
-    ports:
-      - "8003:8003"
-
-  balance_sheet_extractor:
-    <<: *common-python-service
-    build: ./balance_sheet_extractor
-    container_name: cse-balance-sheet-extractor
-    ports:
-      - "8004:8004"
-
-  cashflow_extractor:
-    <<: *common-python-service
-    build: ./cashflow_statement_extractor
-    container_name: cse-cashflow-extractor
-    ports:
-      - "8005:8005"
-
-  ratio_calculator:
-    <<: *common-python-service
-    build: ./ratio_calculator
-    container_name: cse-ratio-calculator
-    ports:
-      - "8006:8006"
-
-  segment_extractor:
-    <<: *common-python-service
-    build: ./segment_extractor
-    container_name: cse-segment-extractor
-    ports:
-      - "8007:8007"
-
-  governance_extractor:
-    <<: *common-python-service
-    build: ./governance_extractor
-    container_name: cse-governance-extractor
-    ports:
-      - "8008:8008"
-
-  risk_extractor:
-    <<: *common-python-service
-    build: ./risk_extractor
-    container_name: cse-risk-extractor
-    ports:
-      - "8009:8009"
-
-  esg_extractor:
-    <<: *common-python-service
-    build: ./esg_extractor
-    container_name: cse-esg-extractor
-    ports:
-      - "8010:8010"
-
-  strategy_nlp:
-    <<: *common-python-service
-    build: ./strategy_nlp
-    container_name: cse-strategy-nlp
-    ports:
-      - "8011:8011"
-
-  kpi_sector_engine:
-    <<: *common-python-service
-    build: ./kpi_sector_engine
-    container_name: cse-kpi-sector-engine
-    ports:
-      - "8012:8012"
-
-  pattern_detection:
-    <<: *common-python-service
-    build: ./pattern_detection
-    container_name: cse-pattern-detection
-    ports:
-      - "8013:8013"
-
-  report_generator:
-    <<: *common-python-service
-    build: ./report_generator
-    container_name: cse-report-generator
-    ports:
-      - "8014:8014"
-
-  comparative_analysis:
-    <<: *common-python-service
-    build: ./comparative_analysis
-    container_name: cse-comparative-analysis
-    ports:
-      - "8015:8015"
-
-  oci_extractor:
-    <<: *common-python-service
-    build: ./oci_extractor
-    container_name: cse-oci-extractor
-    ports:
-      - "8016:8016"
-
-  equity_extractor:
-    <<: *common-python-service
-    build: ./equity_extractor
-    container_name: cse-equity-extractor
-    ports:
-      - "8017:8017"
-
-  data_validator:
-    <<: *common-python-service
-    build: ./data_validator
-    container_name: cse-data-validator
-    ports:
-      - "8018:8018"
-
-  aggregation_service:
-    <<: *common-python-service
-    build: ./aggregation_service
-    container_name: cse-aggregation-service
-    ports:
-      - "8019:8019"
-
-  validation_engine:
-    <<: *common-python-service
-    build: ./validation_engine
-    container_name: cse-validation-engine
-    ports:
-      - "8020:8020"
-
-  frontend:
-    build: ./frontend
-    container_name: cse-frontend
-    ports:
-      - "3001:3000"
-    volumes:
-      - ./frontend/src:/app/src
-    networks:
-      - cse-network
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
-  postgres_data:
-  report_uploads:
-
-networks:
-  cse-network:
-    driver: bridge
+  pgdata:

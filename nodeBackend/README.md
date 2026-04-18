@@ -1,26 +1,8 @@
-# CSE Report Orchestrator
+# Node Backend API
 
-Node.js orchestration service implementing clean architecture layers:
+This is the single Node backend layer between frontend and Python services.
 
-- routes
-- controllers
-- services
-- workflow
-- repositories
-- clients
-- config
-
-## Run
-
-1. Copy `.env.example` to `.env`
-2. Install dependencies: `npm install`
-3. Start service: `npm run dev`
-
-## Main Endpoint
-
-- `POST /reports`
-  - `multipart/form-data`
-  - `report`: PDF file
-  - `symbol`: company symbol
-  - `name`: company name
-  - `sector`: sector name
+Flow:
+- Frontend calls Node backend endpoints
+- Node backend orchestrates extraction, analysis, reporting Python services
+- Artifacts are exchanged through Redis
