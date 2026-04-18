@@ -40,6 +40,7 @@ def _to_canonical_line_items(extractions: list[dict[str, Any]]) -> dict[str, Any
     income_statement: list[dict[str, Any]] = []
     balance_sheet: list[dict[str, Any]] = []
     cashflow: list[dict[str, Any]] = []
+    equity: list[dict[str, Any]] = []
 
     def add_item(target: list[dict[str, Any]], label: str, value: Any, year: int | None) -> None:
         if not isinstance(value, (int, float)):
@@ -73,19 +74,28 @@ def _to_canonical_line_items(extractions: list[dict[str, Any]]) -> dict[str, Any
         add_item(income_statement, "Gross Profit", inc.get("gross_profit"), year)
         add_item(income_statement, "Operating Expenses", inc.get("operating_expenses"), year)
         add_item(income_statement, "Operating Profit", inc.get("operating_profit"), year)
+        add_item(income_statement, "Profit Before Tax", inc.get("profit_before_tax"), year)
+        add_item(income_statement, "Interest Expense", inc.get("interest_expense"), year)
         add_item(income_statement, "Net Income", inc.get("net_profit"), year)
 
         add_item(cashflow, "Operating Cash Flow", cf.get("operating_cash_flow"), year)
         add_item(cashflow, "Investing Cash Flow", cf.get("investing_cash_flow"), year)
         add_item(cashflow, "Financing Cash Flow", cf.get("financing_cash_flow"), year)
         add_item(cashflow, "Net Cash Flow", cf.get("net_cash_change"), year)
+        add_item(cashflow, "Opening Cash", cf.get("opening_cash"), year)
+        add_item(cashflow, "Closing Cash", cf.get("closing_cash"), year)
+        add_item(cashflow, "Net Income", cf.get("net_income"), year)
+
+        eq = statements.get("equity_statement") if isinstance(statements.get("equity_statement"), dict) else {}
+        add_item(equity, "Net Income", eq.get("net_income"), year)
+        add_item(equity, "Change in Retained Earnings", eq.get("change_in_retained_earnings"), year)
 
     return {
         "financial_statements": {
             "income_statement": income_statement,
             "balance_sheet": balance_sheet,
             "cashflow": cashflow,
-            "equity": [],
+            "equity": equity,
         },
         "narrative_sections": {
             "notes": [],
@@ -116,7 +126,49 @@ def _extract_single_file(redis, report_id: str, file_path: str, ttl_seconds: int
     _set_document_status(redis, report_id, file_path, ttl_seconds, "running")
     pages = load_pdf_pages(file_path)
     full_text = "\n\n".join(pages)
-    output = extract_financial_statements_from_text(full_text, file_path, report_id)
+
+    output: dict[str, Any] | None = None
+    focus_fields: list[str] = []
+    attempts = 0
+    max_attempts = 3
+    while attempts < max_attempts:
+        attempts += 1
+        output = extract_financial_statements_from_text(
+            full_text,
+            file_path,
+            report_id,
+            strict_mode=attempts > 1,
+            focus_fields=focus_fields,
+        )
+        if output.get("status") == "completed":
+            break
+
+        missing = output.get("missing_required_metrics", [])
+        quality_issues = output.get("quality_issues", [])
+        focus_fields = [m for m in missing if isinstance(m, str)]
+        if not focus_fields and quality_issues:
+            for issue in quality_issues:
+                lowered = str(issue).lower()
+                if "balance" in lowered:
+                    focus_fields.extend([
+                        "balance_sheet.total_assets",
+                        "balance_sheet.total_liabilities",
+                        "balance_sheet.total_equity",
+                    ])
+                if "cash" in lowered:
+                    focus_fields.extend([
+                        "cashflow_statement.operating_cash_flow",
+                        "cashflow_statement.closing_cash",
+                    ])
+                if "profit" in lowered or "revenue" in lowered:
+                    focus_fields.extend([
+                        "income_statement.revenue_or_interest_income",
+                        "income_statement.net_profit",
+                    ])
+        focus_fields = sorted(set(focus_fields))
+
+    output = output or {}
+    output["re_extraction_attempts"] = attempts
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
     if output.get("status") == "failed":
@@ -131,6 +183,8 @@ def _extract_single_file(redis, report_id: str, file_path: str, ttl_seconds: int
             "metrics_extracted_count": int(output.get("metrics_extracted_count", 0)),
             "missing_required_metrics": output.get("missing_required_metrics", []),
             "quality_issues": output.get("quality_issues", []),
+            "re_extraction_attempts": int(output.get("re_extraction_attempts", attempts)),
+            "dual_pass": output.get("dual_pass", {}),
             "critical_values": {
                 "total_assets": bs.get("total_assets"),
                 "total_liabilities": bs.get("total_liabilities"),
@@ -161,6 +215,8 @@ def _extract_single_file(redis, report_id: str, file_path: str, ttl_seconds: int
         duration_ms=elapsed_ms,
         document_year=output.get("document_year"),
         metrics_extracted_count=output.get("metrics_extracted_count", 0),
+        re_extraction_attempts=int(output.get("re_extraction_attempts", attempts)),
+        extraction_agreement_score=(output.get("dual_pass") or {}).get("agreement_score"),
     )
     return output, len(pages)
 
@@ -205,9 +261,13 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
                             "balance_sheet": output["statements"].get("balance_sheet", {}),
                             "income_statement": output["statements"].get("income_statement", {}),
                             "cashflow_statement": output["statements"].get("cashflow_statement", {}),
+                            "equity_statement": output["statements"].get("equity_statement", {}),
                             "source_file": file_path,
                             "extraction_confidence": output.get("extraction_confidence", 0.0),
                             "metrics_extracted_count": int(output.get("metrics_extracted_count", 0)),
+                            "re_extraction_attempts": int(output.get("re_extraction_attempts", 1)),
+                            "extraction_agreement_score": float(((output.get("dual_pass") or {}).get("agreement_score", 0.0) or 0.0)),
+                            "dual_pass": output.get("dual_pass", {}),
                         }
                     )
                 except Exception as exc:
@@ -245,6 +305,8 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
                                 ],
                             ),
                             "quality_issues": (parsed_error or {}).get("quality_issues", []),
+                            "re_extraction_attempts": int((parsed_error or {}).get("re_extraction_attempts", 1) or 1),
+                            "dual_pass": (parsed_error or {}).get("dual_pass", {}),
                             "critical_values": (parsed_error or {}).get("critical_values", {}),
                         }
                     )
@@ -304,6 +366,12 @@ def extract(request: ExtractRequest) -> dict[str, Any]:
             ),
             "avg_extraction_confidence": (
                 sum(float(item.get("extraction_confidence", 0.0)) for item in extraction_outputs) / len(extraction_outputs)
+            ),
+            "avg_extraction_agreement": (
+                sum(float(((item.get("dual_pass") or {}).get("agreement_score", 0.0) or 0.0)) for item in extraction_outputs) / len(extraction_outputs)
+            ),
+            "avg_re_extraction_attempts": (
+                sum(int(item.get("re_extraction_attempts", 1) or 1) for item in extraction_outputs) / len(extraction_outputs)
             ),
             "document_errors": file_errors,
         }

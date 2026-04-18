@@ -45,6 +45,38 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
             flag = _trend_flag(metric, by_year)
             if flag:
                 patterns.append(flag)
+        # Multi-year growth/cycle diagnosis.
+        rev_points = []
+        for year in sorted(by_year.keys()):
+            value = by_year.get(year, {}).get("revenue_growth_yoy")
+            if isinstance(value, (int, float)):
+                rev_points.append(float(value))
+        if rev_points:
+            if all(v > 0 for v in rev_points):
+                patterns.append("Consistent multi-year growth pattern detected")
+            elif all(v <= 0 for v in rev_points):
+                patterns.append("Persistent top-line contraction pattern detected")
+            elif any(v > 0 for v in rev_points) and any(v < 0 for v in rev_points):
+                patterns.append("Cyclical revenue behavior detected")
+
+        margin_points = []
+        for year in sorted(by_year.keys()):
+            value = by_year.get(year, {}).get("net_margin")
+            if isinstance(value, (int, float)):
+                margin_points.append(float(value))
+        if len(margin_points) >= 3:
+            if margin_points[-1] > margin_points[0]:
+                patterns.append("Margin expansion trend observed")
+            elif margin_points[-1] < margin_points[0]:
+                patterns.append("Margin compression trend observed")
+
+        debt_points = []
+        for year in sorted(by_year.keys()):
+            value = by_year.get(year, {}).get("debt_to_equity")
+            if isinstance(value, (int, float)):
+                debt_points.append(float(value))
+        if len(debt_points) >= 3 and debt_points[-1] > debt_points[0]:
+            patterns.append("Rising debt dependency pattern detected")
     else:
         if len(numeric_years) <= 1:
             patterns.append("Trend analysis limited due to single reporting year")
@@ -53,6 +85,12 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
             patterns.append("Long-horizon trend detection limited because fewer than three reporting years are available")
         patterns.append("Structural financial snapshot generated from available periods")
         patterns.append("Risk interpretation generated from available ratio coverage")
+
+    forensic = ratios.get("forensic_flags") if isinstance(ratios, dict) else None
+    if isinstance(forensic, list):
+        for item in forensic:
+            if isinstance(item, str):
+                patterns.append(item)
 
     if not patterns:
         patterns.append("Stable reporting pattern")

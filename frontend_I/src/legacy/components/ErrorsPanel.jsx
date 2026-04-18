@@ -2,11 +2,25 @@ import React from 'react';
 import { AlertTriangle, XCircle, AlertCircle, Info } from 'lucide-react';
 
 function categorizeError(err) {
-  if (typeof err === 'string') {
-    if (err.includes('balance_mismatch')) return { type: 'error', icon: XCircle, text: 'Balance Sheet Mismatch', detail: err };
-    if (err.includes('revenue_lt_net_profit')) return { type: 'error', icon: AlertTriangle, text: 'Revenue less than Net Profit', detail: err };
-    if (err.includes('missing')) return { type: 'warning', icon: AlertCircle, text: 'Missing Critical Values', detail: err };
-    return { type: 'warning', icon: AlertCircle, text: err, detail: '' };
+  if (typeof err === 'string' || (err && typeof err === 'object')) {
+    const raw = typeof err === 'string'
+      ? err
+      : `${err.code || 'validation_issue'}: ${err.message || 'Validation issue'}`;
+    const normalized = raw.trim();
+
+    if (normalized.startsWith('BALANCE_SHEET_IDENTITY_FAILED')) {
+      return { type: 'error', icon: XCircle, text: 'Balance Sheet Identity Failed', detail: 'Assets must equal liabilities plus equity.' };
+    }
+    if (normalized.startsWith('CASH_RECONCILIATION_FAILED')) {
+      return { type: 'error', icon: XCircle, text: 'Cash Reconciliation Failed', detail: 'Opening cash + net cash flow does not equal closing cash.' };
+    }
+    if (normalized.startsWith('NET_INCOME_LINKAGE_FAILED')) {
+      return { type: 'error', icon: AlertTriangle, text: 'Net Income Linkage Failed', detail: 'Net income is inconsistent across income statement, cash flow, and equity.' };
+    }
+    if (normalized.includes('balance_mismatch')) return { type: 'error', icon: XCircle, text: 'Balance Sheet Mismatch', detail: normalized };
+    if (normalized.includes('revenue_lt_net_profit')) return { type: 'error', icon: AlertTriangle, text: 'Revenue less than Net Profit', detail: normalized };
+    if (normalized.includes('missing')) return { type: 'warning', icon: AlertCircle, text: 'Missing Critical Values', detail: normalized };
+    return { type: 'warning', icon: AlertCircle, text: normalized, detail: '' };
   }
   return { type: 'info', icon: Info, text: JSON.stringify(err), detail: '' };
 }
@@ -26,9 +40,20 @@ export default function ErrorsPanel({ errors }) {
   const errorCatalog = errors.error_catalog || [];
   const missingValues = errors.missing_values || [];
   const weakEntries = errors.weak_data_entries || [];
+  const extractionDocumentErrors = Array.isArray(errors?.extraction_failure?.document_errors)
+    ? errors.extraction_failure.document_errors
+    : [];
+
+  const catalogItems = errorCatalog.map(categorizeError);
+  const extractionItems = extractionDocumentErrors.slice(0, 8).map((entry, idx) => ({
+    type: 'error', icon: XCircle,
+    text: `Extraction gate failure (${idx + 1})`,
+    detail: Array.isArray(entry?.errors) ? entry.errors.join('; ') : 'Document-level extraction validation failed.',
+  }));
 
   const allItems = [
-    ...errorCatalog.map(categorizeError),
+    ...catalogItems,
+    ...extractionItems,
     ...missingValues.slice(0, 10).map((mv) => ({
       type: 'warning', icon: AlertCircle,
       text: `Missing values for row: ${mv.row_id || 'unknown'}`,
@@ -39,7 +64,10 @@ export default function ErrorsPanel({ errors }) {
       text: `Weak Data Entry: ${w.canonical_label || 'unknown'}`,
       detail: `Confidence: ${((w.confidence_score || 0) * 100).toFixed(0)}%`,
     })),
-  ];
+  ].filter((item, index, arr) => {
+    const key = `${item.type}|${item.text}|${item.detail || ''}`;
+    return arr.findIndex((candidate) => `${candidate.type}|${candidate.text}|${candidate.detail || ''}` === key) === index;
+  });
 
   const hasIssues = allItems.length > 0;
 

@@ -31,11 +31,18 @@ FIELD_SYNONYMS: dict[str, list[str]] = {
     "income_statement.gross_profit": ["gross profit"],
     "income_statement.operating_expenses": ["operating expenses", "operating expense"],
     "income_statement.operating_profit": ["operating profit", "operating income"],
+    "income_statement.profit_before_tax": ["profit before tax", "profit before taxation", "pbt"],
+    "income_statement.interest_expense": ["interest expense", "finance cost", "finance expense"],
     "income_statement.net_profit": ["net profit", "profit for the year", "net income", "profit attributable"],
     "cashflow_statement.operating_cash_flow": ["net cash from operating activities", "operating cash flow", "cash from operations"],
     "cashflow_statement.investing_cash_flow": ["net cash used in investing activities", "investing cash flow"],
     "cashflow_statement.financing_cash_flow": ["net cash from financing activities", "financing cash flow"],
     "cashflow_statement.net_cash_change": ["net increase in cash", "net decrease in cash", "net cash flow"],
+    "cashflow_statement.opening_cash": ["opening cash", "cash at beginning", "cash and cash equivalents at beginning"],
+    "cashflow_statement.closing_cash": ["closing cash", "cash at end", "cash and cash equivalents at end"],
+    "cashflow_statement.net_income": ["net income", "profit for the year"],
+    "equity_statement.net_income": ["net income", "profit for the year"],
+    "equity_statement.change_in_retained_earnings": ["change in retained earnings", "retained earnings movement"],
 }
 
 SECTION_ALIASES: dict[str, list[str]] = {
@@ -53,6 +60,20 @@ SECTION_ALIASES: dict[str, list[str]] = {
         "cash flow statement",
         "statement of cash flows",
     ],
+    "equity_statement": [
+        "statement of changes in equity",
+        "statement of changes in shareholders equity",
+        "changes in equity",
+    ],
+}
+
+
+LINE_ITEM_SCHEMA = {
+    "year": None,
+    "currency": "LKR",
+    "unit_scale": "units",
+    "statement_type": None,
+    "line_items": [],
 }
 
 
@@ -168,6 +189,7 @@ def _fallback_regex_extract(full_text: str) -> dict[str, Any]:
         "balance_sheet": {},
         "income_statement": {},
         "cashflow_statement": {},
+        "equity_statement": {},
     }
 
     for field_path, synonyms in FIELD_SYNONYMS.items():
@@ -252,6 +274,7 @@ def _section_anchored_extract(full_text: str) -> dict[str, Any]:
         "balance_sheet": {},
         "income_statement": {},
         "cashflow_statement": {},
+        "equity_statement": {},
     }
 
     for field_path, synonyms in FIELD_SYNONYMS.items():
@@ -296,6 +319,7 @@ def _coalesce_statement_sources(model: dict[str, Any], section: dict[str, Any], 
         "balance_sheet": {},
         "income_statement": {},
         "cashflow_statement": {},
+        "equity_statement": {},
     }
     mandatory_set = set(MANDATORY_METRICS)
     for field_path in FIELD_SYNONYMS.keys():
@@ -473,12 +497,78 @@ def _build_gemini_prompt(full_text: str, detected_years: list[int]) -> str:
         "{\"document_year\": 2023, \"statements\": {\"balance_sheet\": {...}, \"income_statement\": {...}, \"cashflow_statement\": {...}}}. "
         "If a field is missing use null. "
         "Balance sheet keys: total_assets,total_liabilities,total_equity,current_assets,current_liabilities,borrowings,cash_and_equivalents. "
-        "Income keys: revenue_or_interest_income,cost_of_revenue,gross_profit,operating_expenses,operating_profit,net_profit. "
-        "Cashflow keys: operating_cash_flow,investing_cash_flow,financing_cash_flow,net_cash_change. "
+        "Income keys: revenue_or_interest_income,cost_of_revenue,gross_profit,operating_expenses,operating_profit,profit_before_tax,interest_expense,net_profit. "
+        "Cashflow keys: operating_cash_flow,investing_cash_flow,financing_cash_flow,net_cash_change,opening_cash,closing_cash,net_income. "
+        "Equity keys: net_income,change_in_retained_earnings. "
         f"Detected year candidates: {years_hint}. "
         "Source OCR text follows:\n"
         f"{truncated}"
     )
+
+
+def _build_gemini_vision_style_prompt(full_text: str, detected_years: list[int]) -> str:
+    years_hint = ", ".join(str(y) for y in detected_years) if detected_years else "unknown"
+    truncated = full_text[:160000]
+    return (
+        "You are extracting financial tables from annual-report pages. "
+        "Return strict JSON with keys document_year and statements. "
+        "Statements must include balance_sheet, income_statement, cashflow_statement, equity_statement. "
+        "Each missing field must be null; never omit required keys. "
+        "Detected year candidates: " + years_hint + ". "
+        "Table text follows:\n" + truncated
+    )
+
+
+def _extract_statement_table_text(full_text: str) -> str:
+    lines = full_text.splitlines()
+    selected: list[str] = []
+    active = False
+    remaining = 0
+    flat_aliases = [alias for aliases in SECTION_ALIASES.values() for alias in aliases]
+    for raw_line in lines:
+        line = raw_line.strip()
+        lowered = line.lower()
+        if any(alias in lowered for alias in flat_aliases):
+            active = True
+            remaining = 120
+            selected.append(line)
+            continue
+        if active:
+            if line:
+                has_number = bool(re.search(r"\d", line))
+                has_financial_keyword = any(k in lowered for k in ["assets", "liabilities", "equity", "profit", "revenue", "cash", "expense", "income"])
+                if has_number or has_financial_keyword:
+                    selected.append(line)
+            remaining -= 1
+            if remaining <= 0:
+                active = False
+    return "\n".join(selected) if selected else full_text
+
+
+def _focus_text_for_fields(full_text: str, focus_fields: list[str]) -> str:
+    if not focus_fields:
+        return full_text
+    synonyms: list[str] = []
+    for field in focus_fields:
+        synonyms.extend(FIELD_SYNONYMS.get(field, []))
+    if not synonyms:
+        return full_text
+
+    lines = full_text.splitlines()
+    selected: list[str] = []
+    carry = 0
+    for raw_line in lines:
+        line = raw_line.strip()
+        lowered = line.lower()
+        if any(s in lowered for s in synonyms):
+            carry = 20
+            selected.append(line)
+            continue
+        if carry > 0:
+            if line:
+                selected.append(line)
+            carry -= 1
+    return "\n".join(selected) if selected else full_text
 
 
 def _call_gemini_structured(full_text: str, detected_years: list[int]) -> dict[str, Any] | None:
@@ -493,11 +583,24 @@ def _call_gemini_structured(full_text: str, detected_years: list[int]) -> dict[s
     return _parse_model_json(model_text)
 
 
+def _call_gemini_structured_vision_style(full_text: str, detected_years: list[int]) -> dict[str, Any] | None:
+    prompt = _build_gemini_vision_style_prompt(full_text, detected_years)
+    try:
+        response = asyncio.run(call_gemini(prompt, max_output_tokens=4096))
+    except Exception:
+        return None
+    model_text = response.get("text") if isinstance(response, dict) else ""
+    if not isinstance(model_text, str):
+        return None
+    return _parse_model_json(model_text)
+
+
 def _normalize_statements(raw_statements: dict[str, Any], multiplier: int) -> dict[str, dict[str, float | None]]:
     normalized = {
         "balance_sheet": {},
         "income_statement": {},
         "cashflow_statement": {},
+        "equity_statement": {},
     }
 
     for section in normalized.keys():
@@ -515,6 +618,7 @@ def _merge_statement_values(preferred: dict[str, Any], fallback: dict[str, Any])
         "balance_sheet": {},
         "income_statement": {},
         "cashflow_statement": {},
+        "equity_statement": {},
     }
     for section in merged.keys():
         preferred_values = preferred.get(section) if isinstance(preferred, dict) else {}
@@ -649,7 +753,52 @@ def _extract_quality_issues(statements: dict[str, Any], document_year: int | Non
     return issues
 
 
-def extract_financial_statements_from_text(full_text: str, file_path: str, report_id: str) -> dict[str, Any]:
+def _reconcile_dual_pass(table_first: dict[str, Any], vision_first: dict[str, Any]) -> tuple[dict[str, Any], list[str], float]:
+    mismatches: list[str] = []
+    total = 0
+    agrees = 0
+    merged: dict[str, Any] = {
+        "balance_sheet": {},
+        "income_statement": {},
+        "cashflow_statement": {},
+        "equity_statement": {},
+    }
+
+    for field_path in FIELD_SYNONYMS.keys():
+        section, field = field_path.split(".", 1)
+        left = (table_first.get(section) or {}).get(field) if isinstance(table_first.get(section), dict) else None
+        right = (vision_first.get(section) or {}).get(field) if isinstance(vision_first.get(section), dict) else None
+        total += 1
+        chosen = None
+
+        if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+            denom = max(abs(float(left)), abs(float(right)), 1.0)
+            rel = abs(float(left) - float(right)) / denom
+            if rel <= 0.02:
+                agrees += 1
+                chosen = float(left)
+            else:
+                mismatches.append(field_path)
+                chosen = float(left) if abs(float(left)) >= abs(float(right)) else float(right)
+        elif isinstance(left, (int, float)):
+            chosen = float(left)
+        elif isinstance(right, (int, float)):
+            chosen = float(right)
+
+        if chosen is not None:
+            merged[section][field] = chosen
+
+    agreement = float(agrees) / float(total) if total else 0.0
+    return merged, mismatches, agreement
+
+
+def extract_financial_statements_from_text(
+    full_text: str,
+    file_path: str,
+    report_id: str,
+    strict_mode: bool = False,
+    focus_fields: list[str] | None = None,
+) -> dict[str, Any]:
     detected_years = _extract_detected_years(full_text)
     doc_year = _document_year(full_text)
 
@@ -666,9 +815,17 @@ def extract_financial_statements_from_text(full_text: str, file_path: str, repor
             "failure_reason": "Only LKR-denominated statement extraction is supported",
         }
 
-    model_payload = _call_gemini_structured(full_text, detected_years) or {}
-    model_statements = model_payload.get("statements") if isinstance(model_payload, dict) else {}
-    normalized_model = _normalize_statements(model_statements if isinstance(model_statements, dict) else {}, multiplier)
+    focus_text = _focus_text_for_fields(full_text, focus_fields or []) if strict_mode else full_text
+    table_text = _extract_statement_table_text(focus_text)
+    model_payload_table = _call_gemini_structured(table_text, detected_years) or {}
+    model_payload_vision = _call_gemini_structured_vision_style(focus_text, detected_years) or {}
+    model_statements_table = model_payload_table.get("statements") if isinstance(model_payload_table, dict) else {}
+    model_statements_vision = model_payload_vision.get("statements") if isinstance(model_payload_vision, dict) else {}
+    normalized_model_table = _normalize_statements(model_statements_table if isinstance(model_statements_table, dict) else {}, multiplier)
+    normalized_model_vision = _normalize_statements(model_statements_vision if isinstance(model_statements_vision, dict) else {}, multiplier)
+    dual_merged_model, dual_mismatches, agreement_score = _reconcile_dual_pass(normalized_model_table, normalized_model_vision)
+
+    normalized_model = dual_merged_model
     normalized_section = _normalize_statements(_section_anchored_extract(full_text), multiplier)
     normalized_fallback = _normalize_statements(_fallback_regex_extract(full_text), multiplier)
     merged_statements = _coalesce_statement_sources(normalized_model, normalized_section, normalized_fallback)
@@ -683,6 +840,11 @@ def extract_financial_statements_from_text(full_text: str, file_path: str, repor
     extracted_count, missing = _mandatory_metrics_coverage(merged_statements)
     quality_issues = _extract_quality_issues(merged_statements, doc_year)
     extraction_confidence = min(1.0, extracted_count / float(len(MANDATORY_METRICS)))
+    if strict_mode and focus_fields:
+        for field in focus_fields:
+            if field in MANDATORY_METRICS and field in missing:
+                quality_issues.append(f"strict_focus_missing_{field}")
+
     status = "completed" if extracted_count >= 5 and not quality_issues else "failed"
     failure_reason = None
     if extracted_count < 5:
@@ -704,5 +866,12 @@ def extract_financial_statements_from_text(full_text: str, file_path: str, repor
         "quality_issues": quality_issues,
         "extraction_confidence": extraction_confidence,
         "downscale_factor": downscale_factor,
+        "dual_pass": {
+            "mismatch_fields": dual_mismatches,
+            "agreement_score": agreement_score,
+            "table_text_length": len(table_text),
+            "strict_mode": strict_mode,
+            "focus_fields": focus_fields or [],
+        },
         "failure_reason": failure_reason,
     }

@@ -4,6 +4,7 @@ from platform_core.contracts.canonical_dataset import CanonicalRawReport, Determ
 
 
 EPSILON = 1e-6
+REL_TOL = 0.03
 
 
 def _index(items: list) -> dict[str, float]:
@@ -16,20 +17,30 @@ def validate_accounting(canonical: CanonicalRawReport, with_checks: bool = False
     eq = _index(canonical.financial_statements.equity)
     inc = _index(canonical.financial_statements.income_statement)
 
-    assets = bs.get("total assets", 0.0)
-    liabilities = bs.get("total liabilities", 0.0)
-    equity = bs.get("total equity", 0.0)
-    opening_cash = cf.get("opening cash", 0.0)
-    net_cash_flow = cf.get("net cash flow", 0.0)
-    closing_cash = cf.get("closing cash", 0.0)
-    ni_income = inc.get("net income", 0.0)
-    ni_cashflow = cf.get("net income", 0.0)
-    retained_change = eq.get("change in retained earnings", 0.0)
+    assets = bs.get("total assets")
+    liabilities = bs.get("total liabilities")
+    equity = bs.get("total equity")
+    opening_cash = cf.get("opening cash")
+    net_cash_flow = cf.get("net cash flow")
+    closing_cash = cf.get("closing cash")
+    ni_income = inc.get("net income")
+    ni_cashflow = cf.get("net income")
+    retained_change = eq.get("change in retained earnings")
+
+    def rel_close(a: float | None, b: float | None, tol: float = REL_TOL) -> bool:
+        if a is None or b is None:
+            return False
+        denom = max(abs(float(a)), abs(float(b)), 1.0)
+        return abs(float(a) - float(b)) / denom <= tol
+
+    has_bs = all(v is not None for v in [assets, liabilities, equity])
+    has_cash = all(v is not None for v in [opening_cash, net_cash_flow, closing_cash])
+    has_ni = all(v is not None for v in [ni_income, ni_cashflow, retained_change])
 
     checks = DeterministicChecks(
-        balance_sheet_identity=abs(assets - (liabilities + equity)) <= EPSILON,
-        cash_reconciliation=abs((opening_cash + net_cash_flow) - closing_cash) <= EPSILON,
-        net_income_linkage=abs(ni_income - ni_cashflow) <= EPSILON and abs(ni_income - retained_change) <= EPSILON,
+        balance_sheet_identity=has_bs and rel_close(float(assets), float(liabilities) + float(equity)),
+        cash_reconciliation=has_cash and rel_close(float(opening_cash) + float(net_cash_flow), float(closing_cash)),
+        net_income_linkage=has_ni and rel_close(float(ni_income), float(ni_cashflow)) and rel_close(float(ni_income), float(retained_change)),
     )
 
     issues: list[ValidationIssue] = []

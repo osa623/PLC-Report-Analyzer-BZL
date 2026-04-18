@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 def compose_sections(narrative: dict, chart_data: dict) -> dict:
-    return {
+    legacy = {
         "executive_summary": narrative["executive_summary"],
         "company_performance_overview": narrative["financial_health_overview"],
         "financial_analysis": {
@@ -15,4 +15,10 @@ def compose_sections(narrative: dict, chart_data: dict) -> dict:
         "data_limitations_disclosure": narrative["data_scope_and_limitations"],
         "confidence_data_quality": narrative["confidence_data_quality"],
         "charts": chart_data,
+    }
+
+    investor_report = narrative.get("investor_report") if isinstance(narrative.get("investor_report"), dict) else {}
+    return {
+        "investor_grade_report": investor_report,
+        **legacy,
     }
