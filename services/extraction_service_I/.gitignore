@@ -1,0 +1,155 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# data folder
+/data
+
+
+#app folder
+annual-report-backend/app/statement_images/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Data and temp
+*.sqlite3
+data/
+
+temp/
+
+# Test outputs
+*.coverage
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
+
+# Misc
+*.bak
+*.swp
+*.swo
+
+# Ignore extracted/intermediate data
+annual-report-backend/data/processed/
+annual-report-backend/data/temp/
+annual-report-backend/data/Progerss/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Project-specific
+# Generated/extracted data
+data/processed/extracted_json/*.json
+app/results/
+app/statement_images/*/
+!app/statement_images/.gitkeep
+
+# Raw PDFs (too large for git)
+data/raw/**/*.pdf
+data/raw/**/*.PDF
+
+# Temporary files
+data/temp/
+logs/*.log
+*.log
+
+# Uploaded files
+app/uploads/
+
+# Test/Debug/Setup scripts (temporary)
+test_*.py
+debug_*.py
+check_*.py
+configure_*.py
+diagnose_*.py
+find_*.py
+setup_ocr.py
+extraction_log.txt
+
+# Deprecated/old code
+deprecated/
+
+# Documentation (optional - comment out if you want to track these)
+# CLEANUP_PLAN.md
+# IMPLEMENTATION_SUMMARY.md
+
+# Keep directory structure
+!data/processed/extracted_json/.gitkeep
+!data/raw/*/.gitkeep
+!data/temp/.gitkeep
+!logs/.gitkeep
+!app/statement_images/.gitkeep
+!app/uploads/.gitkeep
+!app/results/.gitkeep
+
+# Ignore entire app folder
+app/

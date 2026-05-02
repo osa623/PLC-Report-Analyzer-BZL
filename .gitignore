@@ -26,4 +26,4 @@ __pycache__/
 *.pyc
 *.
 /services/data*
-/services/extraction_service*
+/services/extract/

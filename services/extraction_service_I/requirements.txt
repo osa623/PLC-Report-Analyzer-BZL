@@ -1,0 +1,12 @@
+flask
+flask-cors
+pymongo
+python-dotenv
+openai
+requests
+pytesseract
+pillow
+pymupdf
+numpy
+opencv-python
+google-generativeai
