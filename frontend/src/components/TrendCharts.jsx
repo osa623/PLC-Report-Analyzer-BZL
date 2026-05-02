@@ -1,79 +1,50 @@
 import React, { useMemo } from 'react';
 
-const TREND_CONFIGS = [
-  {
-    key: 'revenue',
-    label: 'Revenue Trend',
-    color: '#3b82f6',
-    match: ['revenue', 'total_revenue', 'turnover', 'sales'],
-  },
-  {
-    key: 'profit',
-    label: 'Profit Trend',
-    color: '#22c55e',
-    match: ['net_profit', 'profit_after_tax', 'net_income'],
-  },
-  {
-    key: 'cash',
-    label: 'Cash Position',
-    color: '#8b5cf6',
-    match: ['cash', 'cash_and_cash_equivalents', 'cash_balance'],
-  },
+const ORDERED_TREND_CONFIGS = [
+  { key: 'revenue', label: 'Revenue', color: '#0f172a', valueType: 'currency' },
+  { key: 'net_income', label: 'Net Income', color: '#1d4ed8', valueType: 'currency' },
+  { key: 'gross_profit_margin', label: 'Gross Profit Margin', color: '#0f766e', valueType: 'percent' },
+  { key: 'net_profit_margin', label: 'Net Profit Margin', color: '#155e75', valueType: 'percent' },
+  { key: 'return_on_equity', label: 'ROE', color: '#0284c7', valueType: 'percent' },
+  { key: 'return_on_assets', label: 'ROA', color: '#0369a1', valueType: 'percent' },
+  { key: 'debt_to_equity', label: 'Debt to Equity', color: '#b45309', valueType: 'ratio' },
+  { key: 'current_ratio', label: 'Current Ratio', color: '#9333ea', valueType: 'ratio' },
+  { key: 'total_assets', label: 'Total Assets', color: '#7c2d12', valueType: 'currency' },
+  { key: 'total_liabilities', label: 'Total Liabilities', color: '#9f1239', valueType: 'currency' },
+  { key: 'total_equity', label: 'Total Equity', color: '#166534', valueType: 'currency' },
+  { key: 'total_cash_flow', label: 'Total Cash Flow', color: '#334155', valueType: 'currency' },
 ];
 
-function extractTrendData(rows) {
-  const trends = {};
+function formatValue(value, type) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  if (type === 'percent') return `${(value * 100).toFixed(1)}%`;
+  if (type === 'ratio') return value.toFixed(2);
 
-  for (const cfg of TREND_CONFIGS) {
-    const matchingRows = rows.filter((r) =>
-      cfg.match.some((m) => (r.canonical_label || '').toLowerCase().includes(m))
-    );
-    if (matchingRows.length > 0) {
-      // Group by year, take first match
-      const byYear = {};
-      for (const row of matchingRows) {
-        const year = String(row.year || 'unknown');
-        if (!byYear[year] && typeof row.value === 'number') {
-          byYear[year] = row.value;
-        }
-      }
-      const sorted = Object.entries(byYear)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([year, value]) => ({ year, value }));
-      if (sorted.length > 0) {
-        trends[cfg.key] = { ...cfg, data: sorted };
-      }
-    }
-  }
-
-  return trends;
+  const abs = Math.abs(value);
+  if (abs >= 1e9) return `LKR ${(value / 1e9).toFixed(2)}B`;
+  if (abs >= 1e6) return `LKR ${(value / 1e6).toFixed(2)}M`;
+  if (abs >= 1e3) return `LKR ${(value / 1e3).toFixed(1)}K`;
+  return `LKR ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
-function extractRatioTrends(analytics) {
+function extractOrderedRatioTrends(analytics) {
   const byYear = analytics?.ratios?.by_year;
   if (!byYear || typeof byYear !== 'object') return [];
 
   const years = Object.keys(byYear).sort((a, b) => a.localeCompare(b));
   if (years.length < 2) return [];
 
-  const preferredMetrics = [
-    { key: 'net_margin', label: 'Net Margin', color: '#0f766e' },
-    { key: 'roe', label: 'ROE', color: '#0ea5e9' },
-    { key: 'current_ratio', label: 'Current Ratio', color: '#d97706' },
-    { key: 'debt_to_equity', label: 'Debt to Equity', color: '#be123c' },
-    { key: 'operating_cashflow_to_net_profit', label: 'OCF to Net Profit', color: '#334155' },
-  ];
-
-  return preferredMetrics
+  return ORDERED_TREND_CONFIGS
     .map((metric) => {
       const data = years
         .map((year) => ({ year, value: byYear[year]?.[metric.key] }))
         .filter((entry) => typeof entry.value === 'number' && Number.isFinite(entry.value));
       if (data.length < 2) return null;
       return {
-        key: `ratio_${metric.key}`,
-        label: `${metric.label} Trend`,
+        key: metric.key,
+        label: metric.label,
         color: metric.color,
+        valueType: metric.valueType,
         data,
       };
     })
@@ -116,41 +87,28 @@ function MiniBarChart({ data, color }) {
   );
 }
 
-function formatLargeNum(val) {
-  if (val == null) return '—';
-  const abs = Math.abs(val);
-  if (abs >= 1e9) return `${(val / 1e9).toFixed(1)}B`;
-  if (abs >= 1e6) return `${(val / 1e6).toFixed(1)}M`;
-  if (abs >= 1e3) return `${(val / 1e3).toFixed(0)}K`;
-  return val.toLocaleString();
-}
-
-export default function TrendCharts({ validatedData, analytics }) {
-  const rows = validatedData?.validated?.validated_rows || [];
-  const trends = useMemo(() => extractTrendData(rows), [rows]);
-  const ratioTrends = useMemo(() => extractRatioTrends(analytics), [analytics]);
-
-  const trendEntries = [...Object.values(trends), ...ratioTrends];
+export default function TrendCharts({ analytics }) {
+  const trendEntries = useMemo(() => extractOrderedRatioTrends(analytics), [analytics]);
 
   if (trendEntries.length === 0) {
-    return null; // Don't render if no trend data
+    return null;
   }
 
   return (
     <div className="card fade-in">
-      <div className="card-header">Financial Trends (Validated Data)</div>
+      <div className="card-header">Financial Trends (LKR)</div>
       <div className="card-body">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20 }}>
           {trendEntries.map((trend) => (
             <div key={trend.key}>
               <div style={{ fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
-                {trend.label}
+                {trend.label} Trend
               </div>
               <MiniBarChart data={trend.data} color={trend.color} />
               <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between' }}>
                 {trend.data.map((d, i) => (
                   <span key={i} style={{ fontSize: 10, color: '#1e293b', fontWeight: 600 }}>
-                    {formatLargeNum(d.value)}
+                    {formatValue(d.value, trend.valueType)}
                   </span>
                 ))}
               </div>

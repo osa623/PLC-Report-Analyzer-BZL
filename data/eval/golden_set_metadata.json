@@ -1,10 +1,13 @@
 {
-  "name": "sampath_bank_reports",
-  "description": "Golden set of Sampath Bank annual reports used for local benchmarking (2021-2024).",
-  "files": [
-    "431_1646390362476.pdf",
-    "431_1677837108267.pdf",
-    "431_1709205218085.pdf",
-    "sampa -.pdf"
+  "dataset_name": "plc-report-golden-set",
+  "dataset_version": "1.0.0",
+  "description": "Golden dataset for deterministic financial dashboard parity checks.",
+  "tolerance_pct": 0.01,
+  "cases": [
+    {
+      "case_id": "baseline-final-report",
+      "expected_path": "data/eval/final_report.json",
+      "predicted_path": "data/eval/final_report.json"
+    }
   ]
 }

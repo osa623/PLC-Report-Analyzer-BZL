@@ -63,6 +63,7 @@ async def call_gemini_normalizer(
     prompt = (
         "You are a table-and-section normalizer.\n"
         "Input: a compressed representation of detected tables and entities from OCR.\n"
+        "Just identigy the extract year and under that values for each income , financial and cashflow statement line item. Do not hallucinate values that are not present in the input.\n"
         "Task: Extract and align financial statement tables into the following JSON schema:"
         ' {"income_statement": {...}, "balance_sheet": {...}, "cash_flow": {...}, "notes": [...], "sections": [...], "confidence": 0.0 }\n'
         "Rules:\n"

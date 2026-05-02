@@ -150,6 +150,9 @@ function extractKeyMetrics(analytics) {
   if (!analytics) return [];
 
   const metrics = [];
+  const globalConfidence = typeof analytics?.confidence?.raw_score === 'number'
+    ? analytics.confidence.raw_score
+    : (typeof analytics?.confidence?.score === 'number' ? analytics.confidence.score : null);
 
   // Extract from ratios
   const ratios = analytics.ratios;
@@ -164,22 +167,31 @@ function extractKeyMetrics(analytics) {
       for (const k of keys) {
         const lower = k.toLowerCase();
         for (const [name, val] of Object.entries(map)) {
-          if (name.toLowerCase().includes(lower))
-            return (val && typeof val === 'object') ? (val.value ?? val) : val;
+          if (name.toLowerCase().includes(lower)) {
+            if (val && typeof val === 'object') {
+              return {
+                value: val.value ?? null,
+                confidence: typeof val.confidence_score === 'number'
+                  ? val.confidence_score
+                  : (typeof val.confidence === 'number' ? val.confidence : globalConfidence),
+              };
+            }
+            return { value: val, confidence: globalConfidence };
+          }
         }
       }
       return null;
     };
 
-    const profitMargin = findRatio(['profit_margin', 'net_margin', 'profit margin']);
+    const profitMargin = findRatio(['net_profit_margin', 'profit_margin']);
     const debtToEquity = findRatio(['debt_to_equity', 'debt equity', 'leverage']);
     const currentRatio = findRatio(['current_ratio', 'current ratio']);
-    const roe = findRatio(['roe', 'return_on_equity', 'return on equity']);
+    const roe = findRatio(['return_on_equity', 'return on equity']);
 
-    if (profitMargin != null) metrics.push({ label: 'Profit Margin', value: profitMargin, confidence: ratios.confidence_score || 0.91 });
-    if (debtToEquity != null) metrics.push({ label: 'Debt-to-Equity Ratio', value: debtToEquity, confidence: ratios.confidence_score || 0.87, isRatio: true });
-    if (currentRatio != null) metrics.push({ label: 'Current Ratio', value: currentRatio, confidence: ratios.confidence_score || 0.85, isRatio: true });
-    if (roe != null) metrics.push({ label: 'ROE', value: roe, confidence: ratios.confidence_score || 0.83 });
+    if (profitMargin?.value != null) metrics.push({ label: 'Profit Margin', value: profitMargin.value, confidence: profitMargin.confidence });
+    if (debtToEquity?.value != null) metrics.push({ label: 'Debt-to-Equity Ratio', value: debtToEquity.value, confidence: debtToEquity.confidence, isRatio: true });
+    if (currentRatio?.value != null) metrics.push({ label: 'Current Ratio', value: currentRatio.value, confidence: currentRatio.confidence, isRatio: true });
+    if (roe?.value != null) metrics.push({ label: 'ROE', value: roe.value, confidence: roe.confidence });
   }
 
   // Extract from patterns
@@ -191,7 +203,9 @@ function extractKeyMetrics(analytics) {
       metrics.push({
         label: 'Growth Trend Detected',
         value: first.description || first.pattern_type || first.name || 'Pattern Found',
-        confidence: first.confidence_score || first.confidence || 0.80,
+        confidence: typeof first.confidence_score === 'number'
+          ? first.confidence_score
+          : (typeof first.confidence === 'number' ? first.confidence : globalConfidence),
         isPattern: true,
       });
     }
@@ -211,15 +225,17 @@ function extractDetailedAnalytics(analytics) {
   const latestMetrics = latestFromByYear && typeof latestFromByYear === 'object' ? latestFromByYear : ratios;
 
   const periodRatios = [
-    { label: 'Net Margin', value: formatPercent(latestMetrics.net_margin), raw: latestMetrics.net_margin },
+    { label: 'Gross Profit Margin', value: formatPercent(latestMetrics.gross_profit_margin), raw: latestMetrics.gross_profit_margin },
+    { label: 'Net Profit Margin', value: formatPercent(latestMetrics.net_profit_margin), raw: latestMetrics.net_profit_margin },
     { label: 'Current Ratio', value: formatDisplayNumber(latestMetrics.current_ratio), raw: latestMetrics.current_ratio },
     { label: 'Debt to Equity', value: formatDisplayNumber(latestMetrics.debt_to_equity), raw: latestMetrics.debt_to_equity },
     { label: 'Debt Ratio', value: formatPercent(latestMetrics.debt_ratio), raw: latestMetrics.debt_ratio },
-    { label: 'ROE', value: formatPercent(latestMetrics.roe), raw: latestMetrics.roe },
+    { label: 'ROE', value: formatPercent(latestMetrics.return_on_equity), raw: latestMetrics.return_on_equity },
+    { label: 'ROA', value: formatPercent(latestMetrics.return_on_assets), raw: latestMetrics.return_on_assets },
     {
-      label: 'OCF to Net Profit',
-      value: formatDisplayNumber(latestMetrics.operating_cashflow_to_net_profit),
-      raw: latestMetrics.operating_cashflow_to_net_profit,
+      label: 'Cash Flow to Net Income',
+      value: formatDisplayNumber(latestMetrics.cash_flow_to_net_income),
+      raw: latestMetrics.cash_flow_to_net_income,
     },
   ].filter((item) => item.raw != null && item.value !== '—');
 

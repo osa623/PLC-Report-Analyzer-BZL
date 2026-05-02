@@ -9,3 +9,4 @@ PyPDF2
 pdfplumber
 camelot-py
 tabula-py
+rapidfuzz

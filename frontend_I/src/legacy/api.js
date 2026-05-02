@@ -59,6 +59,18 @@ export async function fetchAnalytics(reportId) {
   return res.data;
 }
 
+export async function fetchCurrencyConverted(reportId, target = 'USD') {
+  const res = await http.get('/currency/convert', {
+    params: { reportId, target },
+  });
+  return res.data;
+}
+
+export async function fetchFxLatest() {
+  const res = await http.get('/fx/latest');
+  return res.data;
+}
+
 export async function fetchErrors(reportId) {
   const res = await http.get(`/pipeline/${reportId}/errors`);
   return res.data;

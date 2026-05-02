@@ -43,13 +43,13 @@ try:
 except ModuleNotFoundError:
     genai = None
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
+GEMINI_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash")
 
 if genai is None:
     logger.error("google-generativeai is not installed")
 elif not GEMINI_API_KEY:
-    logger.error("GEMINI_API_KEY not found in environment variables!")
+    logger.error("GOOGLE_API_KEY not found in environment variables!")
 else:
     genai.configure(api_key=GEMINI_API_KEY)
 
@@ -63,7 +63,8 @@ _COMMON_RULES = """
 - Extract ALL numerical values, preserving signs (negative numbers).
 - Use `null` for cells that are empty or contain dashes.
 - Numbers must be plain numbers (no commas, no currency symbols). Keep negative signs.
-- If the statement has BOTH Group/Consolidated AND Company/Separate columns, include ALL columns and label them clearly in the headers.
+- Extract LKR / Sri Lankan Rupee statement values only. Ignore foreign-currency note tables.
+- If the statement has BOTH Group/Consolidated AND Company/Separate columns, preserve Group/Consolidated columns first and label all headers clearly.
 - Preserve the exact hierarchy of line items (sub-items, totals, sub-totals).
 - For numbers in thousands or millions, note the unit in the `notes` field.
 - Return ONLY valid JSON. No markdown, no explanations, no code fences.
@@ -266,7 +267,7 @@ class GeminiFinancialExtractor:
         if genai is None:
             raise RuntimeError("google-generativeai is not installed")
         if not GEMINI_API_KEY:
-            raise ValueError("GEMINI_API_KEY is not configured")
+            raise ValueError("GOOGLE_API_KEY is not configured")
         self.model = genai.GenerativeModel(GEMINI_MODEL)
         self._file_cache = {}  # pdf_path -> (uploaded_file, timestamp)
 
@@ -566,7 +567,7 @@ class GeminiFinancialExtractor:
 
     # ── Core: extract one statement ───────────────────────────────────
 
-    def _extract_single_statement(self, uploaded_file, prompt: str, display_name: str, retries: int = 2):
+    def _extract_single_statement(self, uploaded_file, prompt: str, display_name: str, retries: int = 4):
         """
         Send a single extraction prompt to Gemini for one statement type.
         Returns the parsed dict or None if not found.
@@ -579,7 +580,7 @@ class GeminiFinancialExtractor:
                 response = self.model.generate_content(
                     [uploaded_file, prompt],
                     generation_config=genai.types.GenerationConfig(
-                        temperature=0.1,
+                        temperature=0.0,
                         max_output_tokens=50000,
                         response_mime_type="application/json",
                     ),

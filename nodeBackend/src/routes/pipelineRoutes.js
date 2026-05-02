@@ -7,6 +7,173 @@ const { triggerExtract, triggerAnalyze, triggerGenerateReport } = require('../se
 
 const router = Router();
 
+const BASE_CURRENCY = 'LKR';
+const SUPPORTED_CURRENCIES = new Set(['LKR', 'USD']);
+const parsedFxRate = Number(process.env.FX_LKR_PER_USD || process.env.USD_LKR_RATE || 300);
+const FX_LKR_PER_USD = Number.isFinite(parsedFxRate) && parsedFxRate > 0 ? parsedFxRate : 300;
+const CONVERSION_CACHE = new Map();
+const MAX_CONVERSION_CACHE_ENTRIES = 200;
+const MONETARY_METRIC_KEYS = new Set([
+  'revenue',
+  'gross_profit',
+  'operating_profit',
+  'net_income',
+  'net_profit',
+  'current_assets',
+  'current_liabilities',
+  'total_assets',
+  'total_liabilities',
+  'total_equity',
+  'cash_and_cash_equivalents',
+  'operating_cash_flow',
+  'investing_cash_flow',
+  'financing_cash_flow',
+  'net_cash_flow',
+  'total_cash_flow',
+  'tangible_net_worth',
+  'capital_employed',
+  'net_asset_value',
+  'market_capitalization',
+  'enterprise_value',
+  'book_value_per_share',
+  'eps',
+  'dividend_per_share',
+  'depreciation',
+  'interest_expense',
+  'operating_expenses',
+  'profit_before_tax',
+  'tax_expense',
+]);
+
+function normalizeCurrency(target) {
+  const normalized = String(target || BASE_CURRENCY).trim().toUpperCase();
+  return SUPPORTED_CURRENCIES.has(normalized) ? normalized : BASE_CURRENCY;
+}
+
+function getLatestFxSnapshot() {
+  const now = new Date();
+  const exchangeRateDate = now.toISOString().slice(0, 10);
+  return {
+    base_currency: BASE_CURRENCY,
+    quote_currency: 'USD',
+    exchange_rate_date: exchangeRateDate,
+    fx_rate_lkr_per_usd: FX_LKR_PER_USD,
+    source: 'configured',
+    fetched_at: now.toISOString(),
+  };
+}
+
+function buildConversionCacheKey(reportId, exchangeRateDate) {
+  return `${String(reportId)}:${String(exchangeRateDate)}`;
+}
+
+function getConversionCache(cacheKey) {
+  return CONVERSION_CACHE.get(cacheKey) || null;
+}
+
+function setConversionCache(cacheKey, payload) {
+  if (!cacheKey) {
+    return;
+  }
+  if (CONVERSION_CACHE.size >= MAX_CONVERSION_CACHE_ENTRIES) {
+    const oldestKey = CONVERSION_CACHE.keys().next().value;
+    if (oldestKey) {
+      CONVERSION_CACHE.delete(oldestKey);
+    }
+  }
+  CONVERSION_CACHE.set(cacheKey, payload);
+}
+
+function convertAmountFromLkr(value, targetCurrency, fxRateLkrPerUsd = FX_LKR_PER_USD) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return value;
+  }
+  if (targetCurrency === BASE_CURRENCY) {
+    return value;
+  }
+  if (targetCurrency === 'USD') {
+    const safeRate = Number(fxRateLkrPerUsd);
+    if (!Number.isFinite(safeRate) || safeRate <= 0) {
+      return value;
+    }
+    return Number((value / safeRate).toFixed(6));
+  }
+  return value;
+}
+
+function cloneJson(value, fallback) {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return fallback;
+  }
+}
+
+function convertMetricMap(metricMap, targetCurrency, fxRateLkrPerUsd = FX_LKR_PER_USD) {
+  if (!metricMap || typeof metricMap !== 'object') {
+    return metricMap;
+  }
+  Object.keys(metricMap).forEach((key) => {
+    if (MONETARY_METRIC_KEYS.has(key) && typeof metricMap[key] === 'number' && Number.isFinite(metricMap[key])) {
+      metricMap[key] = convertAmountFromLkr(metricMap[key], targetCurrency, fxRateLkrPerUsd);
+    }
+  });
+  return metricMap;
+}
+
+function convertValidatedCurrency(validated, targetCurrency, fxRateLkrPerUsd = FX_LKR_PER_USD) {
+  const out = cloneJson(validated, null);
+  if (!out || typeof out !== 'object') {
+    return out;
+  }
+
+  const statements = out.financial_statements;
+  if (statements && typeof statements === 'object') {
+    ['income_statement', 'balance_sheet', 'cashflow', 'equity'].forEach((sectionKey) => {
+      const rows = Array.isArray(statements[sectionKey]) ? statements[sectionKey] : [];
+      rows.forEach((row) => {
+        if (typeof row?.value === 'number' && Number.isFinite(row.value)) {
+          row.value = convertAmountFromLkr(row.value, targetCurrency, fxRateLkrPerUsd);
+        }
+      });
+    });
+  }
+
+  const validatedRows = Array.isArray(out.validated_rows) ? out.validated_rows : [];
+  validatedRows.forEach((row) => {
+    if (typeof row?.value === 'number' && Number.isFinite(row.value)) {
+      row.value = convertAmountFromLkr(row.value, targetCurrency, fxRateLkrPerUsd);
+    }
+  });
+
+  return out;
+}
+
+function convertAnalyticsCurrency(analyticsPayload, targetCurrency, fxRateLkrPerUsd = FX_LKR_PER_USD) {
+  const out = cloneJson(analyticsPayload, {
+    ratios: {},
+    patterns: [],
+    risk: {},
+    sector_kpis: {},
+    confidence: {},
+    analysis_coverage: {},
+    sections: {},
+    transparency: {},
+  });
+
+  const ratios = out.ratios && typeof out.ratios === 'object' ? out.ratios : {};
+  convertMetricMap(ratios, targetCurrency, fxRateLkrPerUsd);
+
+  if (ratios.by_year && typeof ratios.by_year === 'object') {
+    Object.keys(ratios.by_year).forEach((year) => {
+      convertMetricMap(ratios.by_year[year], targetCurrency, fxRateLkrPerUsd);
+    });
+  }
+
+  out.ratios = ratios;
+  return out;
+}
+
 function parseJson(raw, fallback = null) {
   if (!raw) {
     return fallback;
@@ -16,6 +183,113 @@ function parseJson(raw, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function clamp01(value) {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(1, value));
+}
+
+function normalizeText(value = '') {
+  return String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function toSafeNumber(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function median(values = []) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return null;
+  }
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) {
+    return sorted[mid];
+  }
+  return (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+function stdDeviation(values = []) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return 0;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance = values.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / values.length;
+  return Math.sqrt(variance);
+}
+
+function normalizeValidationIssues(validationIssues = []) {
+  const items = Array.isArray(validationIssues) ? validationIssues : [];
+  return items
+    .map((issue) => {
+      if (typeof issue === 'string') {
+        const text = normalizeText(issue);
+        return {
+          code: text,
+          message: text,
+          text,
+          severity: text.includes('failed') || text.includes('error') ? 'error' : 'warning',
+        };
+      }
+
+      if (!issue || typeof issue !== 'object') {
+        return null;
+      }
+
+      const code = normalizeText(issue.code || 'validation_issue');
+      const message = normalizeText(issue.message || 'validation issue');
+      const severity = String(issue.severity || '').toLowerCase();
+      return {
+        code,
+        message,
+        text: `${code} ${message}`.trim(),
+        severity: severity === 'error' || severity === 'warning' || severity === 'info' ? severity : 'warning',
+      };
+    })
+    .filter(Boolean)
+    .map((issue) => ({
+      ...issue,
+      severityWeight: issue.severity === 'error' ? 1.0 : issue.severity === 'warning' ? 0.6 : 0.3,
+    }));
+}
+
+function selectCanonicalQualityScore(calculatedScore, confidencePayload = null) {
+  let selected = null;
+  if (confidencePayload && typeof confidencePayload === 'object') {
+    if (typeof confidencePayload.raw_score === 'number' && Number.isFinite(confidencePayload.raw_score)) {
+      selected = confidencePayload.raw_score;
+    } else if (typeof confidencePayload.score === 'number' && Number.isFinite(confidencePayload.score)) {
+      selected = confidencePayload.score;
+    }
+  }
+  if (selected == null && typeof calculatedScore === 'number' && Number.isFinite(calculatedScore)) {
+    selected = calculatedScore;
+  }
+  if (selected == null) {
+    return null;
+  }
+  return clamp01(selected);
+}
+
+function normalizeConfidencePayload(confidencePayload, fallbackQualityScore = null) {
+  const normalized = confidencePayload && typeof confidencePayload === 'object'
+    ? { ...confidencePayload }
+    : {};
+  const qualityScore = selectCanonicalQualityScore(fallbackQualityScore, normalized);
+  if (typeof qualityScore === 'number') {
+    normalized.overall_data_quality_score = qualityScore;
+  }
+  return normalized;
 }
 
 function normalizeStatus(status) {
@@ -38,18 +312,108 @@ function buildValidatedRows(validated = null) {
     equity: 'equity_statement',
   };
 
+  const expectedSectionCounts = {
+    income_statement: 8,
+    balance_sheet: 7,
+    cashflow_statement: 7,
+    equity_statement: 2,
+  };
+
+  const deterministicChecks = validated?.deterministic_checks && typeof validated.deterministic_checks === 'object'
+    ? validated.deterministic_checks
+    : {};
+  const deterministicFlags = Object.values(deterministicChecks).filter((value) => typeof value === 'boolean');
+  const deterministicPassRate = deterministicFlags.length > 0
+    ? deterministicFlags.filter(Boolean).length / deterministicFlags.length
+    : 0;
+
+  const normalizedIssues = normalizeValidationIssues(validated?.validation_issues);
+
+  const sectionYearNumericCounts = {};
+  const labelSeries = {};
+
+  Object.entries(statementTypeByKey).forEach(([key, statementType]) => {
+    const items = Array.isArray(financialStatements[key]) ? financialStatements[key] : [];
+    items.forEach((item) => {
+      const period = String(item?.period || 'unknown');
+      const label = normalizeText(item?.label || 'unknown');
+      const value = toSafeNumber(item?.value);
+      if (value == null) {
+        return;
+      }
+      const sectionYearKey = `${statementType}|${period}`;
+      sectionYearNumericCounts[sectionYearKey] = (sectionYearNumericCounts[sectionYearKey] || 0) + 1;
+      const labelKey = `${statementType}|${label}`;
+      if (!labelSeries[labelKey]) {
+        labelSeries[labelKey] = [];
+      }
+      labelSeries[labelKey].push(value);
+    });
+  });
+
+  const spreadScore = (value, peers) => {
+    if (!Array.isArray(peers) || peers.length < 2 || !Number.isFinite(value)) {
+      return 0.6;
+    }
+    const med = median(peers);
+    if (!Number.isFinite(med)) {
+      return 0.6;
+    }
+    const relDist = Math.abs(value - med) / Math.max(Math.abs(med), 1);
+    return clamp01(1 - (relDist / 3));
+  };
+
   const rows = [];
   Object.entries(statementTypeByKey).forEach(([key, statementType]) => {
     const items = Array.isArray(financialStatements[key]) ? financialStatements[key] : [];
     items.forEach((item, index) => {
+      const rawValue = toSafeNumber(item?.value);
+      const period = String(item?.period || 'unknown');
+      const label = String(item?.label || 'unknown');
+      const normalizedLabel = normalizeText(label);
+
+      const sectionYearKey = `${statementType}|${period}`;
+      const sectionCoverage = clamp01(
+        (sectionYearNumericCounts[sectionYearKey] || 0)
+        / Math.max(1, expectedSectionCounts[statementType] || 6)
+      );
+
+      const labelKey = `${statementType}|${normalizedLabel}`;
+      const valueDistribution = spreadScore(rawValue, labelSeries[labelKey] || []);
+
+      let issuePenalty = 0;
+      normalizedIssues.forEach((issue) => {
+        const tokenHits = normalizedLabel
+          .split(' ')
+          .filter((token) => token.length >= 5 && issue.text.includes(token)).length;
+        const sectionHit = issue.text.includes(statementType.replace(/_/g, ' '));
+        if (tokenHits > 0 || sectionHit) {
+          issuePenalty += (0.05 + (tokenHits * 0.01)) * issue.severityWeight;
+        }
+      });
+      issuePenalty = Math.min(0.30, issuePenalty);
+
+      const valueSignal = rawValue == null ? 0.10 : 0.75;
+      const periodSignal = /^\d{4}$/.test(period) ? 1.0 : 0.5;
+      const labelSignal = normalizedLabel ? 1.0 : 0.25;
+
+      let confidenceScore = 0;
+      confidenceScore += 0.34 * valueSignal;
+      confidenceScore += 0.20 * sectionCoverage;
+      confidenceScore += 0.16 * deterministicPassRate;
+      confidenceScore += 0.12 * valueDistribution;
+      confidenceScore += 0.10 * periodSignal;
+      confidenceScore += 0.08 * labelSignal;
+      confidenceScore -= issuePenalty;
+
       rows.push({
         row_id: `${statementType}-${index}`,
-        canonical_label: item?.label || 'unknown',
-        original_label: item?.label || 'unknown',
-        value: typeof item?.value === 'number' ? item.value : Number(item?.value || 0),
+        canonical_label: label,
+        original_label: label,
+        value: rawValue,
         year: item?.period || null,
         statement_type: statementType,
-        confidence_score: 0.9,
+        confidence_score: Number(clamp01(confidenceScore).toFixed(4)),
         page_number: null,
       });
     });
@@ -63,33 +427,86 @@ function deriveQualityScore(validatedRows = [], validationIssues = [], determini
     return 0;
   }
 
-  const avgRowConfidence = validatedRows.reduce((acc, row) => acc + (row.confidence_score || 0), 0) / validatedRows.length;
-  const issuePenalty = Math.min((validationIssues.length || 0) * 0.04, 0.4);
-  const checks = Object.values(deterministicChecks || {});
-  const passedChecks = checks.filter(Boolean).length;
-  const checkBonus = checks.length > 0 ? (passedChecks / checks.length) * 0.1 : 0;
-  return Math.max(0, Math.min(1, avgRowConfidence - issuePenalty + checkBonus));
+  const confidences = validatedRows
+    .map((row) => toSafeNumber(row?.confidence_score))
+    .filter((value) => value != null);
+  const avgRowConfidence = confidences.length > 0
+    ? (confidences.reduce((acc, value) => acc + value, 0) / confidences.length)
+    : 0;
+  const highConfidenceShare = confidences.length > 0
+    ? (confidences.filter((value) => value >= 0.75).length / confidences.length)
+    : 0;
+  const confidenceStability = clamp01(1 - (stdDeviation(confidences) / 0.35));
+
+  const checks = Object.values(deterministicChecks || {}).filter((value) => typeof value === 'boolean');
+  const checkPassRate = checks.length > 0 ? (checks.filter(Boolean).length / checks.length) : 0;
+
+  const numericRows = validatedRows.filter((row) => toSafeNumber(row?.value) != null).length;
+  const completeness = numericRows / Math.max(validatedRows.length, 1);
+
+  const normalizedIssues = normalizeValidationIssues(validationIssues);
+  const weightedIssueCount = normalizedIssues.reduce((sum, issue) => sum + issue.severityWeight, 0);
+  const issuePenalty = Math.min(0.40, (weightedIssueCount / Math.max(validatedRows.length, 1)) * 1.25);
+
+  let score = 0;
+  score += 0.32 * avgRowConfidence;
+  score += 0.22 * completeness;
+  score += 0.18 * checkPassRate;
+  score += 0.16 * confidenceStability;
+  score += 0.12 * highConfidenceShare;
+  score -= issuePenalty;
+
+  return clamp01(score);
 }
 
-function mapLegacyStages(stageState = {}, hasUpload = false, artifacts = {}) {
+function mapLegacyStages(stageState = {}, hasUpload = false, artifacts = {}, extractionSubstages = {}) {
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
 
+  // Use granular extraction sub-stages when available.
+  const textExtractionStatus = extractionSubstages.text_extraction?.status || null;
+  const tableDetectionStatus = extractionSubstages.table_detection?.status || null;
+  const fieldMappingStatus = extractionSubstages.field_mapping?.status || null;
+  const normalizationStatus = extractionSubstages.normalization?.status || null;
+  const validationSubStatus = extractionSubstages.validation?.status || null;
+
+  // PARSING maps to text_extraction sub-stage.
   const parsingStatus =
-    extraction === 'failed'
+    extraction === 'failed' && !textExtractionStatus
       ? 'failed'
-      : artifacts.hasCanonicalRaw
+      : textExtractionStatus === 'completed' || artifacts.hasCanonicalRaw
       ? 'completed'
+      : textExtractionStatus === 'running'
+      ? 'running'
+      : extraction === 'running'
+      ? 'running'
       : normalizeStatus(extraction);
 
-  const structureStatus = parsingStatus;
+  // STRUCTURE maps to table_detection sub-stage.
+  const structureStatus =
+    extraction === 'failed' && !tableDetectionStatus
+      ? 'failed'
+      : tableDetectionStatus === 'completed' || artifacts.hasCanonicalRaw
+      ? 'completed'
+      : tableDetectionStatus === 'running'
+      ? 'running'
+      : parsingStatus === 'completed' && extraction === 'running'
+      ? 'running'
+      : parsingStatus;
 
+  // EXTRACTION maps to the full extraction completion (field_mapping + normalization + validation).
   const extractionStatus =
     extraction === 'failed'
       ? 'failed'
       : artifacts.hasCanonicalRaw
       ? 'completed'
+      : validationSubStatus === 'completed'
+      ? 'completed'
+      : normalizationStatus === 'running' || validationSubStatus === 'running'
+      ? 'running'
+      : fieldMappingStatus === 'completed' && extraction === 'running'
+      ? 'running'
       : normalizeStatus(extraction);
 
   const aggregationStatus =
@@ -122,6 +539,8 @@ function mapLegacyStages(stageState = {}, hasUpload = false, artifacts = {}) {
   const reportStatus =
     reporting === 'failed'
       ? 'failed'
+      : reporting === 'skipped'
+      ? 'skipped'
       : (artifacts.hasFinalReport && analyticsStatus === 'completed' && validationStatus === 'completed')
       ? 'completed'
       : reporting === 'running'
@@ -144,6 +563,8 @@ function deriveWorkflowState(stageState = {}, confidence = null) {
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
+  const confidenceScore = Number(confidence?.score || 0);
+  const lowConfidence = confidence?.band === 'low' && confidenceScore < 0.85;
 
   if ([extraction, analysis, reporting].includes('failed')) {
     return 'FAILED';
@@ -151,7 +572,7 @@ function deriveWorkflowState(stageState = {}, confidence = null) {
   if (extraction === 'completed' && analysis === 'completed' && reporting === 'completed') {
     return 'COMPLETED';
   }
-  if (analysis === 'completed' && confidence?.band === 'low') {
+  if (analysis === 'completed' && lowConfidence) {
     return 'LOW_CONFIDENCE';
   }
   if (analysis === 'completed' && reporting === 'running') {
@@ -170,6 +591,8 @@ function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confi
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
+  const confidenceScore = Number(confidence?.score || 0);
+  const lowConfidence = confidence?.band === 'low' && confidenceScore < 0.85;
 
   if ([extraction, analysis, reporting].includes('failed')) {
     return 'FAILED';
@@ -177,7 +600,7 @@ function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confi
   if (artifacts.hasFinalReport || (extraction === 'completed' && analysis === 'completed' && reporting === 'completed')) {
     return 'COMPLETED';
   }
-  if ((analysis === 'completed' || artifacts.hasCanonicalValidated) && confidence?.band === 'low') {
+  if ((analysis === 'completed' || artifacts.hasCanonicalValidated) && lowConfidence) {
     return 'LOW_CONFIDENCE';
   }
   if (reporting === 'running' || (artifacts.hasAnalytics && !artifacts.hasFinalReport)) {
@@ -209,10 +632,59 @@ function trendLimitations(yearCount) {
   ];
 }
 
+function analysisBlocksReporting(analysisPayload = {}) {
+  const status = String(analysisPayload?.status || '').toUpperCase();
+  const validYears = Array.isArray(analysisPayload?.valid_years)
+    ? analysisPayload.valid_years.filter((year) => typeof year === 'string' && /^\d{4}$/.test(year))
+    : [];
+  return status === 'VALIDATION_FAILED' || validYears.length === 0;
+}
+
+async function markReportingSkipped(reportId, analysisPayload = {}) {
+  const redis = await getRedis();
+  const raw = await redis.get(`report:${reportId}:pipeline_stages`);
+  const stages = parseJson(raw, {});
+  const now = new Date().toISOString();
+  const reporting = stages.REPORTING && typeof stages.REPORTING === 'object' ? stages.REPORTING : {};
+  const reasons = Array.isArray(analysisPayload?.reasons) ? analysisPayload.reasons : [];
+
+  stages.REPORTING = {
+    ...reporting,
+    status: 'skipped',
+    start_time: reporting.start_time || now,
+    end_time: now,
+    diagnostics: {
+      ...(reporting.diagnostics && typeof reporting.diagnostics === 'object' ? reporting.diagnostics : {}),
+      reason: reasons[0] || 'Report generation skipped because analysis did not yield a valid analytics result',
+    },
+  };
+
+  await redis.set(
+    `report:${reportId}:pipeline_stages`,
+    JSON.stringify(stages),
+    'EX',
+    86400
+  );
+}
+
 async function startPipeline(reportId, filePath) {
-  await triggerExtract(reportId, filePath);
-  await triggerAnalyze(reportId);
-  await triggerGenerateReport(reportId);
+  const extract = await triggerExtract(reportId, filePath);
+  const analyze = await triggerAnalyze(reportId);
+
+  if (analysisBlocksReporting(analyze.data)) {
+    await markReportingSkipped(reportId, analyze.data);
+    return {
+      extract: extract.data,
+      analyze: analyze.data,
+      report: {
+        status: 'skipped',
+        reason: 'Analysis did not produce a valid analytics payload for report generation',
+      },
+    };
+  }
+
+  const report = await triggerGenerateReport(reportId);
+  return { extract: extract.data, analyze: analyze.data, report: report.data };
 }
 
 function extractUploadedPaths(req, fieldName) {
@@ -353,10 +825,8 @@ router.post('/pipeline/start', async (req, res, next) => {
     const fileInput = Array.isArray(req.body.filePaths) && req.body.filePaths.length > 0
       ? req.body.filePaths
       : req.body.filePath;
-    const extract = await triggerExtract(reportId, fileInput);
-    const analyze = await triggerAnalyze(reportId);
-    const report = await triggerGenerateReport(reportId);
-    return res.json({ extract: extract.data, analyze: analyze.data, report: report.data });
+    const result = await startPipeline(reportId, fileInput);
+    return res.json(result);
   } catch (error) {
     return next(error);
   }
@@ -377,7 +847,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, riskRaw, finalReportRaw] = await Promise.all([
+    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, riskRaw, finalReportRaw, rawExtractionSubstages] = await Promise.all([
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
       redis.get(`report:${reportId}:confidence`),
@@ -388,17 +858,19 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
       redis.get(`report:${reportId}:sector_comparison`),
       redis.get(`report:${reportId}:risk`),
       redis.get(`report:${reportId}:final_report`),
+      redis.get(`report:${reportId}:extraction_substages`),
     ]);
 
     const stageState = parseJson(rawStages, {});
     const confidence = parseJson(rawConfidence, null);
+    const extractionSubstages = parseJson(rawExtractionSubstages, {});
     const artifacts = {
       hasCanonicalRaw: Boolean(canonicalRaw),
       hasCanonicalValidated: Boolean(canonicalValidated),
       hasAnalytics: Boolean(ratiosRaw || patternsRaw || sectorRaw || riskRaw),
       hasFinalReport: Boolean(finalReportRaw),
     };
-    const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts);
+    const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts, extractionSubstages);
 
     return res.json({
       report_id: reportId,
@@ -407,6 +879,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
         hasUploadedFile: Boolean(uploadedFile),
       }, confidence),
       stages,
+      extraction_substages: extractionSubstages,
     });
   } catch (error) {
     return next(error);
@@ -439,13 +912,19 @@ router.get('/pipeline/:reportId/validated', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const validated = parseJson(await redis.get(`report:${reportId}:canonical_validated`), null);
+    const [validatedRaw, confidenceRaw] = await Promise.all([
+      redis.get(`report:${reportId}:canonical_validated`),
+      redis.get(`report:${reportId}:confidence`),
+    ]);
+    const validated = parseJson(validatedRaw, null);
+    const confidence = parseJson(confidenceRaw, null);
     const validatedRows = buildValidatedRows(validated);
-    const qualityScore = deriveQualityScore(
+    const derivedQualityScore = deriveQualityScore(
       validatedRows,
       Array.isArray(validated?.validation_issues) ? validated.validation_issues : [],
       validated?.deterministic_checks || {}
     );
+    const qualityScore = selectCanonicalQualityScore(derivedQualityScore, confidence) ?? derivedQualityScore;
     return res.json({
       report_id: reportId,
       validated: {
@@ -474,17 +953,112 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
     ]);
 
     const finalReport = parseJson(finalReportRaw, null);
+    const confidencePayload = normalizeConfidencePayload(parseJson(confidenceRaw, {}));
     return res.json({
       report_id: reportId,
       ratios: parseJson(ratiosRaw, {}),
       patterns: parseJson(patternsRaw, []),
       risk: parseJson(riskRaw, {}),
       sector_kpis: parseJson(sectorRaw, {}),
-      confidence: parseJson(confidenceRaw, {}),
+      confidence: confidencePayload,
       analysis_coverage: parseJson(analysisCoverageRaw, {}),
       sections: finalReport?.sections || {},
       transparency: finalReport?.transparency || {},
     });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/fx/latest', async (_req, res, next) => {
+  try {
+    return res.json(getLatestFxSnapshot());
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/currency/convert', async (req, res, next) => {
+  try {
+    const reportId = String(req.query.reportId || '').trim();
+    const targetCurrency = normalizeCurrency(req.query.target);
+    if (!reportId) {
+      return res.status(400).json({ error: 'reportId is required' });
+    }
+
+    const fxSnapshot = getLatestFxSnapshot();
+    const useUsdCache = targetCurrency === 'USD';
+    const cacheKey = useUsdCache ? buildConversionCacheKey(reportId, fxSnapshot.exchange_rate_date) : null;
+    if (cacheKey) {
+      const cached = getConversionCache(cacheKey);
+      if (cached) {
+        return res.json(cached);
+      }
+    }
+
+    const redis = await getRedis();
+    const [validatedRaw, ratiosRaw, patternsRaw, sectorRaw, riskRaw, confidenceRaw, analysisCoverageRaw, finalReportRaw] = await Promise.all([
+      redis.get(`report:${reportId}:canonical_validated`),
+      redis.get(`report:${reportId}:ratios`),
+      redis.get(`report:${reportId}:patterns`),
+      redis.get(`report:${reportId}:sector_comparison`),
+      redis.get(`report:${reportId}:risk`),
+      redis.get(`report:${reportId}:confidence`),
+      redis.get(`report:${reportId}:analysis_coverage`),
+      redis.get(`report:${reportId}:final_report`),
+    ]);
+
+    if (!validatedRaw || !ratiosRaw) {
+      return res.status(409).json({
+        error: 'Currency conversion is available only after calculations complete',
+        report_id: reportId,
+      });
+    }
+
+    const validated = parseJson(validatedRaw, null);
+    const convertedValidated = convertValidatedCurrency(validated, targetCurrency, fxSnapshot.fx_rate_lkr_per_usd);
+    const convertedValidatedRows = buildValidatedRows(convertedValidated);
+    const confidencePayload = parseJson(confidenceRaw, {});
+    const derivedConvertedQualityScore = deriveQualityScore(
+      convertedValidatedRows,
+      Array.isArray(convertedValidated?.validation_issues) ? convertedValidated.validation_issues : [],
+      convertedValidated?.deterministic_checks || {}
+    );
+    const convertedQualityScore = selectCanonicalQualityScore(derivedConvertedQualityScore, confidencePayload) ?? derivedConvertedQualityScore;
+    const finalReport = parseJson(finalReportRaw, null);
+    const analyticsPayload = {
+      report_id: reportId,
+      ratios: parseJson(ratiosRaw, {}),
+      patterns: parseJson(patternsRaw, []),
+      risk: parseJson(riskRaw, {}),
+      sector_kpis: parseJson(sectorRaw, {}),
+      confidence: normalizeConfidencePayload(confidencePayload, convertedQualityScore),
+      analysis_coverage: parseJson(analysisCoverageRaw, {}),
+      sections: finalReport?.sections || {},
+      transparency: finalReport?.transparency || {},
+    };
+
+    const payload = {
+      report_id: reportId,
+      base_currency: BASE_CURRENCY,
+      target_currency: targetCurrency,
+      exchange_rate_date: fxSnapshot.exchange_rate_date,
+      fx_rate_lkr_per_usd: fxSnapshot.fx_rate_lkr_per_usd,
+      converted: {
+        validated: {
+          ...(convertedValidated || {}),
+          validated_rows: convertedValidatedRows,
+          overall_data_quality_score: convertedQualityScore,
+        },
+        analytics: convertAnalyticsCurrency(analyticsPayload, targetCurrency, fxSnapshot.fx_rate_lkr_per_usd),
+      },
+    };
+
+    if (cacheKey) {
+      setConversionCache(cacheKey, payload);
+    }
+
+    return res.json(payload);
   } catch (error) {
     return next(error);
   }
@@ -622,11 +1196,13 @@ router.get('/reports/:reportId', async (req, res, next) => {
     const pipelineTracker = mapLegacyStages(stageState, artifacts.hasUploadedFile, artifacts);
 
     const validatedRows = buildValidatedRows(validated);
-    const qualityScore = deriveQualityScore(
+    const derivedQualityScore = deriveQualityScore(
       validatedRows,
       Array.isArray(validated?.validation_issues) ? validated.validation_issues : [],
       validated?.deterministic_checks || {}
     );
+    const qualityScore = selectCanonicalQualityScore(derivedQualityScore, confidence) ?? derivedQualityScore;
+    const normalizedConfidence = normalizeConfidencePayload(confidence, qualityScore);
 
     const narratives = {
       governance: Array.isArray(canonicalRaw?.narrative_sections?.governance) ? canonicalRaw.narrative_sections.governance : [],
@@ -677,9 +1253,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
         risk,
         sector_kpis: sector,
       },
-      confidence: confidence || {
-        overall_data_quality_score: qualityScore,
-      },
+      confidence: normalizedConfidence,
       narratives,
       transparency,
       pdf_path: finalReport ? `/results/${reportId}` : null,

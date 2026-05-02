@@ -2,109 +2,51 @@ import asyncio
 import json
 import time
 from typing import Dict, Any
-from .integrations.paddleocr_client import call_paddleocr, compute_pdf_hash
-from .integrations.gemini_normalizer import call_gemini_normalizer
-from .integrations.cache import get_cached, set_cached
-from .integrations.telemetry import PIPELINE_DURATION, CACHE_HITS, CACHE_MISSES
 
-OCR_CONFIDENCE_THRESHOLD = 0.94
-
-
-async def _merge_ocr_results(
-    primary: Dict[str, Any], fallback: Dict[str, Any]
-) -> Dict[str, Any]:
-    # Basic merge strategy: prefer fields from primary if confidence high;
-    # otherwise use fallback; keep both raw_texts for auditing.
-    merged = {
-        "raw_texts": {
-            "primary": primary.get("raw_text"),
-            "fallback": fallback.get("raw_text"),
-        },
-        "structured": primary.get("structured") or fallback.get("structured"),
-        "confidence": max(
-            primary.get("confidence", 0.0), fallback.get("confidence", 0.0)
-        ),
-        "sources": {
-            "primary": primary.get("processor") or primary.get("engine"),
-            "fallback": fallback.get("engine"),
-        },
-    }
-    return merged
-
+from .pipeline.pdf_loader import load_pdf_pages
+from .pipeline.gemini_statement_extractor import extract_financial_statements_from_text
+from .pipeline.financial_structure_engine import FinancialStructureEngine
+from .pipeline.column_alignment_engine import ColumnAlignmentEngine
+from .pipeline.reconciliation_engine import ReconciliationEngine
+from .integrations.telemetry import PIPELINE_DURATION
 
 async def extract_pdf_to_structured(
-    json_output_path: str, pdf_bytes: bytes
+    json_output_path: str, pdf_path: str
 ) -> Dict[str, Any]:
     start_pipeline = time.time()
-    key = compute_pdf_hash(pdf_bytes)
-    cached = await get_cached(key)
-    if cached:
-        try:
-            CACHE_HITS.inc()
-            return json.loads(cached)
-        except Exception:
-            CACHE_MISSES.inc()
 
-    CACHE_MISSES.inc()
+    pages = load_pdf_pages(pdf_path)
+    full_text = "\n\n".join(pages)
 
-    # Step 1: call PaddleOCR (free, offline extraction)
-    primary = await call_paddleocr(pdf_bytes)
+    # L1: Extraction Layer
+    l1_output = extract_financial_statements_from_text(full_text, pdf_path, "local_test")
+    if l1_output.get("status") == "failed":
+        raise RuntimeError(l1_output.get("failure_reason"))
 
-    # No fallback needed - PaddleOCR is reliable and free
-    fallback = {
-        "raw_text": None,
-        "structured": None,
-        "confidence": 0.0,
-        "processor": None,
-    }
+    extracted_tables = l1_output.get("extracted_tables", [])
 
-    merged = await _merge_ocr_results(primary, fallback)
+    # L2 & L3: Financial Structure & Column Alignment
+    structure_engine = FinancialStructureEngine()
+    alignment_engine = ColumnAlignmentEngine()
+    
+    graph_payload = structure_engine.build(extracted_tables, alignment_engine)
 
-    # Step 3: Gemini normalization (table alignment, semantic labels)
-    gemini_resp = await call_gemini_normalizer(merged.get("structured") or {})
-    normalized = gemini_resp.get("normalized")
-    # Run domain extractors on normalized JSON
-    try:
-        from .extractors.cashflow import extract as extract_cashflow
+    # L4: Reconciliation Engine
+    recon_engine = ReconciliationEngine()
+    validation_results = recon_engine.validate_graph(graph_payload["financial_graph"])
 
-        cashflow_results = extract_cashflow(
-            {"cash_flow": normalized.get("cash_flow", {})}
-        )
-    except Exception:
-        cashflow_results = None
-
-    final = {
-        "document_hash": key,
-        "ocr": merged,
-        "normalized": normalized,
-        "extracted": {
-            "cashflow": cashflow_results,
-        },
-        "meta": {
-            "gemini": gemini_resp.get("meta"),
-            "final_confidence": min(
-                1.0,
-                merged.get("confidence", 0.0)
-                * gemini_resp.get("normalized", {}).get("confidence", 1.0),
-            ),
-        },
-    }
-
-    # Cache final JSON
-    try:
-        await set_cached(key, json.dumps(final).encode("utf-8"), ttl=60 * 60 * 24)
-    except Exception:
-        pass
+    graph_payload["metadata"]["reconciliation_errors"] = validation_results["errors"]
+    graph_payload["metadata"]["is_valid"] = validation_results["is_valid"]
 
     # Optional: persist to file path for debugging
     try:
         with open(json_output_path, "w", encoding="utf-8") as f:
-            json.dump(final, f, indent=2)
+            json.dump(graph_payload, f, indent=2)
     except Exception:
         pass
 
     PIPELINE_DURATION.observe(time.time() - start_pipeline)
-    return final
+    return graph_payload
 
 
 if __name__ == "__main__":
@@ -116,19 +58,15 @@ if __name__ == "__main__":
             return
         path = sys.argv[1]
         out = sys.argv[2]
-        with open(path, "rb") as f:
-            b = f.read()
-        # Start Prometheus metrics server (non-blocking)
+        
         try:
             import os
-
             from .integrations.telemetry import start_metrics_server
-
             start_metrics_server(port=int(os.environ.get("METRICS_PORT", 8000)))
         except Exception:
             pass
 
-        res = await extract_pdf_to_structured(out, b)
-        print("Extracted:", res.get("document_hash"))
+        res = await extract_pdf_to_structured(out, path)
+        print("Extraction complete. Valid:", res.get("metadata", {}).get("is_valid"))
 
     asyncio.run(_main())

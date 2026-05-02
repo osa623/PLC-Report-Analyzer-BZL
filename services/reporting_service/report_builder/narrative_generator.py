@@ -82,8 +82,8 @@ def generate_narrative(
 
     bull_points = []
     bear_points = []
-    if isinstance(ratio_source.get("net_margin"), (int, float)) and float(ratio_source["net_margin"]) > 0.1:
-        bull_points.append("Profitability profile indicates healthy earnings conversion at the net margin level.")
+    if isinstance(ratio_source.get("net_profit_margin"), (int, float)) and float(ratio_source["net_profit_margin"]) > 0.1:
+        bull_points.append("Profitability profile indicates healthy earnings conversion at the net profit margin level.")
     if isinstance(ratio_source.get("current_ratio"), (int, float)) and float(ratio_source["current_ratio"]) >= 1.2:
         bull_points.append("Liquidity coverage suggests manageable short-term funding pressure.")
     if isinstance(risk.get("overall_risk_score"), (int, float)) and float(risk["overall_risk_score"]) >= 61:
@@ -123,7 +123,7 @@ def generate_narrative(
             "growth_snapshot": ratios.get("latest_growth_snapshot", {}),
         },
         "Cash Flow & Earnings Quality": {
-            "operating_cashflow_to_net_profit": ratio_source.get("operating_cashflow_to_net_profit"),
+            "cash_flow_to_net_income": ratio_source.get("cash_flow_to_net_income"),
             "free_cash_flow": ratio_source.get("free_cash_flow"),
             "free_cash_flow_growth": ratio_source.get("free_cash_flow_growth"),
             "cash_conversion_quality_score": ratio_source.get("cash_conversion_quality_score"),
