@@ -21,6 +21,7 @@ _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
     "income_statement": [
         "statement of income",  
         "income statement",
+        "Statement of Profit or Loss"
     ],
     "balance_sheet": [
         "statement of financial position",
