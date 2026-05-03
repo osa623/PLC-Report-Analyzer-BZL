@@ -216,7 +216,7 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
             }],
             "generationConfig": {
                 "temperature": 0.0,
-                "maxOutputTokens": 4096,
+                "maxOutputTokens": 16384,
                 "responseMimeType": "application/json"
             },
             # Disable safety settings to prevent false positives on financial data
@@ -299,11 +299,23 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
                     clean_text = text.strip()
 
             return json.loads(clean_text)
-            
+
+
         except json.JSONDecodeError as e:
-            logger.warning(f"JSON Parse Error: {str(e)}. Attempting simple repairs...")
+            logger.warning(f"JSON Parse Error: {str(e)}. Attempting repairs...")
             logger.warning(f"Failed JSON tail (last 500 chars): {clean_text[-500:]}")
-            
+
+            # Pre-repair: strip control characters and fix common LLM output issues
+            clean_text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]', '', clean_text)  # strip control chars
+            clean_text = re.sub(r',\s*([}\]])', r'\1', clean_text)  # trailing commas
+            clean_text = re.sub(r'"\s*\n\s*"', '" "', clean_text)  # broken strings across lines
+
+            # Quick retry after pre-repair
+            try:
+                return json.loads(clean_text)
+            except json.JSONDecodeError:
+                pass
+
             try:
                 # Attempt 1: Fix missing commas between objects in lists/dicts
                 repaired_text = re.sub(r'}\s*{', '}, {', clean_text)
@@ -393,27 +405,7 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
                 except Exception as file_err:
                     logger.error(f"Could not save debug file: {file_err}")
 
-                # Raise the original error (or the new one) to ensure we don't proceed with bad data
-                raise e
-                # Backup failure handling: Save the raw text to a file for debugging
-                try:
-                    debug_dir = Path("logs/debug_dumps")
-                    debug_dir.mkdir(parents=True, exist_ok=True)
-                    
-                    timestamp = int(time.time())
-                    safe_context = "".join(x for x in context_id if x.isalnum() or x in "-_.")
-                    filename = f"failed_extraction_{safe_context}_{timestamp}.txt"
-                    debug_path = debug_dir / filename
-                    
-                    with open(debug_path, "w", encoding="utf-8") as f:
-                        f.write(text)
-                        
-                    logger.error(f"JSON Repair failed. Raw output saved to: {debug_path}")
-                    
-                except Exception as file_err:
-                    logger.error(f"Could not save debug file: {file_err}")
-
-                # Raise the original error (or the new one) to ensure we don't proceed with bad data
+                # Raise the original error to ensure we don't proceed with bad data
                 raise e
 
     def _mock_response(self, filename: str) -> Dict[str, Any]:

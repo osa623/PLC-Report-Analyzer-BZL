@@ -15,13 +15,12 @@ from src.pipeline.llm_extractor import LLMFinancialExtractor
 
 logger = logging.getLogger(__name__)
 
-_TOC_MARKERS = ["contents", "table of contents"]
+_TOC_MARKERS = ["contents", "table of contents", "Contents"]
 
 _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
     "income_statement": [
-        "statement of profit or loss",
-        "statement of profit or loss and other comprehensive income",
-        "statement of profit or loss and other comprehensive",
+        "statement of income",  
+        "income statement",
     ],
     "balance_sheet": [
         "statement of financial position",
@@ -35,10 +34,11 @@ _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
     ],
     "comprehensive_income": [
         "statement of comprehensive income",
+        "Statement of Profit or Loss and Other Comprehensive Income"
     ],
 }
 
-_TOC_LINE_REJECT = ["usd", "us$", "$"]
+_TOC_LINE_REJECT = ["usd", "us$", "$", "USD"]
 
 _EXTRACTOR = LLMFinancialExtractor()
 
@@ -92,14 +92,22 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
         raise ValueError("PDF bytes are empty")
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        toc_index = _find_toc_page(pdf)
-        toc_text = pdf.pages[toc_index - 1].extract_text() or ""
+        toc_page_indices = _find_toc_page(pdf)
+        # Anchor y/x to the first TOC page (offset is constant across the document)
+        toc_index = toc_page_indices[0]
+        first_toc_text = pdf.pages[toc_index - 1].extract_text() or ""
 
-        printed_page = _extract_printed_page_number(toc_text)
+        # Concatenate text from ALL detected TOC pages for complete regex coverage
+        toc_text = ""
+        for page_num in toc_page_indices:
+            text = pdf.pages[page_num - 1].extract_text() or ""
+            toc_text += "\n" + text
+
+        printed_page = _extract_printed_page_number(first_toc_text)
         statement_refs = _parse_statement_references(toc_text)
 
-        logger.info("PDF %s TOC page index y=%s", pdf_name, toc_index)
-        logger.info("PDF %s printed page number x=%s", pdf_name, printed_page)
+        logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
+        logger.info("PDF %s TOC anchor y=%s, printed page x=%s", pdf_name, toc_index, printed_page)
 
         total_pages = len(pdf.pages)
         statement_pages = _resolve_statement_pages(
@@ -116,31 +124,115 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
 
     return {
         "pdf_name": pdf_name,
+        "statement_pages": statement_pages,
         "statements": extracted,
     }
 
 
-def _find_toc_page(pdf: pdfplumber.PDF) -> int:
-    for page_idx in range(min(20, len(pdf.pages))):
-        text = pdf.pages[page_idx].extract_text() or ""
-        haystack = text.lower()
-        if any(marker in haystack for marker in _TOC_MARKERS):
-            return page_idx + 1
-    raise RuntimeError("Table of Contents page not found in first 20 pages")
+def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:
+    """
+    Detect ALL consecutive TOC pages at the beginning of the report.
 
+    Behaviour:
+    - Find first page containing TOC markers.
+    - Continue scanning forward while pages still look like TOC pages.
+    - Stops automatically when normal content begins.
+    - Returns 1-based page numbers.
+    """
+
+    def _looks_like_toc_continuation(text: str) -> bool:
+        import re
+        if not text:
+            return False
+
+        t = text.lower()
+
+        # Still contains TOC keywords
+        if any(m in t for m in _TOC_MARKERS):
+            return True
+
+        # Many dotted leader patterns → strong TOC signal
+        dotted_lines = len(re.findall(r"\.{3,}", text))
+
+        # Many short lines ending with numbers → section listings
+        numbered_lines = len(re.findall(r".+\s\d{1,4}\s*$", text, re.MULTILINE))
+
+        # Heuristic threshold tuned to avoid false positives
+        return dotted_lines >= 5 or numbered_lines >= 8
+
+    max_scan = min(20, len(pdf.pages))
+    toc_pages = []
+
+    # Step 1 — find first TOC page
+    start_idx = None
+    for i in range(max_scan):
+        text = pdf.pages[i].extract_text() or ""
+        if any(marker in text.lower() for marker in _TOC_MARKERS):
+            start_idx = i
+            toc_pages.append(i + 1)
+            break
+
+    if start_idx is None:
+        raise RuntimeError("Table of Contents page not found in first 20 pages")
+
+    # Step 2 — detect continuation pages
+    for i in range(start_idx + 1, max_scan):
+        text = pdf.pages[i].extract_text() or ""
+        if _looks_like_toc_continuation(text):
+            toc_pages.append(i + 1)
+        else:
+            break
+
+    return toc_pages
 
 def _extract_printed_page_number(toc_text: str) -> int:
-    lines = [line.strip() for line in toc_text.splitlines() if line.strip()]
-    header_footer = lines[:5] + lines[-5:]
-    numbers = _extract_isolated_numbers("\n".join(header_footer))
+    """
+    Extract the printed page number from the footer of the first TOC page.
 
-    if not numbers:
-        numbers = _extract_isolated_numbers(toc_text)
+    Common footer patterns observed:
+      - "HATTON NATIONAL BANK PLC | 2 | ANNUAL REPORT 2024"
+      - "2 | Annual Report 2022"
+      - "3"
+      - "Page 3"
+      - "- 3 -"
+    """
+    lines = [l.strip() for l in toc_text.splitlines() if l.strip()]
+    if not lines:
+        raise RuntimeError("Empty TOC page")
 
-    if not numbers:
-        raise RuntimeError("Printed page number not found on TOC page")
+    # Scan header (first 3) and footer (last 5) lines
+    candidates = lines[:3] + lines[-5:]
 
-    return min(numbers)
+    for line in reversed(candidates):
+        # Pattern 1a: "TEXT | N | TEXT" (pipe-delimited footer with number in middle)
+        m = re.search(r"\|\s*(\d{1,3})\s*\|", line)
+        if m:
+            return int(m.group(1))
+
+        # Pattern 1b: "N | text" (number at start before pipe)
+        m = re.match(r"^(\d{1,3})\s*\|", line)
+        if m:
+            return int(m.group(1))
+
+        # Pattern 2: standalone number, possibly with decorators "- 3 -", "(3)"
+        if re.fullmatch(r"[\(\[\-–—\s]*(\d{1,3})[\)\]\-–—\s]*", line):
+            n = int(re.search(r"\d+", line).group())
+            if n < 100:
+                return n
+
+        # Pattern 3: "Page N"
+        m = re.match(r"(?i)page\s+(\d{1,3})", line)
+        if m:
+            return int(m.group(1))
+
+    # Fallback: smallest isolated number from header/footer band
+    header_footer = "\n".join(lines[:5] + lines[-5:])
+    numbers = _extract_isolated_numbers(header_footer)
+    small = [n for n in numbers if n < 50]
+    if small:
+        return min(small)
+
+    raise RuntimeError("Printed page number not found on TOC page")
 
 
 def _extract_isolated_numbers(text: str) -> List[int]:
@@ -151,24 +243,23 @@ def _extract_isolated_numbers(text: str) -> List[int]:
 def _parse_statement_references(toc_text: str) -> Dict[str, int]:
     references: Dict[str, int] = {}
 
-    for raw_line in toc_text.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-
-        lowered = line.lower()
-        if any(token in lowered for token in _TOC_LINE_REJECT):
-            continue
-
-        for statement_key, keywords in _STATEMENT_KEYWORDS.items():
-            if statement_key in references:
-                continue
-            if any(keyword in lowered for keyword in keywords):
-                page_number = _extract_toc_line_page_number(line)
-                if page_number is not None:
-                    references[statement_key] = page_number
-                    logger.info("TOC detected %s at r=%s", statement_key, page_number)
-                break
+    for statement_key, keywords in _STATEMENT_KEYWORDS.items():
+        best_page = None
+        best_pos = -1
+        
+        escaped_keywords = [re.escape(k) for k in keywords]
+        pattern_str = r"(?i)(" + "|".join(escaped_keywords) + r")[\s\.\_]*(\d{1,4})(?!\d)"
+        pattern = re.compile(pattern_str)
+        
+        for match in pattern.finditer(toc_text):
+            pos = match.start()
+            if pos > best_pos:
+                best_pos = pos
+                best_page = int(match.group(2))
+                    
+        if best_page is not None:
+            references[statement_key] = best_page
+            logger.info("TOC detected %s at r=%s", statement_key, best_page)
 
     return references
 
@@ -201,21 +292,30 @@ def _resolve_statement_pages(
         "comprehensive_income": None,
     }
 
-    for statement_key, toc_page in references.items():
-        real_page = toc_index - printed_page + toc_page
-        logger.info(
-            "PDF %s computed %s real page = %s (y=%s, x=%s, r=%s)",
-            pdf_name,
-            statement_key,
-            real_page,
-            toc_index,
-            printed_page,
-            toc_page,
-        )
-
-        resolved_page = _validate_statement_page(pdf, real_page, statement_key, total_pages)
+    for statement_key in resolved.keys():
+        resolved_page = None
+        if statement_key in references:
+            toc_page = references[statement_key]
+            real_page = toc_index - printed_page + toc_page
+            logger.info(
+                "PDF %s computed %s real page = %s (y=%s, x=%s, r=%s)",
+                pdf_name,
+                statement_key,
+                real_page,
+                toc_index,
+                printed_page,
+                toc_page,
+            )
+            resolved_page = _validate_statement_page(pdf, real_page, statement_key, total_pages)
+            
         if resolved_page is None:
-            logger.warning("PDF %s could not validate %s", pdf_name, statement_key)
+            logger.warning("PDF %s could not validate %s via TOC equation. Attempting direct scan fallback...", pdf_name, statement_key)
+            resolved_page = _direct_scan_for_statement(pdf, statement_key, total_pages)
+            if resolved_page:
+                logger.info("PDF %s found %s via direct scan at page %s", pdf_name, statement_key, resolved_page)
+            else:
+                logger.error("PDF %s completely failed to find %s", pdf_name, statement_key)
+                
         resolved[statement_key] = resolved_page
 
     return resolved
@@ -240,6 +340,29 @@ def _validate_statement_page(
         if _page_has_keywords(pdf, page_index, keywords):
             return page_index
 
+    return None
+
+
+def _direct_scan_for_statement(pdf: pdfplumber.PDF, statement_key: str, total_pages: int) -> Optional[int]:
+    keywords = _STATEMENT_KEYWORDS.get(statement_key, [])
+    if not keywords:
+        return None
+        
+    start_page = max(1, min(50, total_pages // 4))
+    
+    for page_idx in range(start_page, total_pages + 1):
+        text = pdf.pages[page_idx - 1].extract_text() or ""
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        
+        # Scan headers in the first few lines of the page
+        for line in lines[:15]:
+            for keyword in keywords:
+                expected_header = keyword.upper()
+                if expected_header in line and len(line) < len(expected_header) + 20 and line.isupper():
+                    return page_idx
+                if line.lower() == keyword.lower():
+                    return page_idx
+                    
     return None
 
 
