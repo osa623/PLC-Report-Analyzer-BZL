@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 import pdfplumber
 from pdf2image import convert_from_bytes
 
-from src.pipeline.llm_extractor import LLMFinancialExtractor
+from .llm_extractor import LLMFinancialExtractor
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
     "income_statement": [
         "statement of income",  
         "income statement",
-        "Statement of Profit or Loss"
+        "statement of profit or loss"
     ],
     "balance_sheet": [
         "statement of financial position",
@@ -463,8 +463,11 @@ def _extract_statements_parallel(statement_images: Dict[str, bytes], pdf_name: s
 
 def _get_poppler_path() -> Optional[str]:
     try:
-        from config.ocr_config import POPPLER_PATH
-
+        from services.extraction_service.config.ocr_config import POPPLER_PATH
         return POPPLER_PATH
-    except Exception:
-        return None
+    except ImportError:
+        try:
+            from config.ocr_config import POPPLER_PATH
+            return POPPLER_PATH
+        except ImportError:
+            return None

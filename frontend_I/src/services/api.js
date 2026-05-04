@@ -176,6 +176,45 @@ export const pdfService = {
   },
 
   /**
+   * Run the full pipeline (extraction → analysis → reporting) for multiple PDFs.
+   * @param {File[]} files - Array of PDF files to process (max 5)
+   * @returns {{ report_id, workflow_state, message }}
+   */
+  runFullPipeline: async (files) => {
+    const formData = new FormData();
+    (files || []).forEach((file) => formData.append('report', file));
+    const response = await gatewayApi.post('/intelligence/reports', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Poll pipeline stages for a report.
+   * @param {string} reportId
+   * @returns {{ report_id, workflow_state, stages, extraction_substages }}
+   */
+  getPipelineStages: async (reportId) => {
+    const response = await gatewayApi.get(`/intelligence/pipeline/${reportId}/stages`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get full report data.
+   * @param {string} reportId
+   * @returns {object} Full report payload
+   */
+  getReport: async (reportId) => {
+    const response = await gatewayApi.get(`/intelligence/reports/${reportId}`, {
+      timeout: 60000,
+    });
+    return response.data;
+  },
+
+  /**
    * Health check
    */
   healthCheck: async () => {

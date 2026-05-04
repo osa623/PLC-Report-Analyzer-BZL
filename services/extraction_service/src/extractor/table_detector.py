@@ -50,12 +50,18 @@ class TableDetector:
             
             # Try to load config
             try:
-                from config.ocr_config import TESSERACT_PATH, POPPLER_PATH
+                from services.extraction_service.config.ocr_config import TESSERACT_PATH, POPPLER_PATH
                 if TESSERACT_PATH:
                     pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
                     logger.info(f"Tesseract configured: {TESSERACT_PATH}")
             except ImportError:
-                logger.info("OCR config not found, using system PATH")
+                try:
+                    from config.ocr_config import TESSERACT_PATH, POPPLER_PATH
+                    if TESSERACT_PATH:
+                        pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
+                        logger.info(f"Tesseract configured: {TESSERACT_PATH}")
+                except ImportError:
+                    logger.info("OCR config not found, using system PATH")
             
             return True
         except ImportError as e:
@@ -225,10 +231,14 @@ class TableDetector:
             # Load poppler path from config if available
             poppler_path = None
             try:
-                from config.ocr_config import POPPLER_PATH
+                from services.extraction_service.config.ocr_config import POPPLER_PATH
                 poppler_path = POPPLER_PATH
             except ImportError:
-                pass
+                try:
+                    from config.ocr_config import POPPLER_PATH
+                    poppler_path = POPPLER_PATH
+                except ImportError:
+                    pass
             
             images = convert_from_path(
                 pdf_path,

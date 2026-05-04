@@ -71,5 +71,14 @@ async function triggerGenerateReport(reportId) {
   });
 }
 
-module.exports = { triggerExtract, triggerAnalyze, triggerGenerateReport, initPipelineStages };
+async function triggerFullPipeline(reportId, filePaths) {
+  await initPipelineStages(reportId);
+  return axios.post(`${config.pipelineOrchestratorUrl}/run-full-pipeline`, {
+    report_id: reportId,
+    pdf_paths: filePaths,
+    ...buildContractEnvelope(reportId, 'pipeline_full_run_v1', 'pipeline_orchestration_v1'),
+  });
+}
+
+module.exports = { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline, initPipelineStages };
 

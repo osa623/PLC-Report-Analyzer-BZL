@@ -1,0 +1,2150 @@
+[
+  {
+    "pdf_name": "Banking_HNB_2018.pdf",
+    "pipeline": {
+      "extraction": {
+        "company_name": "Banking HNB 2018",
+        "company": "Banking HNB 2018",
+        "currency": "LKR_millions",
+        "years": {
+          "2017": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 102.642,
+              "interest_payments": -54672229.0,
+              "net_commission_receipts": 8983610.0,
+              "payments_to_employees": -10224168.0,
+              "receipts_from_other_operating_activities": 5753404.0,
+              "balances_with_central_bank": -4833326.0,
+              "reverse_repurchase_agreements": 4167210.0,
+              "other_assets": -1765867.0,
+              "securities_sold_under_repurchase_agreements": -8106159.0,
+              "other_liabilities": -66003.0,
+              "net_investment_cash_flow": -25154184.0,
+              "net_purchase_intangible_assets": -367328.0,
+              "dividends_from_subsidiaries": 1790871.0,
+              "dividends_from_other_investments": 206706.0
+            },
+            "extraction_confidence": 90.0
+          },
+          "2018": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 114.386,
+              "interest_payments": -64957879.0,
+              "net_commission_receipts": 10087205.0,
+              "payments_to_employees": -11379438.0,
+              "receipts_from_other_operating_activities": 9861573.0,
+              "balances_with_central_bank": 4703883.0,
+              "reverse_repurchase_agreements": -396668.0,
+              "other_assets": -4874360.0,
+              "securities_sold_under_repurchase_agreements": 11626013.0,
+              "other_liabilities": 2529775.0,
+              "net_investment_cash_flow": -18392639.0,
+              "net_purchase_intangible_assets": -497025.0,
+              "dividends_from_subsidiaries": 221095.0,
+              "dividends_from_other_investments": 192639.0
+            },
+            "extraction_confidence": 90.0
+          }
+        },
+        "financial_graph": {
+          "2017": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 102.642,
+              "interest_payments": -54672229.0,
+              "net_commission_receipts": 8983610.0,
+              "payments_to_employees": -10224168.0,
+              "receipts_from_other_operating_activities": 5753404.0,
+              "balances_with_central_bank": -4833326.0,
+              "reverse_repurchase_agreements": 4167210.0,
+              "other_assets": -1765867.0,
+              "securities_sold_under_repurchase_agreements": -8106159.0,
+              "other_liabilities": -66003.0,
+              "net_investment_cash_flow": -25154184.0,
+              "net_purchase_intangible_assets": -367328.0,
+              "dividends_from_subsidiaries": 1790871.0,
+              "dividends_from_other_investments": 206706.0
+            },
+            "extraction_confidence": 90.0
+          },
+          "2018": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 114.386,
+              "interest_payments": -64957879.0,
+              "net_commission_receipts": 10087205.0,
+              "payments_to_employees": -11379438.0,
+              "receipts_from_other_operating_activities": 9861573.0,
+              "balances_with_central_bank": 4703883.0,
+              "reverse_repurchase_agreements": -396668.0,
+              "other_assets": -4874360.0,
+              "securities_sold_under_repurchase_agreements": 11626013.0,
+              "other_liabilities": 2529775.0,
+              "net_investment_cash_flow": -18392639.0,
+              "net_purchase_intangible_assets": -497025.0,
+              "dividends_from_subsidiaries": 221095.0,
+              "dividends_from_other_investments": 192639.0
+            },
+            "extraction_confidence": 90.0
+          }
+        },
+        "metadata": {
+          "unit_scale": "LKR_millions",
+          "confidence": {
+            "overall": 90.0,
+            "per_year": {
+              "2018": 90.0,
+              "2017": 90.0
+            },
+            "duplicate_year_merges": 0
+          }
+        },
+        "extraction_confidence": 100
+      },
+      "analysis": {
+        "status": "COMPLETED",
+        "yearly_ratios": {
+          "2017": {
+            "Gross Margin": null,
+            "Operating Margin": null,
+            "Net Profit Margin": null,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": null,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": null,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          },
+          "2018": {
+            "Gross Margin": null,
+            "Operating Margin": null,
+            "Net Profit Margin": null,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": null,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": null,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          }
+        },
+        "growth_metrics": {
+          "2017": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          },
+          "2018": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          }
+        },
+        "validation_gates": {
+          "2017": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          },
+          "2018": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          }
+        },
+        "sector_adjustments": {
+          "2017": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          },
+          "2018": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          }
+        },
+        "evaluated_equations_by_year": {
+          "2017": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2018": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        },
+        "scores": {
+          "reliability_score": 0.0,
+          "risk_score": 50.0,
+          "confidence_score": 0.0,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        }
+      },
+      "report": {
+        "tables": {
+          "income_statement": {
+            "columns": [
+              "Year",
+              "Revenue",
+              "Operating Profit",
+              "Net Profit"
+            ],
+            "rows": [
+              [
+                "2017",
+                null,
+                null,
+                null
+              ],
+              [
+                "2018",
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "balance_sheet": {
+            "columns": [
+              "Year",
+              "Total Assets",
+              "Total Liabilities",
+              "Total Equity"
+            ],
+            "rows": [
+              [
+                "2017",
+                null,
+                null,
+                null
+              ],
+              [
+                "2018",
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "cash_flow": {
+            "columns": [
+              "Year",
+              "Operating CF",
+              "Investing CF",
+              "Financing CF",
+              "Closing Cash"
+            ],
+            "rows": [
+              [
+                "2017",
+                null,
+                null,
+                null,
+                null
+              ],
+              [
+                "2018",
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "ratios": {
+            "columns": [
+              "Year",
+              "ROE",
+              "ROA",
+              "Current Ratio",
+              "Debt/Equity",
+              "Net Margin",
+              "Gross Margin",
+              "Operating Margin",
+              "Cash Ratio"
+            ],
+            "rows": [
+              [
+                "2017",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              [
+                "2018",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          }
+        },
+        "key_findings": [
+          "Processed years available for reporting: 2017, 2018.",
+          "Latest year 2018 revenue was None and net profit was None.",
+          "Overall analysis indicates weak financial health and elevated diligence requirements (Risk: medium, Reliability: low)."
+        ],
+        "anomalies": [],
+        "validation_summary": [
+          "Processed years: 2017, 2018",
+          "Validation warnings for year 2017: Net Income Linkage failed",
+          "Validation warnings for year 2018: Net Income Linkage failed"
+        ],
+        "financial_health_score": 0.0,
+        "risk_score": 50.0,
+        "scores": {
+          "reliability_score": 0.0,
+          "risk_score": 50.0,
+          "confidence_score": 0.0,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        },
+        "evaluated_equations_by_year": {
+          "2017": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2018": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        }
+      },
+      "stages": {
+        "extraction": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.100054",
+          "end_time": "2026-05-04T17:19:30.100054"
+        },
+        "analysis": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.100054",
+          "end_time": "2026-05-04T17:19:30.103066"
+        },
+        "report": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.103066",
+          "end_time": "2026-05-04T17:19:30.103066"
+        }
+      },
+      "logs": [
+        "[2026-05-04T17:19:30] Converting Gemini output to strict extraction dataset",
+        "[2026-05-04T17:19:30] Strict extraction built: 2 years detected",
+        "[2026-05-04T17:19:30] Running strict analysis",
+        "[2026-05-04T17:19:30] Analysis complete. Valid years: []",
+        "[2026-05-04T17:19:30] Generating strict report",
+        "[2026-05-04T17:19:30] Report generation complete"
+      ]
+    }
+  },
+  {
+    "pdf_name": "Banking_HNB_2020.pdf",
+    "pipeline": {
+      "extraction": {
+        "company_name": "Banking HNB 2020",
+        "company": "Banking HNB 2020",
+        "currency": "LKR_millions",
+        "years": {
+          "2019": {
+            "income_statement": {
+              "revenue_or_interest_income": 145.401,
+              "fee_and_commission_income": 10333772.0,
+              "fee_and_commission_expenses": 356642.0,
+              "fair_value_fvoci_gain": 190283.0,
+              "net_insurance_premium_income": 8365756.0,
+              "derecognition_gain": 82348.0,
+              "other_operating_income": 3803085.0,
+              "total_operating_income": 76510660.0,
+              "impairment_charge": 11426824.0,
+              "net_operating_income": 65083836.0,
+              "personnel_expenses": 14025540.0,
+              "benefits_claims_and_underwriting_expenditure": 7091214.0,
+              "other_expenses": 15311355.0,
+              "total_operating_expenses": 36428109.0,
+              "operating_profit_before_tax": 28655727.0,
+              "taxes_on_financial_services": 8397854.0,
+              "operating_profit": 20257873.0,
+              "share_of_profit_joint_venture": 186884.0,
+              "profit_before_tax": 20444757.0,
+              "income_tax_expense": 5415685.0,
+              "net_profit": 15029072.0,
+              "profit_attributable_to_equity_holders": 14670104.0,
+              "non_controlling_interests": 358968.0,
+              "basic_earnings_per_share": 28.65,
+              "diluted_earnings_per_share": 28.65,
+              "dividend_per_share": 8.0
+            },
+            "balance_sheet": {
+              "cash_and_cash_equivalents": 30263.654,
+              "placements_with_banks": 15490.267,
+              "balances_with_central_bank": 22795.332,
+              "reverse_repurchase_agreements": 2072.482,
+              "derivative_financial_instruments": 527.193,
+              "financial_assets_fvtpl": 1155.339,
+              "loans_and_advances_to_customers": 769392.169,
+              "financial_assets_fvoci": 133953.117,
+              "investment_in_joint_venture": 2137.665,
+              "investment_properties": 1026.05,
+              "right_of_use_assets": 1571.319,
+              "intangible_assets_and_goodwill": 1568.08,
+              "deferred_tax_assets": 1250.755,
+              "other_assets": 15467.912,
+              "total_assets": 1197635.228,
+              "due_to_banks": 87212.97,
+              "securities_sold_under_repurchase_agreements": 17569.394,
+              "due_to_depositors": 835060.146,
+              "other_borrowings": 22604.039,
+              "debt_securities_issued": 2368.986,
+              "current_tax_liabilities": 5621.389,
+              "deferred_tax_liabilities": 7334.048,
+              "insurance_provision_life": 14468.866,
+              "insurance_provision_non_life": 2871.417,
+              "other_provisions": 4171.801,
+              "other_liabilities": 12495.406,
+              "subordinated_term_debts": 33345.904,
+              "total_liabilities": 1047164.69,
+              "total_equity": 150470.538
+            },
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          },
+          "2020": {
+            "income_statement": {
+              "revenue_or_interest_income": 134.436,
+              "fee_and_commission_income": 8399641.0,
+              "fee_and_commission_expenses": 374084.0,
+              "fair_value_fvoci_gain": 209217.0,
+              "net_insurance_premium_income": 8907731.0,
+              "derecognition_gain": 1106649.0,
+              "other_operating_income": 3042217.0,
+              "total_operating_income": 72073880.0,
+              "impairment_charge": 16046578.0,
+              "net_operating_income": 56027302.0,
+              "personnel_expenses": 13903432.0,
+              "benefits_claims_and_underwriting_expenditure": 7374868.0,
+              "other_expenses": 13527427.0,
+              "total_operating_expenses": 34805727.0,
+              "operating_profit_before_tax": 21221575.0,
+              "taxes_on_financial_services": 4048466.0,
+              "operating_profit": 17173109.0,
+              "share_of_profit_joint_venture": 407215.0,
+              "profit_before_tax": 17580324.0,
+              "income_tax_expense": 3918061.0,
+              "net_profit": 13662263.0,
+              "profit_attributable_to_equity_holders": 13095420.0,
+              "non_controlling_interests": 566843.0,
+              "basic_earnings_per_share": 25.58,
+              "diluted_earnings_per_share": 25.58,
+              "dividend_per_share": 8.0
+            },
+            "balance_sheet": {
+              "cash_and_cash_equivalents": 34898.957,
+              "placements_with_banks": 12126.434,
+              "balances_with_central_bank": 7212.395,
+              "reverse_repurchase_agreements": 2827.05,
+              "derivative_financial_instruments": 1032.318,
+              "financial_assets_fvtpl": 1094.827,
+              "loans_and_advances_to_customers": 800815.971,
+              "financial_assets_fvoci": 256394.644,
+              "investment_in_joint_venture": 2521.811,
+              "investment_properties": 1028.956,
+              "property_plant_and_equipment": 41827.384,
+              "right_of_use_assets": 1827.832,
+              "intangible_assets_and_goodwill": 1749.994,
+              "deferred_tax_assets": 1728.958,
+              "other_assets": 11045.479,
+              "total_assets": 1371482.506,
+              "due_to_banks": 89746.709,
+              "securities_sold_under_repurchase_agreements": 10361.383,
+              "due_to_depositors": 994948.912,
+              "other_borrowings": 30526.261,
+              "debt_securities_issued": 2411.408,
+              "current_tax_liabilities": 8093.584,
+              "deferred_tax_liabilities": 5371.39,
+              "insurance_provision_life": 17073.033,
+              "insurance_provision_non_life": 3309.15,
+              "other_provisions": 4266.262,
+              "other_liabilities": 15451.997,
+              "subordinated_term_debts": 28945.457,
+              "total_liabilities": 1211823.067,
+              "total_equity": 159659.439
+            },
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          }
+        },
+        "financial_graph": {
+          "2019": {
+            "income_statement": {
+              "revenue_or_interest_income": 145.401,
+              "fee_and_commission_income": 10333772.0,
+              "fee_and_commission_expenses": 356642.0,
+              "fair_value_fvoci_gain": 190283.0,
+              "net_insurance_premium_income": 8365756.0,
+              "derecognition_gain": 82348.0,
+              "other_operating_income": 3803085.0,
+              "total_operating_income": 76510660.0,
+              "impairment_charge": 11426824.0,
+              "net_operating_income": 65083836.0,
+              "personnel_expenses": 14025540.0,
+              "benefits_claims_and_underwriting_expenditure": 7091214.0,
+              "other_expenses": 15311355.0,
+              "total_operating_expenses": 36428109.0,
+              "operating_profit_before_tax": 28655727.0,
+              "taxes_on_financial_services": 8397854.0,
+              "operating_profit": 20257873.0,
+              "share_of_profit_joint_venture": 186884.0,
+              "profit_before_tax": 20444757.0,
+              "income_tax_expense": 5415685.0,
+              "net_profit": 15029072.0,
+              "profit_attributable_to_equity_holders": 14670104.0,
+              "non_controlling_interests": 358968.0,
+              "basic_earnings_per_share": 28.65,
+              "diluted_earnings_per_share": 28.65,
+              "dividend_per_share": 8.0
+            },
+            "balance_sheet": {
+              "cash_and_cash_equivalents": 30263.654,
+              "placements_with_banks": 15490.267,
+              "balances_with_central_bank": 22795.332,
+              "reverse_repurchase_agreements": 2072.482,
+              "derivative_financial_instruments": 527.193,
+              "financial_assets_fvtpl": 1155.339,
+              "loans_and_advances_to_customers": 769392.169,
+              "financial_assets_fvoci": 133953.117,
+              "investment_in_joint_venture": 2137.665,
+              "investment_properties": 1026.05,
+              "right_of_use_assets": 1571.319,
+              "intangible_assets_and_goodwill": 1568.08,
+              "deferred_tax_assets": 1250.755,
+              "other_assets": 15467.912,
+              "total_assets": 1197635.228,
+              "due_to_banks": 87212.97,
+              "securities_sold_under_repurchase_agreements": 17569.394,
+              "due_to_depositors": 835060.146,
+              "other_borrowings": 22604.039,
+              "debt_securities_issued": 2368.986,
+              "current_tax_liabilities": 5621.389,
+              "deferred_tax_liabilities": 7334.048,
+              "insurance_provision_life": 14468.866,
+              "insurance_provision_non_life": 2871.417,
+              "other_provisions": 4171.801,
+              "other_liabilities": 12495.406,
+              "subordinated_term_debts": 33345.904,
+              "total_liabilities": 1047164.69,
+              "total_equity": 150470.538
+            },
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          },
+          "2020": {
+            "income_statement": {
+              "revenue_or_interest_income": 134.436,
+              "fee_and_commission_income": 8399641.0,
+              "fee_and_commission_expenses": 374084.0,
+              "fair_value_fvoci_gain": 209217.0,
+              "net_insurance_premium_income": 8907731.0,
+              "derecognition_gain": 1106649.0,
+              "other_operating_income": 3042217.0,
+              "total_operating_income": 72073880.0,
+              "impairment_charge": 16046578.0,
+              "net_operating_income": 56027302.0,
+              "personnel_expenses": 13903432.0,
+              "benefits_claims_and_underwriting_expenditure": 7374868.0,
+              "other_expenses": 13527427.0,
+              "total_operating_expenses": 34805727.0,
+              "operating_profit_before_tax": 21221575.0,
+              "taxes_on_financial_services": 4048466.0,
+              "operating_profit": 17173109.0,
+              "share_of_profit_joint_venture": 407215.0,
+              "profit_before_tax": 17580324.0,
+              "income_tax_expense": 3918061.0,
+              "net_profit": 13662263.0,
+              "profit_attributable_to_equity_holders": 13095420.0,
+              "non_controlling_interests": 566843.0,
+              "basic_earnings_per_share": 25.58,
+              "diluted_earnings_per_share": 25.58,
+              "dividend_per_share": 8.0
+            },
+            "balance_sheet": {
+              "cash_and_cash_equivalents": 34898.957,
+              "placements_with_banks": 12126.434,
+              "balances_with_central_bank": 7212.395,
+              "reverse_repurchase_agreements": 2827.05,
+              "derivative_financial_instruments": 1032.318,
+              "financial_assets_fvtpl": 1094.827,
+              "loans_and_advances_to_customers": 800815.971,
+              "financial_assets_fvoci": 256394.644,
+              "investment_in_joint_venture": 2521.811,
+              "investment_properties": 1028.956,
+              "property_plant_and_equipment": 41827.384,
+              "right_of_use_assets": 1827.832,
+              "intangible_assets_and_goodwill": 1749.994,
+              "deferred_tax_assets": 1728.958,
+              "other_assets": 11045.479,
+              "total_assets": 1371482.506,
+              "due_to_banks": 89746.709,
+              "securities_sold_under_repurchase_agreements": 10361.383,
+              "due_to_depositors": 994948.912,
+              "other_borrowings": 30526.261,
+              "debt_securities_issued": 2411.408,
+              "current_tax_liabilities": 8093.584,
+              "deferred_tax_liabilities": 5371.39,
+              "insurance_provision_life": 17073.033,
+              "insurance_provision_non_life": 3309.15,
+              "other_provisions": 4266.262,
+              "other_liabilities": 15451.997,
+              "subordinated_term_debts": 28945.457,
+              "total_liabilities": 1211823.067,
+              "total_equity": 159659.439
+            },
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          }
+        },
+        "metadata": {
+          "unit_scale": "LKR_millions",
+          "confidence": {
+            "overall": 100.0,
+            "per_year": {
+              "2020": 100.0,
+              "2019": 100.0
+            },
+            "duplicate_year_merges": 0
+          }
+        },
+        "extraction_confidence": 100
+      },
+      "analysis": {
+        "status": "COMPLETED",
+        "yearly_ratios": {
+          "2019": {
+            "Gross Margin": null,
+            "Operating Margin": 0.26477190237281967,
+            "Net Profit Margin": 0.1964310855506932,
+            "Return on Assets (ROA)": 12.548956183509993,
+            "Return on Equity (ROE)": 99.88049620717113,
+            "EBIT Margin": 0.26477190237281967,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": 6.95926726865295,
+            "Debt Ratio": 0.8743602939508723,
+            "Interest Coverage": null,
+            "Asset Turnover": 63.88477744410505,
+            "Inventory Turnover": null,
+            "Receivables Turnover": 99.4429929010624,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          },
+          "2020": {
+            "Gross Margin": null,
+            "Operating Margin": 0.23827091034921388,
+            "Net Profit Margin": 0.18955914403387192,
+            "Return on Assets (ROA)": 9.961675005134918,
+            "Return on Equity (ROE)": 85.57128276017555,
+            "EBIT Margin": 0.23827091034921388,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": 7.590049636839823,
+            "Debt Ratio": 0.8835862373004997,
+            "Interest Coverage": null,
+            "Asset Turnover": 52.551804113205364,
+            "Inventory Turnover": null,
+            "Receivables Turnover": 90.0005526987673,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          }
+        },
+        "growth_metrics": {
+          "2019": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          },
+          "2020": {
+            "Revenue Growth": -0.05798904361823568,
+            "Net Profit Growth": -0.09094433774753358,
+            "Asset Growth": 0.14515878786424624
+          }
+        },
+        "validation_gates": {
+          "2019": {
+            "Balance Sheet Identity": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            }
+          },
+          "2020": {
+            "Balance Sheet Identity": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            },
+            "Unit Consistency": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            }
+          }
+        },
+        "sector_adjustments": {
+          "2019": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          },
+          "2020": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          }
+        },
+        "evaluated_equations_by_year": {
+          "2019": {
+            "Gross Margin": "Gross Profit (None) / Revenue (76510660.0)",
+            "Operating Margin": "Operating Profit (20257873.0) / Revenue (76510660.0)",
+            "Net Profit Margin": "Net Profit (15029072.0) / Revenue (76510660.0)",
+            "Return on Assets (ROA)": "Net Profit (15029072.0) / Total Assets (1197635.228)",
+            "Return on Equity (ROE)": "Net Profit (15029072.0) / Equity (150470.538)",
+            "EBIT Margin": "Operating Profit (20257873.0) / Revenue (76510660.0)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (30263.654) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (1047164.69) / Equity (150470.538)",
+            "Debt Ratio": "Total Liabilities (1047164.69) / Total Assets (1197635.228)",
+            "Interest Coverage": "Operating Profit (20257873.0) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (76510660.0) / Total Assets (1197635.228)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (76510660.0) / Receivables (769392.169)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (15029072.0)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2020": {
+            "Gross Margin": "Gross Profit (None) / Revenue (72073880.0)",
+            "Operating Margin": "Operating Profit (17173109.0) / Revenue (72073880.0)",
+            "Net Profit Margin": "Net Profit (13662263.0) / Revenue (72073880.0)",
+            "Return on Assets (ROA)": "Net Profit (13662263.0) / Total Assets (1371482.506)",
+            "Return on Equity (ROE)": "Net Profit (13662263.0) / Equity (159659.439)",
+            "EBIT Margin": "Operating Profit (17173109.0) / Revenue (72073880.0)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (34898.957) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (1211823.067) / Equity (159659.439)",
+            "Debt Ratio": "Total Liabilities (1211823.067) / Total Assets (1371482.506)",
+            "Interest Coverage": "Operating Profit (17173109.0) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (72073880.0) / Total Assets (1371482.506)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (72073880.0) / Receivables (800815.971)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (13662263.0)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        },
+        "scores": {
+          "reliability_score": 71.43,
+          "risk_score": 65.0,
+          "confidence_score": 0.64,
+          "risk_level": "medium",
+          "reliability_band": "medium"
+        }
+      },
+      "report": {
+        "tables": {
+          "income_statement": {
+            "columns": [
+              "Year",
+              "Revenue",
+              "Operating Profit",
+              "Net Profit"
+            ],
+            "rows": [
+              [
+                "2019",
+                76510660.0,
+                20257873.0,
+                15029072.0
+              ],
+              [
+                "2020",
+                72073880.0,
+                17173109.0,
+                13662263.0
+              ]
+            ]
+          },
+          "balance_sheet": {
+            "columns": [
+              "Year",
+              "Total Assets",
+              "Total Liabilities",
+              "Total Equity"
+            ],
+            "rows": [
+              [
+                "2019",
+                1197635.228,
+                1047164.69,
+                150470.538
+              ],
+              [
+                "2020",
+                1371482.506,
+                1211823.067,
+                159659.439
+              ]
+            ]
+          },
+          "cash_flow": {
+            "columns": [
+              "Year",
+              "Operating CF",
+              "Investing CF",
+              "Financing CF",
+              "Closing Cash"
+            ],
+            "rows": [
+              [
+                "2019",
+                null,
+                null,
+                null,
+                null
+              ],
+              [
+                "2020",
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "ratios": {
+            "columns": [
+              "Year",
+              "ROE",
+              "ROA",
+              "Current Ratio",
+              "Debt/Equity",
+              "Net Margin",
+              "Gross Margin",
+              "Operating Margin",
+              "Cash Ratio"
+            ],
+            "rows": [
+              [
+                "2019",
+                99.880496,
+                12.548956,
+                null,
+                6.959267,
+                0.196431,
+                null,
+                0.264772,
+                null
+              ],
+              [
+                "2020",
+                85.571283,
+                9.961675,
+                null,
+                7.59005,
+                0.189559,
+                null,
+                0.238271,
+                null
+              ]
+            ]
+          }
+        },
+        "key_findings": [
+          "Processed years available for reporting: 2019, 2020.",
+          "Latest year 2020 revenue was 72073880.0 and net profit was 13662263.0.",
+          "Overall analysis indicates moderate financial health with some caution flags (Risk: medium, Reliability: medium)."
+        ],
+        "anomalies": [],
+        "validation_summary": [
+          "Processed years: 2019, 2020",
+          "Validation warnings for year 2019: Net Income Linkage failed",
+          "Validation warnings for year 2020: Net Income Linkage failed"
+        ],
+        "financial_health_score": 71.43,
+        "risk_score": 65.0,
+        "scores": {
+          "reliability_score": 71.43,
+          "risk_score": 65.0,
+          "confidence_score": 0.64,
+          "risk_level": "medium",
+          "reliability_band": "medium"
+        },
+        "evaluated_equations_by_year": {
+          "2019": {
+            "Gross Margin": "Gross Profit (None) / Revenue (76510660.0)",
+            "Operating Margin": "Operating Profit (20257873.0) / Revenue (76510660.0)",
+            "Net Profit Margin": "Net Profit (15029072.0) / Revenue (76510660.0)",
+            "Return on Assets (ROA)": "Net Profit (15029072.0) / Total Assets (1197635.228)",
+            "Return on Equity (ROE)": "Net Profit (15029072.0) / Equity (150470.538)",
+            "EBIT Margin": "Operating Profit (20257873.0) / Revenue (76510660.0)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (30263.654) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (1047164.69) / Equity (150470.538)",
+            "Debt Ratio": "Total Liabilities (1047164.69) / Total Assets (1197635.228)",
+            "Interest Coverage": "Operating Profit (20257873.0) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (76510660.0) / Total Assets (1197635.228)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (76510660.0) / Receivables (769392.169)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (15029072.0)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2020": {
+            "Gross Margin": "Gross Profit (None) / Revenue (72073880.0)",
+            "Operating Margin": "Operating Profit (17173109.0) / Revenue (72073880.0)",
+            "Net Profit Margin": "Net Profit (13662263.0) / Revenue (72073880.0)",
+            "Return on Assets (ROA)": "Net Profit (13662263.0) / Total Assets (1371482.506)",
+            "Return on Equity (ROE)": "Net Profit (13662263.0) / Equity (159659.439)",
+            "EBIT Margin": "Operating Profit (17173109.0) / Revenue (72073880.0)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (34898.957) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (1211823.067) / Equity (159659.439)",
+            "Debt Ratio": "Total Liabilities (1211823.067) / Total Assets (1371482.506)",
+            "Interest Coverage": "Operating Profit (17173109.0) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (72073880.0) / Total Assets (1371482.506)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (72073880.0) / Receivables (800815.971)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (13662263.0)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        }
+      },
+      "stages": {
+        "extraction": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.144160",
+          "end_time": "2026-05-04T17:19:30.147196"
+        },
+        "analysis": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.147196",
+          "end_time": "2026-05-04T17:19:30.147196"
+        },
+        "report": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.149709",
+          "end_time": "2026-05-04T17:19:30.149709"
+        }
+      },
+      "logs": [
+        "[2026-05-04T17:19:30] Converting Gemini output to strict extraction dataset",
+        "[2026-05-04T17:19:30] Strict extraction built: 2 years detected",
+        "[2026-05-04T17:19:30] Running strict analysis",
+        "[2026-05-04T17:19:30] Analysis complete. Valid years: []",
+        "[2026-05-04T17:19:30] Generating strict report",
+        "[2026-05-04T17:19:30] Report generation complete"
+      ]
+    }
+  },
+  {
+    "pdf_name": "Banking_HNB_2022.pdf",
+    "pipeline": {
+      "extraction": {
+        "company_name": "Banking HNB 2022",
+        "company": "Banking HNB 2022",
+        "currency": "LKR_millions",
+        "years": {
+          "2021": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 107.875,
+              "interest_payments": -53610605.0,
+              "net_commission_receipts": 10727319.0,
+              "net_trading_income": -608174.0,
+              "payments_to_employees": -15803751.0,
+              "taxes_on_financial_services": -5069260.0,
+              "receipts_from_other_operating_activities": 16396591.0,
+              "payments_for_other_operating_activities": -17151493.0,
+              "operating_profit_before_changes_in_operating_assets_and_liabilities": 42755173.0,
+              "balances_with_central_bank": -18608094.0,
+              "loans_and_advances_to_customers": -117.923,
+              "reverse_repurchase_agreements": -3419226.0,
+              "other_assets": -1215835.0,
+              "increase_decrease_in_operating_liabilities": -141.166,
+              "due_to_depositors": 109.857,
+              "other_borrowings": -77614427.0,
+              "securities_sold_under_repurchase_agreements": 23193118.0,
+              "other_liabilities": 1365904.0,
+              "net_operating_cash_before_tax": -41609629.0,
+              "income_and_surcharge_tax_paid": -3946039.0,
+              "operating_cash_flow": -45555668.0,
+              "purchase_property_plant_and_equipment": -1063001.0,
+              "ppe_sale_proceeds": 10622.0,
+              "net_investment_cash_flow": 55066382.0,
+              "net_purchase_intangible_assets": -661046.0,
+              "acquisition_cash_effect": -1300092.0,
+              "dividends_from_other_investments": 70809.0
+            },
+            "extraction_confidence": 100.0
+          },
+          "2022": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 218.375,
+              "interest_payments": -82156552.0,
+              "net_commission_receipts": 15895361.0,
+              "net_trading_income": 4534746.0,
+              "payments_to_employees": -18013411.0,
+              "taxes_on_financial_services": -4061341.0,
+              "receipts_from_other_operating_activities": 21354498.0,
+              "payments_for_other_operating_activities": -24821097.0,
+              "operating_profit_before_changes_in_operating_assets_and_liabilities": 131.107,
+              "balances_with_central_bank": -6523852.0,
+              "loans_and_advances_to_customers": -65103007.0,
+              "reverse_repurchase_agreements": 4865697.0,
+              "other_assets": -6967076.0,
+              "increase_decrease_in_operating_liabilities": -73728238.0,
+              "due_to_depositors": 152.26,
+              "other_borrowings": -13786954.0,
+              "securities_sold_under_repurchase_agreements": -27224146.0,
+              "other_liabilities": -16423675.0,
+              "net_operating_cash_before_tax": 152.204,
+              "income_and_surcharge_tax_paid": -10222643.0,
+              "operating_cash_flow": 141.981,
+              "purchase_property_plant_and_equipment": -1471498.0,
+              "ppe_sale_proceeds": 17387.0,
+              "net_investment_cash_flow": -46443765.0,
+              "net_purchase_intangible_assets": -285513.0,
+              "dividends_from_other_investments": 50872.0
+            },
+            "extraction_confidence": 100.0
+          }
+        },
+        "financial_graph": {
+          "2021": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 107.875,
+              "interest_payments": -53610605.0,
+              "net_commission_receipts": 10727319.0,
+              "net_trading_income": -608174.0,
+              "payments_to_employees": -15803751.0,
+              "taxes_on_financial_services": -5069260.0,
+              "receipts_from_other_operating_activities": 16396591.0,
+              "payments_for_other_operating_activities": -17151493.0,
+              "operating_profit_before_changes_in_operating_assets_and_liabilities": 42755173.0,
+              "balances_with_central_bank": -18608094.0,
+              "loans_and_advances_to_customers": -117.923,
+              "reverse_repurchase_agreements": -3419226.0,
+              "other_assets": -1215835.0,
+              "increase_decrease_in_operating_liabilities": -141.166,
+              "due_to_depositors": 109.857,
+              "other_borrowings": -77614427.0,
+              "securities_sold_under_repurchase_agreements": 23193118.0,
+              "other_liabilities": 1365904.0,
+              "net_operating_cash_before_tax": -41609629.0,
+              "income_and_surcharge_tax_paid": -3946039.0,
+              "operating_cash_flow": -45555668.0,
+              "purchase_property_plant_and_equipment": -1063001.0,
+              "ppe_sale_proceeds": 10622.0,
+              "net_investment_cash_flow": 55066382.0,
+              "net_purchase_intangible_assets": -661046.0,
+              "acquisition_cash_effect": -1300092.0,
+              "dividends_from_other_investments": 70809.0
+            },
+            "extraction_confidence": 100.0
+          },
+          "2022": {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {
+              "interest_receipts": 218.375,
+              "interest_payments": -82156552.0,
+              "net_commission_receipts": 15895361.0,
+              "net_trading_income": 4534746.0,
+              "payments_to_employees": -18013411.0,
+              "taxes_on_financial_services": -4061341.0,
+              "receipts_from_other_operating_activities": 21354498.0,
+              "payments_for_other_operating_activities": -24821097.0,
+              "operating_profit_before_changes_in_operating_assets_and_liabilities": 131.107,
+              "balances_with_central_bank": -6523852.0,
+              "loans_and_advances_to_customers": -65103007.0,
+              "reverse_repurchase_agreements": 4865697.0,
+              "other_assets": -6967076.0,
+              "increase_decrease_in_operating_liabilities": -73728238.0,
+              "due_to_depositors": 152.26,
+              "other_borrowings": -13786954.0,
+              "securities_sold_under_repurchase_agreements": -27224146.0,
+              "other_liabilities": -16423675.0,
+              "net_operating_cash_before_tax": 152.204,
+              "income_and_surcharge_tax_paid": -10222643.0,
+              "operating_cash_flow": 141.981,
+              "purchase_property_plant_and_equipment": -1471498.0,
+              "ppe_sale_proceeds": 17387.0,
+              "net_investment_cash_flow": -46443765.0,
+              "net_purchase_intangible_assets": -285513.0,
+              "dividends_from_other_investments": 50872.0
+            },
+            "extraction_confidence": 100.0
+          }
+        },
+        "metadata": {
+          "unit_scale": "LKR_millions",
+          "confidence": {
+            "overall": 100.0,
+            "per_year": {
+              "2022": 100.0,
+              "2021": 100.0
+            },
+            "duplicate_year_merges": 0
+          }
+        },
+        "extraction_confidence": 100
+      },
+      "analysis": {
+        "status": "COMPLETED",
+        "yearly_ratios": {
+          "2021": {
+            "Gross Margin": null,
+            "Operating Margin": null,
+            "Net Profit Margin": null,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": null,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": null,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": -46618669.0
+          },
+          "2022": {
+            "Gross Margin": null,
+            "Operating Margin": null,
+            "Net Profit Margin": null,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": null,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": null,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": -1471356.019
+          }
+        },
+        "growth_metrics": {
+          "2021": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          },
+          "2022": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          }
+        },
+        "validation_gates": {
+          "2021": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          },
+          "2022": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          }
+        },
+        "sector_adjustments": {
+          "2021": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          },
+          "2022": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          }
+        },
+        "evaluated_equations_by_year": {
+          "2021": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (-45555668.0) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (-45555668.0) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (-45555668.0) - CapEx (-1063001.0)"
+          },
+          "2022": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (141.981) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (141.981) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (141.981) - CapEx (-1471498.0)"
+          }
+        },
+        "scores": {
+          "reliability_score": 0.0,
+          "risk_score": 50.0,
+          "confidence_score": 0.0,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        }
+      },
+      "report": {
+        "tables": {
+          "income_statement": {
+            "columns": [
+              "Year",
+              "Revenue",
+              "Operating Profit",
+              "Net Profit"
+            ],
+            "rows": [
+              [
+                "2021",
+                null,
+                null,
+                null
+              ],
+              [
+                "2022",
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "balance_sheet": {
+            "columns": [
+              "Year",
+              "Total Assets",
+              "Total Liabilities",
+              "Total Equity"
+            ],
+            "rows": [
+              [
+                "2021",
+                null,
+                null,
+                null
+              ],
+              [
+                "2022",
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "cash_flow": {
+            "columns": [
+              "Year",
+              "Operating CF",
+              "Investing CF",
+              "Financing CF",
+              "Closing Cash"
+            ],
+            "rows": [
+              [
+                "2021",
+                -45555668.0,
+                null,
+                null,
+                null
+              ],
+              [
+                "2022",
+                141.981,
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "ratios": {
+            "columns": [
+              "Year",
+              "ROE",
+              "ROA",
+              "Current Ratio",
+              "Debt/Equity",
+              "Net Margin",
+              "Gross Margin",
+              "Operating Margin",
+              "Cash Ratio"
+            ],
+            "rows": [
+              [
+                "2021",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ],
+              [
+                "2022",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          }
+        },
+        "key_findings": [
+          "Processed years available for reporting: 2021, 2022.",
+          "Latest year 2022 revenue was None and net profit was None.",
+          "Overall analysis indicates weak financial health and elevated diligence requirements (Risk: medium, Reliability: low)."
+        ],
+        "anomalies": [],
+        "validation_summary": [
+          "Processed years: 2021, 2022",
+          "Validation warnings for year 2021: Net Income Linkage failed",
+          "Validation warnings for year 2022: Net Income Linkage failed"
+        ],
+        "financial_health_score": 0.0,
+        "risk_score": 50.0,
+        "scores": {
+          "reliability_score": 0.0,
+          "risk_score": 50.0,
+          "confidence_score": 0.0,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        },
+        "evaluated_equations_by_year": {
+          "2021": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (-45555668.0) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (-45555668.0) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (-45555668.0) - CapEx (-1063001.0)"
+          },
+          "2022": {
+            "Gross Margin": "Gross Profit (None) / Revenue (None)",
+            "Operating Margin": "Operating Profit (None) / Revenue (None)",
+            "Net Profit Margin": "Net Profit (None) / Revenue (None)",
+            "Return on Assets (ROA)": "Net Profit (None) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (None) / Equity (None)",
+            "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
+            "Asset Turnover": "Revenue (None) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (None) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (141.981) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (141.981) / Net Profit (None)",
+            "Free Cash Flow": "Operating Cash Flow (141.981) - CapEx (-1471498.0)"
+          }
+        }
+      },
+      "stages": {
+        "extraction": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.163541",
+          "end_time": "2026-05-04T17:19:30.164549"
+        },
+        "analysis": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.164549",
+          "end_time": "2026-05-04T17:19:30.164549"
+        },
+        "report": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.166583",
+          "end_time": "2026-05-04T17:19:30.166583"
+        }
+      },
+      "logs": [
+        "[2026-05-04T17:19:30] Converting Gemini output to strict extraction dataset",
+        "[2026-05-04T17:19:30] Strict extraction built: 2 years detected",
+        "[2026-05-04T17:19:30] Running strict analysis",
+        "[2026-05-04T17:19:30] Analysis complete. Valid years: []",
+        "[2026-05-04T17:19:30] Generating strict report",
+        "[2026-05-04T17:19:30] Report generation complete"
+      ]
+    }
+  },
+  {
+    "pdf_name": "Banking_HNB_2024.pdf",
+    "pipeline": {
+      "extraction": {
+        "company_name": "Banking HNB 2024",
+        "company": "Banking HNB 2024",
+        "currency": "LKR_millions",
+        "years": {
+          "2023": {
+            "income_statement": {
+              "revenue_or_interest_income": 336638.191,
+              "interest_expense": 186503.55,
+              "fee_and_commission_income": 17207.633,
+              "fee_and_commission_expenses": 634.98,
+              "trading_gain_loss": -11850.918,
+              "net_insurance_premium_income": 15249.25,
+              "other_operating_income": 11143.262,
+              "total_operating_income": 149499.661,
+              "net_operating_income": 106975.731,
+              "personnel_expenses": 20934.258,
+              "benefits_claims_and_underwriting_expenditure": 15218.729,
+              "other_expenses": 24222.208,
+              "total_operating_expenses": 60375.195,
+              "operating_profit_before_tax": 46600.536,
+              "taxes_on_financial_services": 10523.13,
+              "operating_profit": 36077.406,
+              "share_of_profit_joint_venture": 1140.769,
+              "profit_before_tax": 37218.175,
+              "income_tax_expense": 13611.684,
+              "net_profit": 23606.491,
+              "profit_attributable_to_equity_holders": 22770.791,
+              "non_controlling_interests": 835.7,
+              "basic_earnings_per_share": 0.04,
+              "diluted_earnings_per_share": 0.04,
+              "dividend_per_share": 0.008
+            },
+            "balance_sheet": {},
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          },
+          "2024": {
+            "income_statement": {
+              "revenue_or_interest_income": 228945.309,
+              "interest_expense": 130478.678,
+              "fee_and_commission_income": 20022.671,
+              "fee_and_commission_expenses": 873.946,
+              "trading_gain_loss": -3965.732,
+              "net_insurance_premium_income": 17968.647,
+              "other_operating_income": 3630.804,
+              "total_operating_income": 97592.685,
+              "net_operating_income": 174998.234,
+              "personnel_expenses": 26328.854,
+              "benefits_claims_and_underwriting_expenditure": 17314.118,
+              "other_expenses": 27485.811,
+              "total_operating_expenses": 71128.783,
+              "operating_profit_before_tax": 103869.451,
+              "taxes_on_financial_services": 21147.935,
+              "operating_profit": 82721.516,
+              "share_of_profit_joint_venture": 1377.926,
+              "profit_before_tax": 84099.442,
+              "income_tax_expense": 39259.81,
+              "net_profit": 44839.632,
+              "profit_attributable_to_equity_holders": 43538.931,
+              "non_controlling_interests": 1300.701,
+              "basic_earnings_per_share": 0.076,
+              "diluted_earnings_per_share": 0.076,
+              "dividend_per_share": 0.015
+            },
+            "balance_sheet": {},
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          }
+        },
+        "financial_graph": {
+          "2023": {
+            "income_statement": {
+              "revenue_or_interest_income": 336638.191,
+              "interest_expense": 186503.55,
+              "fee_and_commission_income": 17207.633,
+              "fee_and_commission_expenses": 634.98,
+              "trading_gain_loss": -11850.918,
+              "net_insurance_premium_income": 15249.25,
+              "other_operating_income": 11143.262,
+              "total_operating_income": 149499.661,
+              "net_operating_income": 106975.731,
+              "personnel_expenses": 20934.258,
+              "benefits_claims_and_underwriting_expenditure": 15218.729,
+              "other_expenses": 24222.208,
+              "total_operating_expenses": 60375.195,
+              "operating_profit_before_tax": 46600.536,
+              "taxes_on_financial_services": 10523.13,
+              "operating_profit": 36077.406,
+              "share_of_profit_joint_venture": 1140.769,
+              "profit_before_tax": 37218.175,
+              "income_tax_expense": 13611.684,
+              "net_profit": 23606.491,
+              "profit_attributable_to_equity_holders": 22770.791,
+              "non_controlling_interests": 835.7,
+              "basic_earnings_per_share": 0.04,
+              "diluted_earnings_per_share": 0.04,
+              "dividend_per_share": 0.008
+            },
+            "balance_sheet": {},
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          },
+          "2024": {
+            "income_statement": {
+              "revenue_or_interest_income": 228945.309,
+              "interest_expense": 130478.678,
+              "fee_and_commission_income": 20022.671,
+              "fee_and_commission_expenses": 873.946,
+              "trading_gain_loss": -3965.732,
+              "net_insurance_premium_income": 17968.647,
+              "other_operating_income": 3630.804,
+              "total_operating_income": 97592.685,
+              "net_operating_income": 174998.234,
+              "personnel_expenses": 26328.854,
+              "benefits_claims_and_underwriting_expenditure": 17314.118,
+              "other_expenses": 27485.811,
+              "total_operating_expenses": 71128.783,
+              "operating_profit_before_tax": 103869.451,
+              "taxes_on_financial_services": 21147.935,
+              "operating_profit": 82721.516,
+              "share_of_profit_joint_venture": 1377.926,
+              "profit_before_tax": 84099.442,
+              "income_tax_expense": 39259.81,
+              "net_profit": 44839.632,
+              "profit_attributable_to_equity_holders": 43538.931,
+              "non_controlling_interests": 1300.701,
+              "basic_earnings_per_share": 0.076,
+              "diluted_earnings_per_share": 0.076,
+              "dividend_per_share": 0.015
+            },
+            "balance_sheet": {},
+            "cash_flow": {},
+            "extraction_confidence": 100.0
+          }
+        },
+        "metadata": {
+          "unit_scale": "LKR_millions",
+          "confidence": {
+            "overall": 100.0,
+            "per_year": {
+              "2024": 100.0,
+              "2023": 100.0
+            },
+            "duplicate_year_merges": 0
+          }
+        },
+        "extraction_confidence": 100
+      },
+      "analysis": {
+        "status": "COMPLETED",
+        "yearly_ratios": {
+          "2023": {
+            "Gross Margin": null,
+            "Operating Margin": 0.2413209886810379,
+            "Net Profit Margin": 0.1579033078877684,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": 0.2413209886810379,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": 0.19344085407489564,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          },
+          "2024": {
+            "Gross Margin": null,
+            "Operating Margin": 0.8476200444736202,
+            "Net Profit Margin": 0.45945689474574863,
+            "Return on Assets (ROA)": null,
+            "Return on Equity (ROE)": null,
+            "EBIT Margin": 0.8476200444736202,
+            "Current Ratio": null,
+            "Quick Ratio": null,
+            "Cash Ratio": null,
+            "Debt to Equity": null,
+            "Debt Ratio": null,
+            "Interest Coverage": 0.6339849335383364,
+            "Asset Turnover": null,
+            "Inventory Turnover": null,
+            "Receivables Turnover": null,
+            "Operating Cash Flow Ratio": null,
+            "Cash Flow to Net Income": null,
+            "Free Cash Flow": null
+          }
+        },
+        "growth_metrics": {
+          "2023": {
+            "Revenue Growth": null,
+            "Net Profit Growth": null,
+            "Asset Growth": null
+          },
+          "2024": {
+            "Revenue Growth": -0.34720464014965224,
+            "Net Profit Growth": 0.8994619742510649,
+            "Asset Growth": null
+          }
+        },
+        "validation_gates": {
+          "2023": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          },
+          "2024": {
+            "Balance Sheet Identity": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Cash Reconciliation": {
+              "status": "unknown",
+              "confidence_weight": 0.0
+            },
+            "Net Income Linkage": {
+              "status": "fail",
+              "confidence_weight": 0.0
+            },
+            "Multi-Year Continuity": {
+              "status": "pass",
+              "confidence_weight": 1.0
+            },
+            "Unit Consistency": {
+              "status": "unknown",
+              "confidence_weight": 0.5
+            }
+          }
+        },
+        "sector_adjustments": {
+          "2023": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          },
+          "2024": {
+            "sector": "Banking/Finance",
+            "risk_adjustment": 0.0,
+            "weight_adjustment": 1.0
+          }
+        },
+        "evaluated_equations_by_year": {
+          "2023": {
+            "Gross Margin": "Gross Profit (None) / Revenue (149499.661)",
+            "Operating Margin": "Operating Profit (36077.406) / Revenue (149499.661)",
+            "Net Profit Margin": "Net Profit (23606.491) / Revenue (149499.661)",
+            "Return on Assets (ROA)": "Net Profit (23606.491) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (23606.491) / Equity (None)",
+            "EBIT Margin": "Operating Profit (36077.406) / Revenue (149499.661)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (36077.406) / Finance Cost (186503.55)",
+            "Asset Turnover": "Revenue (149499.661) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (149499.661) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (23606.491)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2024": {
+            "Gross Margin": "Gross Profit (None) / Revenue (97592.685)",
+            "Operating Margin": "Operating Profit (82721.516) / Revenue (97592.685)",
+            "Net Profit Margin": "Net Profit (44839.632) / Revenue (97592.685)",
+            "Return on Assets (ROA)": "Net Profit (44839.632) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (44839.632) / Equity (None)",
+            "EBIT Margin": "Operating Profit (82721.516) / Revenue (97592.685)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (82721.516) / Finance Cost (130478.678)",
+            "Asset Turnover": "Revenue (97592.685) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (97592.685) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (44839.632)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        },
+        "scores": {
+          "reliability_score": 33.33,
+          "risk_score": 50.0,
+          "confidence_score": 0.3,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        }
+      },
+      "report": {
+        "tables": {
+          "income_statement": {
+            "columns": [
+              "Year",
+              "Revenue",
+              "Operating Profit",
+              "Net Profit"
+            ],
+            "rows": [
+              [
+                "2023",
+                149499.661,
+                36077.406,
+                23606.491
+              ],
+              [
+                "2024",
+                97592.685,
+                82721.516,
+                44839.632
+              ]
+            ]
+          },
+          "balance_sheet": {
+            "columns": [
+              "Year",
+              "Total Assets",
+              "Total Liabilities",
+              "Total Equity"
+            ],
+            "rows": [
+              [
+                "2023",
+                null,
+                null,
+                null
+              ],
+              [
+                "2024",
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "cash_flow": {
+            "columns": [
+              "Year",
+              "Operating CF",
+              "Investing CF",
+              "Financing CF",
+              "Closing Cash"
+            ],
+            "rows": [
+              [
+                "2023",
+                null,
+                null,
+                null,
+                null
+              ],
+              [
+                "2024",
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          },
+          "ratios": {
+            "columns": [
+              "Year",
+              "ROE",
+              "ROA",
+              "Current Ratio",
+              "Debt/Equity",
+              "Net Margin",
+              "Gross Margin",
+              "Operating Margin",
+              "Cash Ratio"
+            ],
+            "rows": [
+              [
+                "2023",
+                null,
+                null,
+                null,
+                null,
+                0.157903,
+                null,
+                0.241321,
+                null
+              ],
+              [
+                "2024",
+                null,
+                null,
+                null,
+                null,
+                0.459457,
+                null,
+                0.84762,
+                null
+              ]
+            ]
+          }
+        },
+        "key_findings": [
+          "Processed years available for reporting: 2023, 2024.",
+          "Latest year 2024 revenue was 97592.685 and net profit was 44839.632.",
+          "Overall analysis indicates weak financial health and elevated diligence requirements (Risk: medium, Reliability: low)."
+        ],
+        "anomalies": [],
+        "validation_summary": [
+          "Processed years: 2023, 2024",
+          "Validation warnings for year 2023: Net Income Linkage failed",
+          "Validation warnings for year 2024: Net Income Linkage failed"
+        ],
+        "financial_health_score": 33.33,
+        "risk_score": 50.0,
+        "scores": {
+          "reliability_score": 33.33,
+          "risk_score": 50.0,
+          "confidence_score": 0.3,
+          "risk_level": "medium",
+          "reliability_band": "low"
+        },
+        "evaluated_equations_by_year": {
+          "2023": {
+            "Gross Margin": "Gross Profit (None) / Revenue (149499.661)",
+            "Operating Margin": "Operating Profit (36077.406) / Revenue (149499.661)",
+            "Net Profit Margin": "Net Profit (23606.491) / Revenue (149499.661)",
+            "Return on Assets (ROA)": "Net Profit (23606.491) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (23606.491) / Equity (None)",
+            "EBIT Margin": "Operating Profit (36077.406) / Revenue (149499.661)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (36077.406) / Finance Cost (186503.55)",
+            "Asset Turnover": "Revenue (149499.661) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (149499.661) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (23606.491)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          },
+          "2024": {
+            "Gross Margin": "Gross Profit (None) / Revenue (97592.685)",
+            "Operating Margin": "Operating Profit (82721.516) / Revenue (97592.685)",
+            "Net Profit Margin": "Net Profit (44839.632) / Revenue (97592.685)",
+            "Return on Assets (ROA)": "Net Profit (44839.632) / Total Assets (None)",
+            "Return on Equity (ROE)": "Net Profit (44839.632) / Equity (None)",
+            "EBIT Margin": "Operating Profit (82721.516) / Revenue (97592.685)",
+            "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
+            "Quick Ratio": "(Current Assets (None) - Inventory (None)) / Current Liabilities (None)",
+            "Cash Ratio": "Cash (None) / Current Liabilities (None)",
+            "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+            "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+            "Interest Coverage": "Operating Profit (82721.516) / Finance Cost (130478.678)",
+            "Asset Turnover": "Revenue (97592.685) / Total Assets (None)",
+            "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
+            "Receivables Turnover": "Revenue (97592.685) / Receivables (None)",
+            "Operating Cash Flow Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (44839.632)",
+            "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
+          }
+        }
+      },
+      "stages": {
+        "extraction": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.178355",
+          "end_time": "2026-05-04T17:19:30.178355"
+        },
+        "analysis": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.182866",
+          "end_time": "2026-05-04T17:19:30.182866"
+        },
+        "report": {
+          "status": "completed",
+          "start_time": "2026-05-04T17:19:30.183918",
+          "end_time": "2026-05-04T17:19:30.183918"
+        }
+      },
+      "logs": [
+        "[2026-05-04T17:19:30] Converting Gemini output to strict extraction dataset",
+        "[2026-05-04T17:19:30] Strict extraction built: 2 years detected",
+        "[2026-05-04T17:19:30] Running strict analysis",
+        "[2026-05-04T17:19:30] Analysis complete. Valid years: []",
+        "[2026-05-04T17:19:30] Generating strict report",
+        "[2026-05-04T17:19:30] Report generation complete"
+      ]
+    }
+  }
+]

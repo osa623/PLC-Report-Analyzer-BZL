@@ -1,17 +1,25 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
+from typing import List
 import os
 import uuid
 import asyncio
 import json
+from pydantic import BaseModel
 
 from platform_core.job_framework import RedisQueue
 from . import storage
+from .full_pipeline import run_full_pipeline
 
 app = FastAPI(title="pipeline_orchestrator", version="0.1")
 
 # Use Redis queue name 'pipeline:jobs'
 queue = RedisQueue("pipeline:jobs", url=os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
+
+
+class RunFullPipelineRequest(BaseModel):
+    pdf_paths: List[str]
+    report_id: str | None = None
 
 
 @app.post("/submit")
@@ -61,6 +69,36 @@ async def result(job_id: str):
 @app.get("/healthz")
 async def healthz():
     return JSONResponse({"status": "ok"})
+
+
+@app.post("/run-full-pipeline")
+async def run_full_pipeline_endpoint(request: RunFullPipelineRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(run_full_pipeline, request.pdf_paths, request.report_id)
+    return JSONResponse({"status": "started", "report_id": request.report_id})
+
+
+@app.post("/upload-batch")
+async def upload_batch(background_tasks: BackgroundTasks, pdf_files: List[UploadFile] = File(...)):
+    """Accept up to 5 PDF files, save to temp folder, and run the full pipeline."""
+    pdf_files = [f for f in pdf_files if f.filename and f.filename.lower().endswith(".pdf")]
+    if not pdf_files:
+        raise HTTPException(status_code=400, detail="No PDF files provided")
+    if len(pdf_files) > 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 PDFs per batch")
+
+    report_id = str(uuid.uuid4())
+    tmp_dir = os.environ.get("PIPELINE_TMP", "./tmp/pipeline_orchestrator")
+    batch_dir = os.path.join(tmp_dir, report_id)
+    os.makedirs(batch_dir, exist_ok=True)
+
+    for pdf_file in pdf_files:
+        out_path = os.path.join(batch_dir, pdf_file.filename)
+        with open(out_path, "wb") as f:
+            f.write(await pdf_file.read())
+
+    # Run the full pipeline in background thread
+    background_tasks.add_task(run_full_pipeline, batch_dir, report_id)
+    return JSONResponse({"status": "started", "report_id": report_id})
 
 
 def start():

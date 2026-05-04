@@ -56,10 +56,14 @@ class StatementImageSaver:
         # Get Poppler path from config
         poppler_path = None
         try:
-            from config.ocr_config import POPPLER_PATH
+            from services.extraction_service.config.ocr_config import POPPLER_PATH
             poppler_path = POPPLER_PATH
         except ImportError:
-            pass
+            try:
+                from config.ocr_config import POPPLER_PATH
+                poppler_path = POPPLER_PATH
+            except ImportError:
+                pass
         
         # Process each statement
         for statement_name, candidates in page_locations.items():

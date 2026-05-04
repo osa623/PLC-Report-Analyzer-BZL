@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
-const { triggerExtract, triggerAnalyze, triggerGenerateReport } = require('../services/pipelineClient');
+const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline } = require('../services/pipelineClient');
 
 const router = Router();
 
@@ -668,6 +668,13 @@ async function markReportingSkipped(reportId, analysisPayload = {}) {
 }
 
 async function startPipeline(reportId, filePath) {
+  // Batch mode: if filePath is an array with multiple items, use the pipeline orchestrator
+  if (Array.isArray(filePath) && filePath.length > 1) {
+    const result = await triggerFullPipeline(reportId, filePath);
+    return result.data;
+  }
+
+  // Single-file mode: use per-service HTTP calls (existing flow)
   const extract = await triggerExtract(reportId, filePath);
   const analyze = await triggerAnalyze(reportId);
 
@@ -710,6 +717,7 @@ function inferFailedStage(error) {
   if (url.includes('/extract')) return 'EXTRACTION';
   if (url.includes('/analyze')) return 'ANALYSIS';
   if (url.includes('/generate-report')) return 'REPORTING';
+  if (url.includes('/run-full-pipeline')) return 'EXTRACTION';
   return 'EXTRACTION';
 }
 

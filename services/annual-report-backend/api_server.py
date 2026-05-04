@@ -36,6 +36,12 @@ from src.services.gemini_service import (
     FULL_REPORT_SECTION_CONFIGS,
 )
 
+from pipeline_bridge import (
+    PIPELINE_AVAILABLE,
+    run_pipeline_stages,
+    save_pipeline_logs,
+)
+
 # ── Flask Setup ───────────────────────────────────────────────────────
 app = Flask(__name__)
 CORS(app)
@@ -50,6 +56,7 @@ pdf_registry: dict = {}          # pdf_id -> {path, filename, ...}
 progress_queues: dict = {}       # pdf_id -> Queue for SSE progress
 full_report_jobs: dict = {}      # job_id -> {status, result, error, filename, created_at}
 full_report_progress_queues: dict = {}  # job_id -> Queue for full-report SSE progress
+pipeline_results: dict = {}              # job_id -> {extraction, analysis, report, stages}
 
 # Initialize Gemini extractor
 try:
@@ -97,15 +104,46 @@ def _start_full_report_job(job_id, pdf_path, filename):
     def runner():
         try:
             full_report_jobs[job_id]["status"] = "running"
+
+            # ── Stage 1: Gemini extraction ──
+            progress_cb(1, 5, "Extracting financial statements...", {"pipeline_stage": "extraction", "status": "running"})
             result = gemini_extractor.extract_full_report(str(pdf_path), progress_callback=progress_cb)
-            full_report_jobs[job_id]["status"] = "completed"
-            full_report_jobs[job_id]["result"] = result
+
             extraction_results[job_id] = {
                 "data": result,
                 "filename": filename,
                 "extracted_at": datetime.now().isoformat(),
             }
-            q.put({"job_id": job_id, "step": -1, "total": -1, "message": "done", "details": {}})
+
+            # ── Stages 2-3: Analysis + Report (via pipeline bridge) ──
+            pipeline_result = None
+            if PIPELINE_AVAILABLE:
+                try:
+                    pipeline_result = run_pipeline_stages(
+                        gemini_result=result,
+                        filename=filename,
+                        progress_callback=progress_cb,
+                    )
+                    pipeline_results[job_id] = pipeline_result
+                    save_pipeline_logs(job_id, pipeline_result)
+                    logger.info("Pipeline completed for job %s", job_id)
+                except Exception as pipe_exc:
+                    logger.error("Pipeline stages failed for %s: %s", job_id, pipe_exc, exc_info=True)
+                    pipeline_results[job_id] = {
+                        "extraction": {},
+                        "analysis": {"status": "PIPELINE_ERROR", "error": str(pipe_exc)},
+                        "report": {"status": "PIPELINE_ERROR", "error": str(pipe_exc)},
+                        "stages": {"extraction": {"status": "completed"}, "analysis": {"status": "failed"}, "report": {"status": "failed"}},
+                    }
+            else:
+                logger.warning("Pipeline modules unavailable — returning extraction only")
+
+            full_report_jobs[job_id]["status"] = "completed"
+            full_report_jobs[job_id]["result"] = result
+            if pipeline_result:
+                full_report_jobs[job_id]["pipeline"] = pipeline_result
+
+            q.put({"job_id": job_id, "step": -1, "total": -1, "message": "done", "details": {"pipeline_stage": "completed", "status": "completed"}})
         except Exception as exc:
             full_report_jobs[job_id]["status"] = "failed"
             full_report_jobs[job_id]["error"] = str(exc)
@@ -258,6 +296,45 @@ def full_report_result(job_id):
         "job_id": job_id,
         "status": job["status"],
     }), 202
+
+
+@app.route('/api/pipeline-result/<job_id>', methods=['GET'])
+def get_pipeline_result(job_id):
+    """Return the full pipeline result (extraction + analysis + report) for a job."""
+    # Check in pipeline_results first
+    pr = pipeline_results.get(job_id)
+    if pr:
+        return jsonify({
+            "success": True,
+            "job_id": job_id,
+            "pipeline": pr,
+        }), 200
+
+    # Fall back to full_report_jobs
+    job = full_report_jobs.get(job_id)
+    if not job:
+        return jsonify({"error": f"Job '{job_id}' not found"}), 404
+
+    if job.get("pipeline"):
+        return jsonify({
+            "success": True,
+            "job_id": job_id,
+            "pipeline": job["pipeline"],
+        }), 200
+
+    if job["status"] in ("queued", "running"):
+        return jsonify({
+            "success": True,
+            "job_id": job_id,
+            "status": job["status"],
+            "pipeline": None,
+        }), 202
+
+    return jsonify({
+        "success": False,
+        "job_id": job_id,
+        "error": "Pipeline result not available",
+    }), 404
 
 
 @app.route('/api/upload-pdf', methods=['POST'])
