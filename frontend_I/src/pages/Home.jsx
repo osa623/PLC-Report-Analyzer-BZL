@@ -21,6 +21,7 @@ import {
     ScaleIcon,
     ShieldCheckIcon,
     DocumentArrowDownIcon,
+    BoltIcon,
 } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
@@ -318,6 +319,8 @@ const Home = () => {
     const [fullReportProgress, setFullReportProgress] = useState(null);
     const [reportGenerating, setReportGenerating] = useState(false);
     const [analysisBundle, setAnalysisBundle] = useState(null);
+
+    // ── Pipeline state (removed — now navigates to /pipeline) ──
 
     const persistSession = useCallback((patch = {}) => {
         try {
@@ -654,6 +657,45 @@ const Home = () => {
         finally { setExporting(null); }
     };
 
+    // -- Run Full Pipeline ---------------------------------------------------
+    const handleRunFullPipeline = async () => {
+        if (!file || uploading) return;
+        const files = file instanceof File ? [file] : Array.isArray(file) ? file : [];
+        if (files.length === 0) {
+            setError('No file available. Please upload a PDF first.');
+            return;
+        }
+        setUploading(true);
+        setError(null);
+        try {
+            const companyName = files[0]?.name?.replace(/\.pdf$/i, '') || 'Unknown Company';
+            const res = await pdfService.runFullPipeline(files, {
+                symbol: 'UNKNOWN',
+                name: companyName,
+                sector: 'Diversified',
+            });
+            const reportId = res?.report_id;
+            if (!reportId) throw new Error('No report_id returned from pipeline');
+            useCredit();
+            // Persist session so PipelineApp picks it up immediately
+            const fileCount = files.length;
+            const pipelineSession = {
+                reportId,
+                companyInfo: `${companyName} — Diversified • ${fileCount} file${fileCount > 1 ? 's' : ''}`,
+                contextTab: 'Pipeline Overview',
+                currencyTarget: 'LKR',
+                updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem('plc.pipeline.currentReport.v1', JSON.stringify(pipelineSession));
+            // Navigate to the pipeline dashboard
+            navigate('/pipeline');
+        } catch (err) {
+            setError(err?.response?.data?.error || err?.message || 'Failed to start pipeline');
+        } finally {
+            setUploading(false);
+        }
+    };
+
     // -- Reset ---------------------------------------------------------------
     const handleReset = () => {
         setFile(null); setPdfId(null); setSectionStates({}); setActiveSection(null);
@@ -784,16 +826,26 @@ const Home = () => {
                                 Ready
                             </span>
                         </div>
-                        <button
-                            onClick={handleExtractAll}
-                            disabled={extractingAll || anyBusy}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
-                                hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
-                        >
-                            {extractingAll
-                                ? <><ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> Extracting...</>
-                                : <><DocumentArrowDownIcon className="w-3.5 h-3.5" /> Extract All</>}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleRunFullPipeline}
+                                disabled={extractingAll || anyBusy || uploading}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white
+                                    hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
+                            >
+                                <BoltIcon className="w-3.5 h-3.5" /> Full Pipeline
+                            </button>
+                            <button
+                                onClick={handleExtractAll}
+                                disabled={extractingAll || anyBusy}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
+                                    hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
+                            >
+                                {extractingAll
+                                    ? <><ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> Extracting...</>
+                                    : <><DocumentArrowDownIcon className="w-3.5 h-3.5" /> Extract All</>}
+                            </button>
+                        </div>
                     </div>
 
                     {fullReportProgress && (
@@ -842,8 +894,8 @@ const Home = () => {
                                             className={`rounded-2xl border p-4 transition-all duration-200 ease-apple select-none
                                                 ${isExtracting ? 'border-indigo-200/80 bg-indigo-50/20 cursor-wait shadow-apple-sm'
                                                     : isActive ? 'border-slate-900 bg-white shadow-apple cursor-pointer ring-1 ring-slate-900'
-                                                    : isErr ? 'border-red-200/80 bg-red-50/20 cursor-pointer shadow-apple-sm'
-                                                    : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple cursor-pointer shadow-apple-sm'}`}
+                                                        : isErr ? 'border-red-200/80 bg-red-50/20 cursor-pointer shadow-apple-sm'
+                                                            : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple cursor-pointer shadow-apple-sm'}`}
                                         >
                                             {/* top row: icon + title + badge */}
                                             <div className="flex items-start gap-3">
@@ -982,6 +1034,7 @@ const Home = () => {
                     )}
                 </div>
             )}
+
             {/* Insufficient credits modal */}
             <InsufficientCreditsModal open={showCreditModal} onClose={() => setShowCreditModal(false)} />
         </div>

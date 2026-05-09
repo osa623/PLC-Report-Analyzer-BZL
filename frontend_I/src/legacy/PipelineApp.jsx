@@ -9,6 +9,7 @@ import ConfidenceChart from './components/ConfidenceChart';
 import QualitySummary from './components/QualitySummary';
 import UploadCard from './components/UploadCard';
 import TrendCharts from './components/TrendCharts';
+import PipelineWorkflowMap from '../components/PipelineWorkflowMap';
 import { AlertTriangle, X } from 'lucide-react';
 import {
   checkHealth,
@@ -351,69 +352,11 @@ export default function PipelineApp() {
       <PipelineStepper stages={stages} />
 
       {Array.isArray(documentStatuses?.documents) && documentStatuses.documents.length > 0 && (
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-[14px] font-semibold text-slate-900 tracking-[-0.025em]">Document Processing Threads</div>
-            <div className="text-[11px] text-slate-500 tracking-[-0.01em]">
-              {documentStatuses?.counts?.completed || 0}/{documentStatuses?.counts?.total || 0} completed
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    ((documentStatuses?.counts?.completed || 0) /
-                      Math.max(documentStatuses?.counts?.total || 0, 1)) *
-                      100
-                  )}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] tracking-wide uppercase">
-              <span className="px-2 py-0.5 rounded-lg border border-slate-200/80 bg-slate-50 text-slate-500">
-                queued {documentStatuses?.counts?.queued || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-slate-900 bg-slate-900 text-white">
-                running {documentStatuses?.counts?.running || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-green-200/60 bg-green-50/80 text-green-700">
-                completed {documentStatuses?.counts?.completed || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-red-200/60 bg-red-50/80 text-red-700">
-                failed {documentStatuses?.counts?.failed || 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
-            {documentStatuses.documents.map((doc, idx) => {
-              const status = doc.status || 'queued';
-              const badgeClass =
-                status === 'completed' ? 'bg-green-50/80 text-green-700 border-green-200/60' :
-                status === 'running' ? 'bg-slate-900 text-white border-slate-900' :
-                status === 'failed' ? 'bg-red-50/80 text-red-700 border-red-200/60' :
-                'bg-slate-50 text-slate-500 border-slate-200/80';
-
-              const shortName = String(doc.file_path || `document-${idx + 1}`).split(/[/\\]/).pop();
-              return (
-                <div key={`${doc.file_path || 'doc'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 flex flex-col justify-between">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="text-[12px] font-medium text-slate-700 truncate tracking-[-0.01em]" title={shortName}>{shortName}</div>
-                    <span className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap ${badgeClass}`}>{status}</span>
-                  </div>
-                  <div className="mt-auto text-[10px] text-slate-400 tracking-[-0.01em] flex justify-between">
-                    <span>{typeof doc.chunk_count === 'number' ? `${doc.chunk_count} chunks` : 'Waiting'}</span>
-                    <span>{typeof doc.duration_ms === 'number' ? `${(doc.duration_ms / 1000).toFixed(1)}s` : ''}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <PipelineWorkflowMap
+          stagesData={stagesData}
+          documentStatuses={documentStatuses}
+          workflowState={workflowState}
+        />
       )}
 
       {/* Responsive overview grid — Compacted to 2 columns by moving Errors out */}

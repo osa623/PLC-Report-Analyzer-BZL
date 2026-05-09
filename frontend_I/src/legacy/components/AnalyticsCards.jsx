@@ -26,9 +26,9 @@ function formatCurrency(value, currency = 'LKR') {
   const prefix = currency === 'USD' ? '$' : 'LKR ';
   const abs = Math.abs(value);
   if (abs >= 1e9) return `${prefix}${(value / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${prefix}${(value / 1e6).toFixed(2)}M`;
-  if (abs >= 1e3) return `${prefix}${(value / 1e3).toFixed(1)}K`;
-  return `${prefix}${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  if (abs >= 1e6) return `${prefix}${Math.round(value / 1e6).toLocaleString('en-US')}M`;
+  if (abs >= 1e3) return `${prefix}${Math.round(value).toLocaleString('en-US')}`;
+  return `${prefix}${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 }
 
 function formatMetricByKey(key, value, currency = 'LKR') {

@@ -30,10 +30,20 @@ const parseNumericValue = (value) => {
 
 const formatNumber = (value) => {
   if (!Number.isFinite(value)) return value;
-  const hasFraction = Math.abs(value % 1) > 0;
-  return value.toLocaleString('en-US', hasFraction
-    ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-    : undefined);
+  const absVal = Math.abs(value);
+  // For large financial figures, show as whole numbers with comma separators
+  // to avoid ambiguous decimals (e.g. 145.401 could be misread)
+  if (absVal >= 1) {
+    const hasMeaningfulFraction = Math.abs(value % 1) > 0.005;
+    if (hasMeaningfulFraction && absVal < 1000) {
+      // Small values with fractions (e.g. EPS 28.65) — keep 2 decimals
+      return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    // Large values — show as integers with comma separators
+    return Math.round(value).toLocaleString('en-US');
+  }
+  // Ratios and percentages (< 1) — keep decimals
+  return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 };
 
 const InteractiveDataTable = ({ section }) => {
