@@ -252,8 +252,8 @@ def _field_map(statement_key: str, label: str) -> str | None:
 
     if statement_key == "income_statement":
         mapping = [
-            ("gross income", "revenue_or_gross_income"),
-            ("interest income", "revenue_or_interest_income"),
+            ("gross income", "revenue"),
+            ("interest income", "interest_income"),
             ("net interest income", "net_interest_income"),
             ("less: interest expenses", "interest_expense"),
             ("fee and commission income", "fee_and_commission_income"),
