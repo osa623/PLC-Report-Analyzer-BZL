@@ -176,6 +176,103 @@ export const pdfService = {
   },
 
   /**
+   * Run the full pipeline (extraction → analysis → reporting) for multiple PDFs.
+   * @param {File[]} files - Array of PDF files to process (max 5)
+   * @returns {{ report_id, workflow_state, message }}
+   */
+  runFullPipeline: async (files) => {
+    const formData = new FormData();
+    (files || []).forEach((file) => formData.append('report', file));
+    const response = await gatewayApi.post('/intelligence/reports', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 600000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Poll pipeline stages for a report.
+   * @param {string} reportId
+   * @returns {{ report_id, workflow_state, stages, extraction_substages }}
+   */
+  getPipelineStages: async (reportId) => {
+    const response = await gatewayApi.get(`/intelligence/pipeline/${reportId}/stages`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get full report data.
+   * @param {string} reportId
+   * @returns {object} Full report payload
+   */
+  getReport: async (reportId) => {
+    const response = await gatewayApi.get(`/intelligence/reports/${reportId}`, {
+      timeout: 60000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get per-document processing statuses for a pipeline report.
+   * @param {string} reportId
+   * @returns {{ report_id, documents, counts }}
+   */
+  getDocumentStatuses: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/documents`, {
+      timeout: 15000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get validated (canonical) data after analysis completes.
+   * @param {string} reportId
+   * @returns {{ report_id, validated }}
+   */
+  getValidatedData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/validated`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get analytics data (ratios, patterns, risk, confidence).
+   * @param {string} reportId
+   * @returns {{ report_id, ratios, patterns, risk, sector_kpis, confidence, analysis_coverage }}
+   */
+  getAnalyticsData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/analytics`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get validation errors and diagnostics.
+   * @param {string} reportId
+   * @returns {{ report_id, error_catalog, missing_values, ... }}
+   */
+  getErrorsData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/errors`, {
+      timeout: 15000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get the download URL for a completed report.
+   * @param {string} reportId
+   * @returns {string}
+   */
+  getReportDownloadUrl: (reportId) => {
+    const base = import.meta.env.VITE_GATEWAY_URL || '/api';
+    return `${base}/reports/${reportId}/download`;
+  },
+
+  /**
    * Health check
    */
   healthCheck: async () => {

@@ -25,11 +25,24 @@ def _safe_div(numerator: float | None, denominator: float | None) -> float | Non
     return n / d
 
 
-def _extract_year(period: str | None) -> str:
+def _extract_year(period: str | None) -> str | None:
     if not period:
-        return "latest"
-    match = re.search(r"\b(19|20)\d{2}\b", period)
-    return match.group(0) if match else "latest"
+        return None
+    text = str(period)
+
+    # Pattern: YYYY/YY (e.g. 2024/23) -> include both years.
+    slash_match = re.search(r"\b((?:19|20)\d{2})\s*/\s*(\d{2})\b", text)
+    if slash_match:
+        left = int(slash_match.group(1))
+        right_two = int(slash_match.group(2))
+        left_century = (left // 100) * 100
+        right = left_century + right_two
+        if right > left:
+            right -= 100
+        return str(max(left, right))
+
+    match = re.search(r"\b((?:19|20)\d{2})\b", text)
+    return match.group(1) if match else None
 
 
 def _normalize_label(label: str) -> str:
@@ -51,23 +64,51 @@ def _build_statement_maps(validated: CanonicalValidatedReport) -> dict[str, dict
 
     for item in validated.financial_statements.income_statement:
         year = _extract_year(item.period)
+        if year is None:
+            continue
         value = _to_number(item.value)
         if value is not None:
             grouped["income_statement"][year][_normalize_label(item.label)] = value
 
     for item in validated.financial_statements.balance_sheet:
         year = _extract_year(item.period)
+        if year is None:
+            continue
         value = _to_number(item.value)
         if value is not None:
             grouped["balance_sheet"][year][_normalize_label(item.label)] = value
 
     for item in validated.financial_statements.cashflow:
         year = _extract_year(item.period)
+        if year is None:
+            continue
         value = _to_number(item.value)
         if value is not None:
             grouped["cashflow"][year][_normalize_label(item.label)] = value
 
     return grouped
+
+
+def _collect_statement_years(validated: CanonicalValidatedReport) -> list[str]:
+    years: set[str] = set()
+    for item in validated.financial_statements.income_statement:
+        year = _extract_year(item.period)
+        if year:
+            years.add(year)
+    for item in validated.financial_statements.balance_sheet:
+        year = _extract_year(item.period)
+        if year:
+            years.add(year)
+    for item in validated.financial_statements.cashflow:
+        year = _extract_year(item.period)
+        if year:
+            years.add(year)
+    for item in validated.financial_statements.equity:
+        year = _extract_year(item.period)
+        if year:
+            years.add(year)
+
+    return sorted([y for y in years if y.isdigit()], key=lambda y: int(y))
 
 
 def _find_value(statement: dict[str, float], candidates: list[str]) -> float | None:
@@ -118,6 +159,9 @@ METRIC_ALIASES: dict[str, list[str]] = {
     "revenue": ["revenue", "turnover", "gross income", "total revenue", "sales", "interest income"],
     "net_profit": ["profit after tax", "net income", "net profit", "profit for the year", "profit attributable"],
     "operating_profit": ["operating profit", "operating income", "ebit"],
+    "operating_expenses": ["operating expenses", "operating expense", "total operating expenses"],
+    "profit_before_tax": ["profit before tax", "profit before taxation", "pbt"],
+    "tax_expense": ["income tax expense", "tax expense", "income tax", "tax charge"],
     "gross_profit": ["gross profit"],
     "cost_of_revenue": ["cost of revenue", "cost of goods sold", "cogs", "cost of sales"],
     "eps": ["eps", "earnings per share", "basic earnings per share"],
@@ -127,6 +171,7 @@ METRIC_ALIASES: dict[str, list[str]] = {
     "cash": ["cash and equivalents", "cash", "cash equivalents", "cash and cash equivalents"],
     "total_assets": ["total assets", "assets"],
     "equity": ["shareholder equity", "shareholders equity", "total equity", "equity"],
+    "intangible_assets": ["intangible assets", "goodwill", "intangible asset"],
     "total_liabilities": ["total liabilities", "liabilities"],
     "total_debt": ["debt", "total debt", "borrowings", "interest bearing debt"],
     "interest_expense": ["interest expense", "finance costs", "finance expense"],
@@ -142,6 +187,7 @@ METRIC_ALIASES: dict[str, list[str]] = {
     "net_cash_change": ["net cash flow", "net increase in cash", "net change in cash"],
     "capex": ["capital expenditure", "capex", "purchase of property plant and equipment"],
     "dividends_paid": ["dividends paid", "dividend paid"],
+    "dividend_per_share": ["dividend per share", "dps"],
     "shares_outstanding": ["shares outstanding", "number of shares", "weighted average shares"],
     "book_value_per_share": ["book value per share", "nav per share"],
     "price": ["share price", "market price"],
@@ -151,52 +197,58 @@ METRIC_ALIASES: dict[str, list[str]] = {
 
 
 INSTITUTIONAL_RATIO_KEYS: list[str] = [
+    "revenue",
+    "net_income",
     "revenue_growth_yoy",
     "net_profit_growth_yoy",
     "operating_profit_growth_yoy",
     "eps_growth_yoy",
     "asset_growth_yoy",
     "equity_growth_yoy",
-    "gross_margin",
-    "ebitda_margin",
-    "operating_margin",
-    "net_margin",
+    "gross_profit_margin",
+    "net_profit_margin",
+    "effective_tax_rate",
+    "operating_expense_ratio",
+    "earnings_growth_rate",
+    "ebit_growth_vs_revenue_growth",
+    "expense_elasticity",
+    "tangible_net_worth",
+    "capital_employed",
+    "equity_ratio",
+    "net_asset_value",
+    "net_asset_growth_rate",
+    "equity_buffer_ratio",
+    "net_debt_issued_repaid",
+    "net_cash_flow",
+    "ocf_to_debt_ratio",
+    "cash_flow_to_net_income",
+    "operating_cash_flow_margin",
+    "cash_return_on_assets",
+    "cash_return_on_equity",
     "return_on_equity",
     "return_on_assets",
-    "roe",
-    "roa",
-    "roce",
-    "roic",
     "current_ratio",
     "quick_ratio",
     "cash_ratio",
-    "operating_cash_flow_ratio",
     "debt_to_equity",
     "debt_ratio",
-    "financial_leverage_ratio",
+    "total_assets",
+    "total_liabilities",
+    "total_equity",
     "interest_coverage",
-    "asset_turnover",
-    "inventory_turnover",
-    "inventory_days",
-    "receivable_days",
-    "payable_days",
-    "cash_conversion_cycle",
-    "operating_cashflow_to_net_profit",
-    "free_cash_flow",
-    "free_cash_flow_growth",
-    "cash_conversion_quality_score",
     "eps",
     "book_value_per_share",
+    "dividend_per_share",
     "earnings_yield",
     "dividend_payout_ratio",
-    "retention_ratio",
-    "net_interest_margin",
-    "loan_to_deposit_ratio",
-    "cost_to_income_ratio",
-    "equity_to_assets_proxy",
-    "debt_to_assets",
-    "equity_turnover",
-    "operating_cashflow_to_current_liabilities",
+    "dividend_coverage_ratio",
+    "cash_interest_coverage",
+    "price_to_earnings_ratio",
+    "price_to_book_ratio",
+    "dividend_yield",
+    "market_capitalization",
+    "enterprise_value",
+    "total_cash_flow",
 ]
 
 
@@ -227,8 +279,12 @@ def _compute_year_view(base: dict[str, float | None], prev_base: dict[str, float
     revenue = base.get("revenue")
     net_profit = base.get("net_profit")
     operating_profit = base.get("operating_profit")
+    operating_expenses = base.get("operating_expenses")
+    profit_before_tax = base.get("profit_before_tax")
+    tax_expense = base.get("tax_expense")
     eps = base.get("eps")
     assets = base.get("total_assets")
+    intangible_assets = base.get("intangible_assets")
     equity = base.get("equity")
     liabilities = base.get("total_liabilities")
     current_assets = base.get("current_assets")
@@ -247,7 +303,10 @@ def _compute_year_view(base: dict[str, float | None], prev_base: dict[str, float
     deposits = base.get("deposits")
     operating_income_total = base.get("operating_income_total")
     investing_cash_flow = base.get("investing_cash_flow")
+    financing_cash_flow = base.get("financing_cash_flow")
     capex = base.get("capex")
+    dividends_paid = base.get("dividends_paid")
+    dividend_per_share = base.get("dividend_per_share")
     shares = base.get("shares_outstanding")
     bvps = base.get("book_value_per_share")
     price = base.get("price")
@@ -265,8 +324,22 @@ def _compute_year_view(base: dict[str, float | None], prev_base: dict[str, float
     if capex_proxy is None and isinstance(investing_cash_flow, (int, float)) and investing_cash_flow < 0:
         capex_proxy = abs(float(investing_cash_flow))
     free_cash_flow = operating_cash_flow - capex_proxy if isinstance(operating_cash_flow, (int, float)) and isinstance(capex_proxy, (int, float)) else None
+    total_cash_flow = (
+        float(operating_cash_flow) + float(investing_cash_flow) + float(financing_cash_flow)
+        if all(isinstance(v, (int, float)) for v in [operating_cash_flow, investing_cash_flow, financing_cash_flow])
+        else None
+    )
+    tangible_net_worth = equity - intangible_assets if isinstance(equity, (int, float)) and isinstance(intangible_assets, (int, float)) else equity
+    capital_employed = assets - current_liabilities if isinstance(assets, (int, float)) and isinstance(current_liabilities, (int, float)) else None
+    if eps is None and isinstance(net_profit, (int, float)) and isinstance(shares, (int, float)) and shares != 0:
+        eps = float(net_profit) / float(shares)
+    if dividend_per_share is None and isinstance(dividends_paid, (int, float)) and isinstance(shares, (int, float)) and shares != 0:
+        dividend_per_share = float(dividends_paid) / float(shares)
 
     ratios: dict[str, float] = {}
+
+    _put_first(ratios, "revenue", revenue)
+    _put_first(ratios, "net_income", net_profit)
 
     _put_first(ratios, "revenue_growth_yoy", _yoy(revenue, prev_base.get("revenue")))
     _put_first(ratios, "net_profit_growth_yoy", _yoy(net_profit, prev_base.get("net_profit")))
@@ -274,77 +347,108 @@ def _compute_year_view(base: dict[str, float | None], prev_base: dict[str, float
     _put_first(ratios, "eps_growth_yoy", _yoy(eps, prev_base.get("eps")))
     _put_first(ratios, "asset_growth_yoy", _yoy(assets, prev_base.get("total_assets")))
     _put_first(ratios, "equity_growth_yoy", _yoy(equity, prev_base.get("equity")))
+    _put_first(ratios, "earnings_growth_rate", _yoy(net_profit, prev_base.get("net_profit")))
 
-    _put_first(ratios, "gross_margin", _safe_div(gross_profit, revenue))
-    _put_first(ratios, "ebitda_margin", _safe_div(ebitda, revenue))
-    _put_first(ratios, "operating_margin", _safe_div(operating_profit, revenue))
-    _put_first(ratios, "net_margin", _safe_div(net_profit, revenue))
+    revenue_growth = ratios.get("revenue_growth_yoy")
+    ebit_growth = ratios.get("operating_profit_growth_yoy")
+    expense_growth = _yoy(operating_expenses, prev_base.get("operating_expenses"))
+    _put_first(ratios, "ebit_growth_vs_revenue_growth", _safe_div(ebit_growth, revenue_growth))
+    _put_first(ratios, "expense_elasticity", _safe_div(expense_growth, revenue_growth))
+
+    _put_first(ratios, "gross_profit_margin", _safe_div(gross_profit, revenue))
+    _put_first(ratios, "net_profit_margin", _safe_div(net_profit, revenue))
+    _put_first(ratios, "effective_tax_rate", _safe_div(tax_expense, profit_before_tax))
+    _put_first(ratios, "operating_expense_ratio", _safe_div(operating_expenses, revenue))
+
     _put_first(ratios, "return_on_equity", _safe_div(net_profit, _avg(equity, prev_base.get("equity")) or equity))
     _put_first(ratios, "return_on_assets", _safe_div(net_profit, _avg(assets, prev_base.get("total_assets")) or assets))
-    _put_first(ratios, "roe", ratios.get("return_on_equity"))
-    _put_first(ratios, "roa", ratios.get("return_on_assets"))
-    capital_employed = assets - current_liabilities if isinstance(assets, (int, float)) and isinstance(current_liabilities, (int, float)) else None
-    _put_first(ratios, "roce", _safe_div(operating_profit, capital_employed))
-    invested_capital = (debt if isinstance(debt, (int, float)) else 0.0) + (equity if isinstance(equity, (int, float)) else 0.0)
-    _put_first(ratios, "roic", _safe_div(operating_profit, invested_capital if invested_capital != 0 else None))
+
+    _put_first(ratios, "tangible_net_worth", tangible_net_worth)
+    _put_first(ratios, "capital_employed", capital_employed)
+    _put_first(ratios, "equity_ratio", _safe_div(equity, assets))
+    _put_first(ratios, "net_asset_value", equity)
+    _put_first(ratios, "net_asset_growth_rate", _yoy(equity, prev_base.get("equity")))
+    _put_first(ratios, "equity_buffer_ratio", _safe_div(equity, liabilities))
+    if isinstance(debt, (int, float)) and isinstance(prev_base.get("total_debt"), (int, float)):
+        _put_first(ratios, "net_debt_issued_repaid", float(debt) - float(prev_base.get("total_debt")))
 
     _put_first(ratios, "current_ratio", _safe_div(current_assets, current_liabilities))
     _put_first(ratios, "quick_ratio", _safe_div(quick_assets, current_liabilities))
     _put_first(ratios, "cash_ratio", _safe_div(cash, current_liabilities))
-    _put_first(ratios, "operating_cash_flow_ratio", _safe_div(operating_cash_flow, current_liabilities))
 
     _put_first(ratios, "debt_to_equity", _safe_div(debt, equity))
     _put_first(ratios, "debt_ratio", _safe_div(debt, assets))
-    _put_first(ratios, "financial_leverage_ratio", _safe_div(assets, equity))
+    _put_first(ratios, "total_assets", assets)
+    _put_first(ratios, "total_liabilities", liabilities)
+    _put_first(ratios, "total_equity", equity)
     _put_first(ratios, "interest_coverage", _safe_div(operating_profit, interest_expense))
 
-    _put_first(ratios, "asset_turnover", _safe_div(revenue, assets))
-    inv_turnover = _safe_div(cost_of_revenue, inventory)
-    _put_first(ratios, "inventory_turnover", inv_turnover)
-    inventory_days = 365.0 / inv_turnover if isinstance(inv_turnover, (int, float)) and inv_turnover != 0 else None
-    _put_first(ratios, "inventory_days", inventory_days)
-    _put_first(ratios, "receivable_days", _safe_div(receivables, revenue) * 365.0 if _safe_div(receivables, revenue) is not None else None)
-    _put_first(ratios, "payable_days", _safe_div(payables, cost_of_revenue) * 365.0 if _safe_div(payables, cost_of_revenue) is not None else None)
-    if isinstance(ratios.get("receivable_days"), (int, float)) and isinstance(inventory_days, (int, float)) and isinstance(ratios.get("payable_days"), (int, float)):
-        _put_first(ratios, "cash_conversion_cycle", float(ratios["receivable_days"]) + float(inventory_days) - float(ratios["payable_days"]))
-
-    _put_first(ratios, "operating_cashflow_to_net_profit", _safe_div(operating_cash_flow, net_profit))
-    _put_first(ratios, "free_cash_flow", free_cash_flow)
-    _put_first(ratios, "free_cash_flow_growth", _yoy(free_cash_flow, prev_base.get("free_cash_flow")))
-    ocf_quality = _safe_div(operating_cash_flow, net_profit)
-    if ocf_quality is not None:
-        ocf_quality = max(0.0, min(1.5, ocf_quality)) / 1.5
-    _put_first(ratios, "cash_conversion_quality_score", ocf_quality)
+    _put_first(ratios, "net_cash_flow", total_cash_flow)
+    _put_first(ratios, "ocf_to_debt_ratio", _safe_div(operating_cash_flow, debt))
+    _put_first(ratios, "cash_flow_to_net_income", _safe_div(operating_cash_flow, net_profit))
+    _put_first(ratios, "operating_cash_flow_margin", _safe_div(operating_cash_flow, revenue))
+    _put_first(ratios, "cash_return_on_assets", _safe_div(operating_cash_flow, assets))
+    _put_first(ratios, "cash_return_on_equity", _safe_div(operating_cash_flow, equity))
+    _put_first(ratios, "total_cash_flow", total_cash_flow)
 
     _put_first(ratios, "eps", eps)
     if bvps is None and isinstance(equity, (int, float)) and isinstance(shares, (int, float)) and shares != 0:
         bvps = equity / shares
     _put_first(ratios, "book_value_per_share", bvps)
+    _put_first(ratios, "dividend_per_share", dividend_per_share)
+    _put_first(ratios, "dividend_payout_ratio", _safe_div(dividends_paid, net_profit))
+    _put_first(ratios, "dividend_coverage_ratio", _safe_div(net_profit, dividends_paid))
+    _put_first(ratios, "cash_interest_coverage", _safe_div(operating_cash_flow, interest_expense))
+
+    _put_first(ratios, "price_to_earnings_ratio", _safe_div(price, eps))
+    _put_first(ratios, "price_to_book_ratio", _safe_div(price, bvps))
     _put_first(ratios, "earnings_yield", _safe_div(eps, price))
-    _put_first(ratios, "dividend_payout_ratio", _safe_div(base.get("dividends_paid"), net_profit))
-    if isinstance(ratios.get("dividend_payout_ratio"), (int, float)):
-        _put_first(ratios, "retention_ratio", 1.0 - float(ratios.get("dividend_payout_ratio")))
-
-    # Bank/financial specific ratios (computed when source metrics exist).
-    _put_first(ratios, "net_interest_margin", _safe_div(net_interest_income, assets))
-    _put_first(ratios, "loan_to_deposit_ratio", _safe_div(loans, deposits))
-    _put_first(ratios, "cost_to_income_ratio", _safe_div(base.get("cost_of_revenue"), operating_income_total if operating_income_total is not None else revenue))
-    _put_first(ratios, "equity_to_assets_proxy", _safe_div(equity, assets))
-
-    _put_first(ratios, "debt_to_assets", ratios.get("debt_ratio"))
-    _put_first(ratios, "equity_turnover", _safe_div(revenue, equity))
-    _put_first(ratios, "operating_cashflow_to_current_liabilities", _safe_div(operating_cash_flow, current_liabilities))
+    _put_first(ratios, "dividend_yield", _safe_div(dividend_per_share, price))
+    market_cap = price * shares if isinstance(price, (int, float)) and isinstance(shares, (int, float)) else None
+    _put_first(ratios, "market_capitalization", market_cap)
+    if isinstance(market_cap, (int, float)) and isinstance(debt, (int, float)) and isinstance(cash, (int, float)):
+        _put_first(ratios, "enterprise_value", float(market_cap) + float(debt) - float(cash))
 
     normalized: dict[str, float | None] = {k: ratios.get(k) for k in INSTITUTIONAL_RATIO_KEYS}
     return normalized
 
 
 def compute_ratios(validated: CanonicalValidatedReport) -> dict:
-    grouped = _build_statement_maps(validated)
-
-    years = sorted({*grouped["income_statement"].keys(), *grouped["balance_sheet"].keys(), *grouped["cashflow"].keys()})
+    years = _collect_statement_years(validated)
     if not years:
-        years = ["latest"]
+        return {
+            "by_year": {},
+            "detected_years": [],
+            "latest_year": None,
+            "reporting_periods": {
+                "detected_periods": [],
+                "has_comparatives": False,
+            },
+            "data_coverage": {
+                "missing_or_unverifiable_values": {},
+                "label_standardization": {
+                    "revenue": METRIC_ALIASES["revenue"],
+                    "net_profit": METRIC_ALIASES["net_profit"],
+                    "equity": METRIC_ALIASES["equity"],
+                },
+            },
+            "growth": {},
+            "latest_growth_snapshot": {},
+            "forensic_flags": [],
+            "trend_diagnostics": {
+                "revenue_growth_slope": None,
+                "profit_growth_slope": None,
+                "earnings_volatility": None,
+                "growth_consistency_score": None,
+                "acceleration_signal": "stable_or_insufficient_data",
+            },
+            "limitations": {
+                "growth_metrics_limited": True,
+                "no_extractable_financial_metrics": True,
+            },
+        }
+
+    grouped = _build_statement_maps(validated)
 
     base_by_year: dict[str, dict[str, float | None]] = {}
     for year in years:
@@ -352,6 +456,9 @@ def compute_ratios(validated: CanonicalValidatedReport) -> dict:
             "revenue": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["revenue"]),
             "net_profit": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["net_profit"]),
             "operating_profit": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["operating_profit"]),
+            "operating_expenses": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["operating_expenses"]),
+            "profit_before_tax": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["profit_before_tax"]),
+            "tax_expense": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["tax_expense"]),
             "gross_profit": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["gross_profit"]),
             "cost_of_revenue": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["cost_of_revenue"]),
             "eps": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["eps"]),
@@ -362,6 +469,7 @@ def compute_ratios(validated: CanonicalValidatedReport) -> dict:
             "cash": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["cash"]),
             "total_assets": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["total_assets"]),
             "equity": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["equity"]),
+            "intangible_assets": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["intangible_assets"]),
             "total_liabilities": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["total_liabilities"]),
             "total_debt": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["total_debt"]),
             "receivables": _find_value(grouped["balance_sheet"].get(year, {}), METRIC_ALIASES["receivables"]),
@@ -381,6 +489,7 @@ def compute_ratios(validated: CanonicalValidatedReport) -> dict:
             "net_cash_change": _find_value(grouped["cashflow"].get(year, {}), METRIC_ALIASES["net_cash_change"]),
             "capex": _find_value(grouped["cashflow"].get(year, {}), METRIC_ALIASES["capex"]),
             "dividends_paid": _find_value(grouped["cashflow"].get(year, {}), METRIC_ALIASES["dividends_paid"]),
+            "dividend_per_share": _find_value(grouped["income_statement"].get(year, {}), METRIC_ALIASES["dividend_per_share"]),
         }
 
     per_year: dict[str, dict[str, float]] = {}
@@ -450,6 +559,7 @@ def compute_ratios(validated: CanonicalValidatedReport) -> dict:
             "previous_period": prev_year,
             "revenue_growth_yoy": _yoy(base_by_year.get(latest_year, {}).get("revenue"), base_by_year.get(prev_year, {}).get("revenue")),
             "net_profit_growth_yoy": _yoy(base_by_year.get(latest_year, {}).get("net_profit"), base_by_year.get(prev_year, {}).get("net_profit")),
+            "earnings_growth_rate": _yoy(base_by_year.get(latest_year, {}).get("net_profit"), base_by_year.get(prev_year, {}).get("net_profit")),
             "operating_profit_growth_yoy": _yoy(base_by_year.get(latest_year, {}).get("operating_profit"), base_by_year.get(prev_year, {}).get("operating_profit")),
             "eps_growth_yoy": _yoy(base_by_year.get(latest_year, {}).get("eps"), base_by_year.get(prev_year, {}).get("eps")),
             "asset_growth_yoy": _yoy(base_by_year.get(latest_year, {}).get("total_assets"), base_by_year.get(prev_year, {}).get("total_assets")),

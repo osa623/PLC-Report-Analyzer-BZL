@@ -33,7 +33,7 @@ def compute_risk_signals(ratios: dict) -> dict:
         latest = ratios["by_year"].get(ratios["latest_year"], ratios)
 
     profitability_score, profitability_level = _score_from_threshold(
-        latest.get("net_margin"),
+        latest.get("net_profit_margin"),
         low_is_risky=True,
         warning=0.06,
         critical=0.0,
@@ -51,14 +51,14 @@ def compute_risk_signals(ratios: dict) -> dict:
         critical=2.5,
     )
     cashflow_score, cashflow_level = _score_from_threshold(
-        latest.get("operating_cashflow_to_net_profit"),
+        latest.get("cash_flow_to_net_income"),
         low_is_risky=True,
         warning=0.8,
         critical=0.4,
     )
 
     growth_metrics = ratios.get("growth", {}) if isinstance(ratios.get("growth"), dict) else {}
-    growth_value = growth_metrics.get("revenue_cagr")
+    growth_value = latest.get("earnings_growth_rate") if isinstance(latest.get("earnings_growth_rate"), (int, float)) else growth_metrics.get("revenue_cagr")
     growth_stability_score, growth_stability_level = _score_from_threshold(
         growth_value,
         low_is_risky=True,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Navbar from './components/Navbar';
 import ContextBar from './components/ContextBar';
 import PipelineStepper from './components/PipelineStepper';
@@ -9,6 +9,7 @@ import ConfidenceChart from './components/ConfidenceChart';
 import QualitySummary from './components/QualitySummary';
 import UploadCard from './components/UploadCard';
 import TrendCharts from './components/TrendCharts';
+import PipelineWorkflowMap from '../components/PipelineWorkflowMap';
 import { AlertTriangle, X } from 'lucide-react';
 import {
   checkHealth,
@@ -16,6 +17,7 @@ import {
   fetchStages,
   fetchValidated,
   fetchAnalytics,
+  fetchCurrencyConverted,
   fetchErrors,
   fetchDocumentStatuses,
   downloadReportUrl,
@@ -40,6 +42,9 @@ export default function PipelineApp() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [errorsData, setErrorsData] = useState(null);
   const [documentStatuses, setDocumentStatuses] = useState(null);
+  const [currencyTarget, setCurrencyTarget] = useState('LKR');
+  const [fxRate, setFxRate] = useState(null);
+  const [isConvertingCurrency, setIsConvertingCurrency] = useState(false);
 
   // ─── Context tab ───────────────────────────────────────────
   const [contextTab, setContextTab] = useState('Pipeline Overview');
@@ -53,6 +58,56 @@ export default function PipelineApp() {
   const validatedLoadedRef = useRef(false);
   const errorsLoadedRef = useRef(false);
   const analyticsLoadedRef = useRef(false);
+  const baseValidatedRef = useRef(null);
+  const baseAnalyticsRef = useRef(null);
+  const conversionRequestRef = useRef(0);
+
+  const applyCurrencyView = useCallback(async (id, target) => {
+    if (!id) return;
+    if (target === 'LKR') {
+      if (baseValidatedRef.current) setValidatedData(baseValidatedRef.current);
+      if (baseAnalyticsRef.current) setAnalyticsData(baseAnalyticsRef.current);
+      return;
+    }
+
+    const requestId = Date.now();
+    conversionRequestRef.current = requestId;
+
+    try {
+      setIsConvertingCurrency(true);
+      const converted = await fetchCurrencyConverted(id, target);
+      if (conversionRequestRef.current !== requestId) return;
+
+      if (typeof converted?.fx_rate_lkr_per_usd === 'number') {
+        setFxRate(converted.fx_rate_lkr_per_usd);
+      }
+
+      if (converted?.converted?.validated) {
+        setValidatedData({ report_id: id, validated: converted.converted.validated });
+      }
+
+      if (converted?.converted?.analytics) {
+        const a = converted.converted.analytics;
+        setAnalyticsData({
+          report_id: id,
+          ratios: a.ratios || {},
+          patterns: a.patterns || [],
+          risk: a.risk || {},
+          sector_kpis: a.sector_kpis || {},
+          confidence: a.confidence || {},
+          analysis_coverage: a.analysis_coverage || {},
+          sections: a.sections || {},
+          transparency: a.transparency || {},
+        });
+      }
+    } catch (err) {
+      console.warn('Currency conversion error:', err?.message || err);
+    } finally {
+      if (conversionRequestRef.current === requestId) {
+        setIsConvertingCurrency(false);
+      }
+    }
+  }, []);
 
   const persistPipelineSession = useCallback((patch = {}) => {
     try {
@@ -115,13 +170,18 @@ export default function PipelineApp() {
           const validationDone = stages.stages?.some(
             (s) => s.stage === 'VALIDATION' && s.status === 'completed'
           );
-          if (validationDone) {
+          let shouldRefreshCurrency = false;
+          if (validationDone && !validatedLoadedRef.current) {
             try {
               const vd = await fetchValidated(id);
-              setValidatedData(vd);
+              baseValidatedRef.current = vd;
+              if (currencyTarget === 'LKR') {
+                setValidatedData(vd);
+              }
               validationPayloadLoaded = Boolean(vd?.validated);
               if (validationPayloadLoaded) {
                 validatedLoadedRef.current = true;
+                shouldRefreshCurrency = true;
               }
             } catch (_) {}
 
@@ -138,15 +198,23 @@ export default function PipelineApp() {
           const analyticsDone = stages.stages?.some(
             (s) => s.stage === 'ANALYTICS' && s.status === 'completed'
           );
-          if (analyticsDone) {
+          if (analyticsDone && !analyticsLoadedRef.current) {
             try {
               const ad = await fetchAnalytics(id);
-              setAnalyticsData(ad);
+              baseAnalyticsRef.current = ad;
+              if (currencyTarget === 'LKR') {
+                setAnalyticsData(ad);
+              }
               analyticsPayloadLoaded = Boolean(ad && typeof ad === 'object');
               if (analyticsPayloadLoaded) {
                 analyticsLoadedRef.current = true;
+                shouldRefreshCurrency = true;
               }
             } catch (_) {}
+          }
+
+          if (currencyTarget !== 'LKR' && shouldRefreshCurrency) {
+            await applyCurrencyView(id, currencyTarget);
           }
 
           const canStopCompleted =
@@ -173,7 +241,7 @@ export default function PipelineApp() {
       poll();
       pollRef.current = setInterval(poll, 3000);
     },
-    []
+    [applyCurrencyView, currencyTarget]
   );
 
   useEffect(() => {
@@ -190,6 +258,7 @@ export default function PipelineApp() {
       setReportId(saved.reportId);
       setCompanyInfo(saved.companyInfo || null);
       setContextTab(saved.contextTab || 'Pipeline Overview');
+      setCurrencyTarget(saved.currencyTarget || 'LKR');
       startPolling(saved.reportId);
     } catch (_) {
       // Ignore malformed persisted data.
@@ -206,8 +275,20 @@ export default function PipelineApp() {
       clearPipelineSession();
       return;
     }
-    persistPipelineSession({ reportId, companyInfo, contextTab });
-  }, [reportId, companyInfo, contextTab, clearPipelineSession, persistPipelineSession]);
+    persistPipelineSession({ reportId, companyInfo, contextTab, currencyTarget });
+  }, [reportId, companyInfo, contextTab, currencyTarget, clearPipelineSession, persistPipelineSession]);
+
+  useEffect(() => {
+    if (!reportId) {
+      return;
+    }
+    if (currencyTarget === 'LKR') {
+      if (baseValidatedRef.current) setValidatedData(baseValidatedRef.current);
+      if (baseAnalyticsRef.current) setAnalyticsData(baseAnalyticsRef.current);
+      return;
+    }
+    void applyCurrencyView(reportId, currencyTarget);
+  }, [reportId, currencyTarget, applyCurrencyView]);
 
   // ─── Upload handler ────────────────────────────────────────
   const handleUpload = async (files, company) => {
@@ -218,6 +299,8 @@ export default function PipelineApp() {
     setAnalyticsData(null);
     setErrorsData(null);
     setDocumentStatuses(null);
+    baseValidatedRef.current = null;
+    baseAnalyticsRef.current = null;
 
     try {
       const result = await uploadReport(files, company);
@@ -241,7 +324,18 @@ export default function PipelineApp() {
   };
 
   // ─── Derived values ────────────────────────────────────────
-  const qualityScore = validatedData?.validated?.overall_data_quality_score ?? null;
+  const qualityScore = useMemo(() => {
+    if (typeof analyticsData?.confidence?.overall_data_quality_score === 'number') {
+      return analyticsData.confidence.overall_data_quality_score;
+    }
+    if (typeof analyticsData?.confidence?.score === 'number') {
+      return analyticsData.confidence.score;
+    }
+    if (typeof analyticsData?.confidence?.raw_score === 'number') {
+      return analyticsData.confidence.raw_score;
+    }
+    return validatedData?.validated?.overall_data_quality_score ?? null;
+  }, [analyticsData, validatedData]);
   const stages = stagesData?.stages || [];
   const workflowState = stagesData?.workflow_state || null;
 
@@ -258,75 +352,19 @@ export default function PipelineApp() {
       <PipelineStepper stages={stages} />
 
       {Array.isArray(documentStatuses?.documents) && documentStatuses.documents.length > 0 && (
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="text-[14px] font-semibold text-slate-900 tracking-[-0.025em]">Document Processing Threads</div>
-            <div className="text-[11px] text-slate-500 tracking-[-0.01em]">
-              {documentStatuses?.counts?.completed || 0}/{documentStatuses?.counts?.total || 0} completed
-            </div>
-          </div>
-
-          <div className="mb-3">
-            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-slate-900 transition-all duration-300"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    ((documentStatuses?.counts?.completed || 0) /
-                      Math.max(documentStatuses?.counts?.total || 0, 1)) *
-                      100
-                  )}%`,
-                }}
-              />
-            </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] tracking-wide uppercase">
-              <span className="px-2 py-0.5 rounded-lg border border-slate-200/80 bg-slate-50 text-slate-500">
-                queued {documentStatuses?.counts?.queued || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-slate-900 bg-slate-900 text-white">
-                running {documentStatuses?.counts?.running || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-green-200/60 bg-green-50/80 text-green-700">
-                completed {documentStatuses?.counts?.completed || 0}
-              </span>
-              <span className="px-2 py-0.5 rounded-lg border border-red-200/60 bg-red-50/80 text-red-700">
-                failed {documentStatuses?.counts?.failed || 0}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
-            {documentStatuses.documents.map((doc, idx) => {
-              const status = doc.status || 'queued';
-              const badgeClass =
-                status === 'completed' ? 'bg-green-50/80 text-green-700 border-green-200/60' :
-                status === 'running' ? 'bg-slate-900 text-white border-slate-900' :
-                status === 'failed' ? 'bg-red-50/80 text-red-700 border-red-200/60' :
-                'bg-slate-50 text-slate-500 border-slate-200/80';
-
-              const shortName = String(doc.file_path || `document-${idx + 1}`).split(/[/\\]/).pop();
-              return (
-                <div key={`${doc.file_path || 'doc'}-${idx}`} className="rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 flex flex-col justify-between">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="text-[12px] font-medium text-slate-700 truncate tracking-[-0.01em]" title={shortName}>{shortName}</div>
-                    <span className={`text-[9px] uppercase font-semibold px-1.5 py-0.5 rounded border tracking-wide whitespace-nowrap ${badgeClass}`}>{status}</span>
-                  </div>
-                  <div className="mt-auto text-[10px] text-slate-400 tracking-[-0.01em] flex justify-between">
-                    <span>{typeof doc.chunk_count === 'number' ? `${doc.chunk_count} chunks` : 'Waiting'}</span>
-                    <span>{typeof doc.duration_ms === 'number' ? `${(doc.duration_ms / 1000).toFixed(1)}s` : ''}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <PipelineWorkflowMap
+          stagesData={stagesData}
+          documentStatuses={documentStatuses}
+          workflowState={workflowState}
+        />
       )}
 
       {/* Responsive overview grid — Compacted to 2 columns by moving Errors out */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        <ValidatedDataTable data={validatedData} />
-        <AnalyticsCards analytics={analyticsData} />
+        <ValidatedDataTable data={validatedData} analytics={analyticsData} currency={currencyTarget} />
+        <div style={{ maxHeight: 'auto'}} className="pr-1">
+          <AnalyticsCards analytics={analyticsData} currency={currencyTarget} />
+        </div>
       </div>
 
       {/* Bottom row: charts */}
@@ -335,7 +373,18 @@ export default function PipelineApp() {
         <QualitySummary validatedData={validatedData} errors={errorsData} />
       </div>
 
-      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} currency={currencyTarget} />
+
+      {isConvertingCurrency && currencyTarget === 'USD' && (
+        <div className="card p-4 border border-slate-200/80 bg-white/90">
+          <div className="text-[12px] font-semibold text-slate-600 mb-2 tracking-[-0.01em]">Converting values to USD...</div>
+          <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+            <div className="h-3 rounded bg-slate-100 animate-pulse" />
+            <div className="h-3 rounded bg-slate-100 animate-pulse" />
+            <div className="h-3 rounded bg-slate-100 animate-pulse" />
+          </div>
+        </div>
+      )}
 
       {/* Download section */}
       {(workflowState === 'COMPLETED' || workflowState === 'LOW_CONFIDENCE') && reportId && (
@@ -350,6 +399,13 @@ export default function PipelineApp() {
           </a>
         </div>
       )}
+
+      <div className="text-[11px] text-slate-500 tracking-[-0.01em]">
+        Currency view: <span className="font-semibold text-slate-700">{currencyTarget}</span>
+        {currencyTarget === 'USD' && typeof fxRate === 'number' && (
+          <span> (FX 1 USD = {fxRate} LKR)</span>
+        )}
+      </div>
 
       {/* Low confidence notice */}
       {workflowState === 'LOW_CONFIDENCE' && (
@@ -370,15 +426,15 @@ export default function PipelineApp() {
 
   const renderValidatedDataTab = () => (
     <div className="space-y-5 fade-in">
-      <ValidatedDataTable data={validatedData} />
-      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
+      <ValidatedDataTable data={validatedData} analytics={analyticsData} currency={currencyTarget} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} currency={currencyTarget} />
     </div>
   );
 
   const renderAnalyticsTab = () => (
     <div className="space-y-5 fade-in">
-      <AnalyticsCards analytics={analyticsData} />
-      <TrendCharts validatedData={validatedData} analytics={analyticsData} />
+      <AnalyticsCards analytics={analyticsData} currency={currencyTarget} />
+      <TrendCharts validatedData={validatedData} analytics={analyticsData} currency={currencyTarget} />
     </div>
   );
 
@@ -470,6 +526,8 @@ export default function PipelineApp() {
                       setStagesData(null);
                       setValidatedData(null);
                       setAnalyticsData(null);
+                      baseValidatedRef.current = null;
+                      baseAnalyticsRef.current = null;
                       setErrorsData(null);
                       setCompanyInfo(null);
                       setContextTab('Pipeline Overview');
@@ -509,7 +567,7 @@ export default function PipelineApp() {
                   <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1.5">
                     Analytics Quality Threshold
                   </div>
-                  <div className="text-2xl font-bold text-slate-900 tracking-[-0.025em]">65%</div>
+                  <div className="text-2xl font-bold text-slate-900 tracking-[-0.025em]">85%</div>
                   <div className="text-[11px] text-slate-400 mt-0.5 tracking-[-0.01em]">
                     Reports below this will skip analytics and report generation
                   </div>
@@ -530,6 +588,30 @@ export default function PipelineApp() {
           </div>
         )}
       </main>
+
+      {reportId && (
+        <div className="fixed bottom-6 right-[190px] z-50">
+          <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Currency</span>
+            <button
+              type="button"
+              onClick={() => setCurrencyTarget('LKR')}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${currencyTarget === 'LKR' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              disabled={isConvertingCurrency}
+            >
+              LKR
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrencyTarget('USD')}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${currencyTarget === 'USD' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              disabled={isConvertingCurrency}
+            >
+              USD
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Issues pop-out button Widget ────────────────────────────── */}
       <div className="fixed bottom-6 right-6 z-50">

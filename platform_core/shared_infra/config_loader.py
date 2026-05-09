@@ -2,6 +2,16 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except Exception:
+    load_dotenv = None
+
+
+if load_dotenv is not None:
+    load_dotenv(dotenv_path=Path(__file__).resolve().parents[2] / ".env", override=False)
 
 
 @dataclass
@@ -27,5 +37,5 @@ def load_config(service_name: str, default_port: int) -> ServiceConfig:
         database_url=os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/plc"),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
         llm_model=os.getenv("LLM_MODEL", "gemini-2.0-flash"),
-        llm_api_key=os.getenv("LLM_API_KEY", ""),
+        llm_api_key=os.getenv("GOOGLE_API_KEY", ""),
     )

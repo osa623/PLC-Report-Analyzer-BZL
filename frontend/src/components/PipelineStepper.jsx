@@ -2,14 +2,15 @@ import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, SkipForward } from 'lucide-react';
 
 const STAGE_LABELS = {
-  UPLOAD: 'Upload',
-  PARSING: 'Parsing',
-  STRUCTURE: 'Structure',
-  EXTRACTION: 'Extraction',
-  AGGREGATION: 'Aggregation',
-  VALIDATION: 'Validation',
-  ANALYTICS: 'Analytics',
-  REPORT: 'Report Generation',
+  DOCUMENT_INGESTION: 'Document ingestion',
+  PAGE_CLASSIFICATION: 'Page classification',
+  STATEMENT_DETECTION: 'Financial statement detection',
+  MULTI_EXTRACTOR_EXECUTION: 'Multi-extractor execution',
+  CROSS_EXTRACTOR_RECONCILIATION: 'Cross-extractor reconciliation',
+  ACCOUNTING_VALIDATION: 'Accounting validation',
+  COVERAGE_SCORING_GATE: 'Coverage scoring gate',
+  FINANCIAL_ANALYSIS: 'Financial analysis',
+  REPORT_GENERATION: 'Report generation',
 };
 
 function StepIcon({ status }) {

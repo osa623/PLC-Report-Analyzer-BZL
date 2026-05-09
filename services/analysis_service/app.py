@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -40,6 +41,7 @@ def _detected_years_from_ratios(ratios: dict) -> list[str]:
 
 
 def _trend_limitations(year_count: int) -> list[str]:
+
     if year_count >= 3:
         return []
     if year_count <= 1:
@@ -55,6 +57,7 @@ def _trend_limitations(year_count: int) -> list[str]:
 
 
 def _required_ratio_metric_count(financials: dict[str, Any]) -> int:
+    
     required = [
         "total_assets",
         "total_liabilities",
@@ -82,10 +85,66 @@ def _median(values: list[float]) -> float | None:
     return (vals[mid - 1] + vals[mid]) / 2.0
 
 
+REQUIRED_CHART_METRIC_KEYS: list[str] = [
+    "revenue",
+    "net_income",
+    "gross_profit_margin",
+    "net_profit_margin",
+    "return_on_equity",
+    "return_on_assets",
+    "debt_to_equity",
+    "current_ratio",
+    "total_assets",
+    "total_liabilities",
+    "total_equity",
+    "total_cash_flow",
+]
+
+
+def _sorted_numeric_years(years: list[Any]) -> list[str]:
+    clean = sorted({str(y) for y in years if isinstance(y, str) and y.isdigit()}, key=lambda y: int(y))
+    return clean
+
+
+def _empty_chart_metric_map() -> dict[str, Any]:
+    return {key: None for key in REQUIRED_CHART_METRIC_KEYS}
+
+
+def _enforce_analysis_years_on_ratios(ratios: dict[str, Any], analysis_years: list[str]) -> dict[str, Any]:
+    out = dict(ratios) if isinstance(ratios, dict) else {}
+    years = _sorted_numeric_years(analysis_years)
+    by_year = out.get("by_year") if isinstance(out.get("by_year"), dict) else {}
+    normalized_by_year: dict[str, dict[str, Any]] = {}
+
+    for year in years:
+        src = by_year.get(year) if isinstance(by_year.get(year), dict) else {}
+        row = _empty_chart_metric_map()
+        if isinstance(src, dict):
+            row.update(src)
+        if not isinstance(row.get("net_income"), (int, float)) and isinstance(row.get("net_profit"), (int, float)):
+            row["net_income"] = row.get("net_profit")
+        normalized_by_year[year] = row
+
+    out["by_year"] = normalized_by_year
+    out["detected_years"] = years
+    if years:
+        latest = out.get("latest_year")
+        out["latest_year"] = latest if isinstance(latest, str) and latest in years else years[-1]
+    else:
+        out["latest_year"] = None
+
+    reporting_periods = out.get("reporting_periods") if isinstance(out.get("reporting_periods"), dict) else {}
+    reporting_periods["detected_periods"] = years
+    reporting_periods["has_comparatives"] = len(years) >= 2
+    out["reporting_periods"] = reporting_periods
+    return out
+
+
 def _normalize_year_scale(by_year: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Harmonize obvious unit/scale drift across years (e.g., raw vs thousands)."""
     adjustments: list[dict[str, Any]] = []
     metric_paths = [
+
         "balance_sheet.total_assets",
         "balance_sheet.total_liabilities",
         "balance_sheet.total_equity",
@@ -227,6 +286,8 @@ def _build_data_reliability_report(merged: dict[str, Any], hard_validation: dict
 def _merge_temp_docs(temp_docs: list[dict[str, Any]]) -> dict[str, Any]:
     by_year: dict[str, dict[str, Any]] = {}
     restatement_events: list[dict[str, Any]] = []
+    duplicate_year_merges = 0
+    current_year = datetime.now(timezone.utc).year
 
     def merge_section(
         base: dict[str, Any],
@@ -286,8 +347,14 @@ def _merge_temp_docs(temp_docs: list[dict[str, Any]]) -> dict[str, Any]:
         return out
 
     for doc in temp_docs:
+        if bool(doc.get("is_placeholder_year")):
+            continue
+
         year = str(doc.get("year")) if doc.get("year") is not None else ""
         if not year.isdigit():
+            continue
+        year_int = int(year)
+        if year_int < 1990 or year_int > current_year:
             continue
         source_file = str(doc.get("source_file") or "")
         extraction_confidence = float(doc.get("extraction_confidence", 0.0) or 0.0)
@@ -321,6 +388,8 @@ def _merge_temp_docs(temp_docs: list[dict[str, Any]]) -> dict[str, Any]:
         if not current:
             by_year[year] = candidate
             continue
+
+        duplicate_year_merges += 1
 
         current_bs = current.get("balance_sheet") if isinstance(current.get("balance_sheet"), dict) else {}
         current_inc = current.get("income_statement") if isinstance(current.get("income_statement"), dict) else {}
@@ -390,8 +459,56 @@ def _merge_temp_docs(temp_docs: list[dict[str, Any]]) -> dict[str, Any]:
             if missing not in numeric_years:
                 data_gaps.append(str(missing))
 
+    post_extraction_flags: list[str] = []
+    for year in sorted(by_year.keys(), key=lambda y: int(y) if isinstance(y, str) and y.isdigit() else 0):
+        payload = by_year.get(year, {})
+        bs = payload.get("balance_sheet") if isinstance(payload.get("balance_sheet"), dict) else {}
+        inc = payload.get("income_statement") if isinstance(payload.get("income_statement"), dict) else {}
+
+        assets = bs.get("total_assets")
+        liabilities = bs.get("total_liabilities")
+        equity = bs.get("total_equity")
+        if all(isinstance(v, (int, float)) for v in [assets, liabilities, equity]):
+            lhs = float(assets)
+            rhs = float(liabilities) + float(equity)
+            denom = max(abs(lhs), abs(rhs), 1.0)
+            if abs(lhs - rhs) / denom > 0.05:
+                post_extraction_flags.append(f"balance_sheet_identity_5pct_failed_{year}")
+
+        revenue = inc.get("revenue_or_interest_income")
+        if isinstance(revenue, (int, float)) and float(revenue) < 0:
+            post_extraction_flags.append(f"negative_revenue_detected_{year}")
+
+    for metric_path in [
+        "income_statement.revenue_or_interest_income",
+        "income_statement.net_profit",
+        "balance_sheet.total_assets",
+        "balance_sheet.total_equity",
+    ]:
+        section_name, field_name = metric_path.split(".", 1)
+        prev_val: float | None = None
+        prev_year: str | None = None
+        for year in sorted([y for y in by_year.keys() if isinstance(y, str) and y.isdigit()], key=lambda y: int(y)):
+            section = by_year.get(year, {}).get(section_name) if isinstance(by_year.get(year, {}).get(section_name), dict) else {}
+            cur = section.get(field_name)
+            if not isinstance(cur, (int, float)):
+                continue
+            cur_val = float(cur)
+            if prev_val is not None and abs(prev_val) > 1e-9:
+                yoy = (cur_val - prev_val) / abs(prev_val)
+                gap = 1
+                try:
+                    if prev_year is not None:
+                        gap = max(1, int(year) - int(prev_year))
+                except Exception:
+                    gap = 1
+                if abs(yoy) > (5.0 * float(gap)):
+                    post_extraction_flags.append(f"extreme_yoy_gt_500pct_{metric_path}_{prev_year}_to_{year}")
+            prev_val = cur_val
+            prev_year = year
+
     return {
-        "years": sorted(by_year.keys()),
+        "years": sorted([y for y in by_year.keys() if isinstance(y, str) and y.isdigit()], key=lambda y: int(y)),
         "financials": by_year,
         "financial_values": financial_values,
         "comparative_availability": len(numeric_years) >= 2,
@@ -399,6 +516,8 @@ def _merge_temp_docs(temp_docs: list[dict[str, Any]]) -> dict[str, Any]:
         "restatement_events": restatement_events,
         "scale_adjustments": scale_adjustments,
         "cross_statement_adjustments": cross_statement_adjustments,
+        "duplicate_year_merges": duplicate_year_merges,
+        "post_extraction_flags": sorted(set(post_extraction_flags)),
     }
 
 
@@ -483,8 +602,8 @@ def _latest_ratio_coverage(ratios: dict[str, Any]) -> float:
     if not isinstance(latest, dict):
         return 0.0
     numeric_count = len([v for v in latest.values() if isinstance(v, (int, float))])
-    # 13 primary ratios are expected from ratio_engine.
-    return min(1.0, numeric_count / 13.0)
+    # v2 engine expects a wider ratio surface; use 20 as coverage normalization base.
+    return min(1.0, numeric_count / 20.0)
 
 
 def _safe_rel_diff(a: float, b: float) -> float:
@@ -499,7 +618,8 @@ def _apply_ratio_guardrails(ratios: dict[str, Any]) -> tuple[dict[str, Any], lis
     guards = {
         "revenue_growth_yoy": (-0.50, 1.50),
         "net_profit_growth_yoy": (-0.50, 1.50),
-        "roe": (-0.50, 0.60),
+        "return_on_equity": (-0.50, 0.60),
+        "net_profit_margin": (-0.50, 0.80),
         "debt_to_equity": (0.0, 10.0),
         "interest_coverage": (0.0, 50.0),
     }
@@ -707,6 +827,27 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
         issues.extend(validate_cross_statement(canonical_raw))
         issues.extend(detect_anomalies(canonical_raw))
 
+        post_extraction_flags = merged.get("post_extraction_flags") if isinstance(merged.get("post_extraction_flags"), list) else []
+        for flag in post_extraction_flags:
+            if not isinstance(flag, str):
+                continue
+            issues.append(
+                ValidationIssue(
+                    code="POST_EXTRACTION_VALIDATION_FLAG",
+                    message=flag,
+                    severity="error" if flag.startswith("negative_revenue_detected") else "warning",
+                )
+            )
+
+        if int(merged.get("duplicate_year_merges", 0) or 0) > 0:
+            issues.append(
+                ValidationIssue(
+                    code="DUPLICATE_YEAR_DETECTED",
+                    message=f"duplicate_year_merged_count={int(merged.get('duplicate_year_merges', 0) or 0)}",
+                    severity="warning",
+                )
+            )
+
         if not hard_validation.get("all_passed"):
             for failure in hard_validation.get("failures", []):
                 issues.append(
@@ -772,6 +913,10 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
                     "blocked_message": "Ratio engine blocked because each year requires Total Assets, Total Liabilities, Equity, Net Profit, and Revenue/Interest Income",
                 },
             }
+
+        ratios = _enforce_analysis_years_on_ratios(ratios, merged["years"])
+        ratios["analysis_years"] = list(merged["years"])
+        ratios["post_extraction_flags"] = post_extraction_flags
 
         kpis = compute_kpis(validated)
 
@@ -855,6 +1000,8 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
             "sector_comparison": "executed" if sector.get("status") != "blocked" else "blocked",
             "hard_validation": hard_validation,
             "restatement_events": merged.get("restatement_events", []),
+            "duplicate_year_merges": int(merged.get("duplicate_year_merges", 0) or 0),
+            "post_extraction_flags": post_extraction_flags,
             "data_gaps": merged.get("data_gaps", []),
             "comparative_availability": merged.get("comparative_availability", False),
             "data_reliability_report": data_reliability_report,

@@ -341,7 +341,13 @@ function DashboardApp() {
     if (!payload) return <div className="bg-white border border-slate-200/80 rounded-2xl p-4 text-[13px] text-slate-400 tracking-[-0.01em]">Loading analyzer view...</div>;
 
     const accuracy = latestAccuracy;
-    const score = accuracy.overall_data_quality_score;
+    const score = typeof accuracy?.overall_data_quality_score === 'number'
+      ? accuracy.overall_data_quality_score
+      : typeof accuracy?.score === 'number'
+        ? accuracy.score
+        : typeof accuracy?.raw_score === 'number'
+          ? accuracy.raw_score
+          : null;
     const threshold = accuracy.quality_threshold;
     const passed = accuracy.passed;
 
@@ -521,6 +527,10 @@ function DashboardApp() {
                                 ? `${(analyzerAccuracy[report.id].accuracy.overall_data_quality_score * 100).toFixed(1)}%`
                                 : typeof reportDetails[report.id]?.confidence?.overall_data_quality_score === 'number'
                                 ? `${(reportDetails[report.id].confidence.overall_data_quality_score * 100).toFixed(1)}%`
+                                : typeof reportDetails[report.id]?.confidence?.score === 'number'
+                                ? `${(reportDetails[report.id].confidence.score * 100).toFixed(1)}%`
+                                : typeof reportDetails[report.id]?.confidence?.raw_score === 'number'
+                                ? `${(reportDetails[report.id].confidence.raw_score * 100).toFixed(1)}%`
                                 : 'N/A'}
                             </div>
                             <div className="text-[10px] text-slate-400">overall quality</div>

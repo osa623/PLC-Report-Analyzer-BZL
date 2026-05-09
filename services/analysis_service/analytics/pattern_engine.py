@@ -41,7 +41,7 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
     numeric_years = _numeric_years(ratios)
 
     if len(numeric_years) >= 3:
-        for metric in ("net_margin", "current_ratio", "debt_ratio"):
+        for metric in ("net_profit_margin", "current_ratio", "debt_ratio"):
             flag = _trend_flag(metric, by_year)
             if flag:
                 patterns.append(flag)
@@ -61,7 +61,7 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
 
         margin_points = []
         for year in sorted(by_year.keys()):
-            value = by_year.get(year, {}).get("net_margin")
+            value = by_year.get(year, {}).get("net_profit_margin")
             if isinstance(value, (int, float)):
                 margin_points.append(float(value))
         if len(margin_points) >= 3:
@@ -84,20 +84,20 @@ def compute_patterns(validated, issues: list[ValidationIssue], ratios: dict | No
             prev = by_year.get(years[-2], {}) if isinstance(by_year.get(years[-2]), dict) else {}
             latest = by_year.get(years[-1], {}) if isinstance(by_year.get(years[-1]), dict) else {}
 
-            prev_profit = prev.get("net_margin")
-            latest_profit = latest.get("net_margin")
-            prev_ocf_np = prev.get("operating_cashflow_to_net_profit")
-            latest_ocf_np = latest.get("operating_cashflow_to_net_profit")
+            prev_profit = prev.get("net_profit_margin")
+            latest_profit = latest.get("net_profit_margin")
+            prev_ocf_np = prev.get("cash_flow_to_net_income")
+            latest_ocf_np = latest.get("cash_flow_to_net_income")
             if all(isinstance(v, (int, float)) for v in [prev_profit, latest_profit, prev_ocf_np, latest_ocf_np]):
                 if float(latest_profit) > float(prev_profit) and float(latest_ocf_np) < float(prev_ocf_np):
                     patterns.append("Profit rising while cash conversion is weakening")
 
-            prev_asset_turnover = prev.get("asset_turnover")
-            latest_asset_turnover = latest.get("asset_turnover")
+            prev_asset_return = prev.get("return_on_assets")
+            latest_asset_return = latest.get("return_on_assets")
             prev_rev_growth = prev.get("revenue_growth_yoy")
             latest_rev_growth = latest.get("revenue_growth_yoy")
-            if all(isinstance(v, (int, float)) for v in [prev_asset_turnover, latest_asset_turnover, prev_rev_growth, latest_rev_growth]):
-                if float(latest_rev_growth) > float(prev_rev_growth) and float(latest_asset_turnover) > float(prev_asset_turnover):
+            if all(isinstance(v, (int, float)) for v in [prev_asset_return, latest_asset_return, prev_rev_growth, latest_rev_growth]):
+                if float(latest_rev_growth) > float(prev_rev_growth) and float(latest_asset_return) > float(prev_asset_return):
                     patterns.append("Revenue acceleration with improved asset productivity")
 
             prev_de = prev.get("debt_to_equity")
