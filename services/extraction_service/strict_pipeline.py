@@ -107,7 +107,13 @@ def _normalize_value(value: Any, currency_hint: str) -> float | None:
     if number is None:
         return None
     divisor = _scale_factor(number, currency_hint)
-    return round(number / divisor, 3)
+    result = number / divisor
+    # For large financial figures, round to integer to avoid ambiguous decimals
+    # (e.g. 145.401 could be misread as 145,401 in some locales).
+    # Keep decimals only for per-share / ratio-scale values (abs < 100).
+    if abs(result) >= 100:
+        return round(result, 0)
+    return round(result, 3)
 
 
 def _section_rows(statement_payload: Any) -> list[dict[str, Any]]:

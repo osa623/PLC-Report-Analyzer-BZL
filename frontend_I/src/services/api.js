@@ -215,6 +215,64 @@ export const pdfService = {
   },
 
   /**
+   * Get per-document processing statuses for a pipeline report.
+   * @param {string} reportId
+   * @returns {{ report_id, documents, counts }}
+   */
+  getDocumentStatuses: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/documents`, {
+      timeout: 15000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get validated (canonical) data after analysis completes.
+   * @param {string} reportId
+   * @returns {{ report_id, validated }}
+   */
+  getValidatedData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/validated`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get analytics data (ratios, patterns, risk, confidence).
+   * @param {string} reportId
+   * @returns {{ report_id, ratios, patterns, risk, sector_kpis, confidence, analysis_coverage }}
+   */
+  getAnalyticsData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/analytics`, {
+      timeout: 30000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get validation errors and diagnostics.
+   * @param {string} reportId
+   * @returns {{ report_id, error_catalog, missing_values, ... }}
+   */
+  getErrorsData: async (reportId) => {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/errors`, {
+      timeout: 15000,
+    });
+    return response.data;
+  },
+
+  /**
+   * Get the download URL for a completed report.
+   * @param {string} reportId
+   * @returns {string}
+   */
+  getReportDownloadUrl: (reportId) => {
+    const base = import.meta.env.VITE_GATEWAY_URL || '/api';
+    return `${base}/reports/${reportId}/download`;
+  },
+
+  /**
    * Health check
    */
   healthCheck: async () => {

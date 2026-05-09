@@ -1,17 +1,12 @@
 from __future__ import annotations
 
-import json
 import math
-import os
 from datetime import datetime, timezone
 from typing import Any
-from urllib import request as urllib_request
-from urllib.error import HTTPError, URLError
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from .analytics.canonical_calculation_engine import compute_analysis_result
 from .analytics.kpi_engine import compute_kpis
 from .analytics.pattern_engine import compute_patterns
 from .analytics.ratio_engine import compute_ratios
@@ -20,7 +15,6 @@ from .analytics.sector_comparison import compare_sector
 from .confidence.confidence_score import compute_confidence
 from .config import get_config
 from .redis_client import get_redis
-from .strict_pipeline import build_strict_analysis_result, build_validation_failed_diagnostic
 from .storage.analytics_repository import save_analytics
 from .storage.canonical_validated_repository import save_canonical_validated
 from .validation.accounting_validator import validate_accounting
@@ -29,23 +23,16 @@ from .validation.cross_statement_validator import validate_cross_statement
 from .validation.schema_validator import validate_schema
 from .validation.self_correction_loop import run_self_correction_loop
 from .workflow.job_status_tracker import mark_failed, mark_running, mark_success
-from platform_core.contracts import FinancialStatementModel, deterministic_hash_id
-from platform_core.contracts.canonical_dataset import CanonicalRawReport, DeterministicChecks, ValidationIssue
+from platform_core.contracts.canonical_dataset import CanonicalRawReport, ValidationIssue
 from platform_core.shared_infra.redis_client import get_json, set_json
 from platform_core.temp_financial_repository import fetch_temporary_financial_statements
 
 app = FastAPI(title="analysis-service", version="1.0.0")
 cfg = get_config()
-EXTRACTION_SERVICE_URL = os.getenv("EXTRACTION_SERVICE_URL", "http://localhost:8001")
-DEEP_AUDIT_REEXTRACT_KEY = "deep_audit_second_pass"
 
 
 class AnalyzeRequest(BaseModel):
     report_id: str
-    dataset_id: str | None = None
-    schema_version: str | None = None
-    calculation_version: str | None = None
-    timestamp: str | None = None
 
 
 def _detected_years_from_ratios(ratios: dict) -> list[str]:
@@ -795,773 +782,255 @@ def _hard_validation_gates(merged: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _yearly_inputs_from_merged(merged: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    out: dict[str, dict[str, Any]] = {}
-    for year in merged.get("years", []):
-        if not isinstance(year, str) or not year.isdigit():
-            continue
-        row = merged.get("financials", {}).get(year, {})
-        bs = row.get("balance_sheet") if isinstance(row.get("balance_sheet"), dict) else {}
-        inc = row.get("income_statement") if isinstance(row.get("income_statement"), dict) else {}
-        cf = row.get("cashflow_statement") if isinstance(row.get("cashflow_statement"), dict) else {}
-
-        revenue = inc.get("revenue_or_interest_income")
-        cost_of_sales = inc.get("cost_of_revenue")
-        gross_profit = inc.get("gross_profit")
-        if not isinstance(gross_profit, (int, float)) and isinstance(revenue, (int, float)) and isinstance(cost_of_sales, (int, float)):
-            gross_profit = float(revenue) - float(cost_of_sales)
-
-        out[year] = {
-            "revenue": revenue,
-            "cost_of_sales": cost_of_sales,
-            "gross_profit": gross_profit,
-            "operating_profit": inc.get("operating_profit"),
-            "net_profit": inc.get("net_profit"),
-            "total_assets": bs.get("total_assets"),
-            "total_liabilities": bs.get("total_liabilities"),
-            "equity": bs.get("total_equity"),
-            "current_assets": bs.get("current_assets"),
-            "current_liabilities": bs.get("current_liabilities"),
-            "inventory": bs.get("inventory"),
-            "cash": bs.get("cash_and_equivalents"),
-            "total_debt": bs.get("borrowings"),
-            "operating_cash_flow": cf.get("operating_cash_flow"),
-            "investing_cash_flow": cf.get("investing_cash_flow"),
-            "financing_cash_flow": cf.get("financing_cash_flow"),
-            "shares_outstanding": bs.get("shares_outstanding"),
-        }
-    return out
-
-
-def _analysis_result_to_ratios(analysis_result: dict[str, Any], yearly_inputs: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    metrics = analysis_result.get("metrics") if isinstance(analysis_result.get("metrics"), dict) else {}
-    by_year_metrics = metrics.get("by_year") if isinstance(metrics.get("by_year"), dict) else {}
-    detected_years = sorted([y for y in by_year_metrics.keys() if isinstance(y, str) and y.isdigit()], key=lambda y: int(y))
-    latest_year = metrics.get("latest_year") if isinstance(metrics.get("latest_year"), str) else (detected_years[-1] if detected_years else None)
-
-    by_year: dict[str, dict[str, Any]] = {}
-    for year in detected_years:
-        row = by_year_metrics.get(year) if isinstance(by_year_metrics.get(year), dict) else {}
-        input_row = yearly_inputs.get(year, {})
-        total_cash_flow = None
-        ocf = input_row.get("operating_cash_flow")
-        icf = input_row.get("investing_cash_flow")
-        fcf = input_row.get("financing_cash_flow")
-        if all(isinstance(v, (int, float)) for v in [ocf, icf, fcf]):
-            total_cash_flow = float(ocf) + float(icf) + float(fcf)
-
-        by_year[year] = {
-            "revenue": row.get("revenue"),
-            "net_income": row.get("net_profit"),
-            "gross_profit_margin": row.get("gross_margin"),
-            "operating_margin": row.get("operating_margin"),
-            "net_profit_margin": row.get("net_margin"),
-            "return_on_equity": row.get("return_on_equity"),
-            "return_on_assets": row.get("return_on_assets"),
-            "current_ratio": row.get("current_ratio"),
-            "quick_ratio": row.get("quick_ratio"),
-            "debt_to_equity": row.get("debt_to_equity"),
-            "debt_ratio": row.get("debt_ratio"),
-            "asset_turnover": row.get("asset_turnover"),
-            "revenue_growth_yoy": row.get("revenue_growth_yoy"),
-            "net_profit_growth_yoy": row.get("net_profit_growth_yoy"),
-            "eps": row.get("eps"),
-            "book_value_per_share": row.get("book_value_per_share"),
-            "operating_cash_flow": row.get("operating_cash_flow"),
-            "total_assets": input_row.get("total_assets"),
-            "total_liabilities": input_row.get("total_liabilities"),
-            "total_equity": input_row.get("equity"),
-            "total_cash_flow": total_cash_flow,
-        }
-
-    latest = by_year.get(latest_year, {}) if isinstance(latest_year, str) else {}
-    previous_year = detected_years[-2] if len(detected_years) >= 2 else None
-    latest_growth_snapshot = {
-        "period": latest_year,
-        "previous_period": previous_year,
-        "revenue_growth_yoy": latest.get("revenue_growth_yoy"),
-        "net_profit_growth_yoy": latest.get("net_profit_growth_yoy"),
-    }
-
-    envelope = analysis_result.get("envelope") if isinstance(analysis_result.get("envelope"), dict) else {}
-    payload = dict(latest)
-    payload.update(
-        {
-            "by_year": by_year,
-            "detected_years": detected_years,
-            "latest_year": latest_year,
-            "latest_growth_snapshot": latest_growth_snapshot,
-            "forensic_flags": analysis_result.get("risk_flags", []),
-            "financial_health_scores": analysis_result.get("financial_health_scores", {}),
-            "data_quality_score": analysis_result.get("data_quality_score"),
-            "dataset_id": envelope.get("dataset_id"),
-            "schema_version": envelope.get("schema_version"),
-            "calculation_version": envelope.get("calculation_version"),
-            "timestamp": envelope.get("timestamp"),
-        }
-    )
-    return payload
-
-
-def _analysis_result_to_risk(analysis_result: dict[str, Any]) -> dict[str, Any]:
-    scores = analysis_result.get("financial_health_scores") if isinstance(analysis_result.get("financial_health_scores"), dict) else {}
-    overall_health = float(scores.get("overall_health_score", 0.0) or 0.0)
-    overall_risk = max(0.0, 100.0 - overall_health)
-    if overall_risk >= 66.0:
-        level = "high"
-    elif overall_risk >= 33.0:
-        level = "moderate"
-    else:
-        level = "low"
-
-    envelope = analysis_result.get("envelope") if isinstance(analysis_result.get("envelope"), dict) else {}
-    return {
-        "overall_risk_score": round(overall_risk, 4),
-        "overall_risk_level": level,
-        "risk_flags": analysis_result.get("risk_flags", []),
-        "final_financial_health_score": round(overall_health, 4),
-        "weighted_model": {
-            "profitability_weight": 0.30,
-            "liquidity_weight": 0.25,
-            "leverage_weight": 0.20,
-            "efficiency_weight": 0.10,
-            "growth_weight": 0.15,
-        },
-        "dataset_id": envelope.get("dataset_id"),
-        "schema_version": envelope.get("schema_version"),
-        "calculation_version": envelope.get("calculation_version"),
-        "timestamp": envelope.get("timestamp"),
-    }
-
-
-def _strict_years_sorted(strict_extraction: dict[str, Any]) -> list[str]:
-    years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
-    return sorted([y for y in years.keys() if isinstance(y, str) and y.isdigit()], key=int)
-
-
-def _strict_metric(section: Any, key: str) -> float | None:
-    value = section.get(key) if isinstance(section, dict) else None
-    return float(value) if isinstance(value, (int, float)) else None
-
-
-def _strict_to_canonical_raw(report_id: str, strict_extraction: dict[str, Any]) -> CanonicalRawReport:
-    income_statement: list[dict[str, Any]] = []
-    balance_sheet: list[dict[str, Any]] = []
-    cashflow: list[dict[str, Any]] = []
-    equity: list[dict[str, Any]] = []
-
-    def add(target: list[dict[str, Any]], label: str, value: Any, year: str) -> None:
-        if not isinstance(value, (int, float)):
-            return
-        target.append(
-            {
-                "label": label,
-                "value": float(value),
-                "period": year,
-                "currency": str(strict_extraction.get("currency") or "LKR"),
-            }
-        )
-
-    years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
-    for year in _strict_years_sorted(strict_extraction):
-        payload = years.get(year) if isinstance(years.get(year), dict) else {}
-        bs = payload.get("balance_sheet") if isinstance(payload.get("balance_sheet"), dict) else {}
-        inc = payload.get("income_statement") if isinstance(payload.get("income_statement"), dict) else {}
-        cf = payload.get("cash_flow") if isinstance(payload.get("cash_flow"), dict) else {}
-
-        add(balance_sheet, "Total Assets", bs.get("total_assets"), year)
-        add(balance_sheet, "Total Liabilities", bs.get("total_liabilities"), year)
-        add(balance_sheet, "Total Equity", bs.get("total_equity"), year)
-        add(balance_sheet, "Current Assets", bs.get("current_assets"), year)
-        add(balance_sheet, "Current Liabilities", bs.get("current_liabilities"), year)
-        add(balance_sheet, "Debt", bs.get("total_debt"), year)
-        add(balance_sheet, "Cash and Equivalents", bs.get("cash_and_cash_equivalents"), year)
-
-        add(income_statement, "Revenue", inc.get("revenue"), year)
-        add(income_statement, "Cost of Revenue", inc.get("cost_of_sales"), year)
-        add(income_statement, "Gross Profit", inc.get("gross_profit"), year)
-        add(income_statement, "Operating Profit", inc.get("operating_profit"), year)
-        add(income_statement, "Net Income", inc.get("net_profit"), year)
-
-        add(cashflow, "Operating Cash Flow", cf.get("operating_cash_flow"), year)
-        add(cashflow, "Investing Cash Flow", cf.get("investing_cash_flow"), year)
-        add(cashflow, "Financing Cash Flow", cf.get("financing_cash_flow"), year)
-        add(cashflow, "Net Cash Flow", cf.get("net_cash_flow"), year)
-        add(cashflow, "Opening Cash", cf.get("opening_cash"), year)
-        add(cashflow, "Closing Cash", cf.get("closing_cash"), year)
-
-        net_profit = inc.get("net_profit")
-        add(equity, "Net Income", net_profit, year)
-        add(equity, "Change in Retained Earnings", net_profit, year)
-
-    return CanonicalRawReport(
-        report_id=report_id,
-        financial_statements={
-            "income_statement": income_statement,
-            "balance_sheet": balance_sheet,
-            "cashflow": cashflow,
-            "equity": equity,
-        },
-        narrative_sections={
-            "notes": [],
-            "risk": [],
-            "governance": [],
-            "esg": [],
-            "segment": [],
-        },
-    )
-
-
-def _strict_validation_issues(strict_analysis: dict[str, Any]) -> list[ValidationIssue]:
-    issues: list[ValidationIssue] = []
-    flags = strict_analysis.get("validation_flags") if isinstance(strict_analysis.get("validation_flags"), list) else []
-    for flag in flags:
-        if not isinstance(flag, dict):
-            continue
-        code = str(flag.get("code") or "validation_issue")
-        year = str(flag.get("year") or "").strip()
-        message = str(flag.get("message") or "Validation issue")
-        if year:
-            message = f"{year}: {message}"
-        issues.append(
-            ValidationIssue(
-                code=code,
-                message=message,
-                severity=str(flag.get("severity") or "error"),
-            )
-        )
-
-    if strict_analysis.get("status") == "VALIDATION_FAILED":
-        reasons = strict_analysis.get("reasons") if isinstance(strict_analysis.get("reasons"), list) else []
-        missing_by_year = (
-            strict_analysis.get("missing_fields_by_year")
-            if isinstance(strict_analysis.get("missing_fields_by_year"), dict)
-            else {}
-        )
-        for year, fields in missing_by_year.items():
-            if isinstance(year, str) and year.isdigit() and isinstance(fields, list) and fields:
-                issues.append(
-                    ValidationIssue(
-                        code="MINIMUM_COMPLETENESS_FAILED",
-                        message=f"{year}: Missing required fields: {', '.join(str(field) for field in fields)}",
-                        severity="error",
-                    )
-                )
-        for reason in reasons:
-            if isinstance(reason, str) and reason.strip():
-                issues.append(
-                    ValidationIssue(
-                        code="VALIDATION_FAILED",
-                        message=reason.strip(),
-                        severity="error",
-                    )
-                )
-
-    deduped: list[ValidationIssue] = []
-    seen: set[tuple[str, str, str]] = set()
-    for issue in issues:
-        key = (issue.code, issue.message, issue.severity)
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(issue)
-    return deduped
-
-
-def _strict_focus_field_map() -> dict[str, str]:
-    return {
-        "income_statement.revenue": "income_statement.revenue_or_interest_income",
-        "income_statement.net_profit": "income_statement.net_profit",
-        "balance_sheet.total_assets": "balance_sheet.total_assets",
-        "balance_sheet.total_liabilities": "balance_sheet.total_liabilities",
-        "balance_sheet.total_equity": "balance_sheet.total_equity",
-        "cash_flow.operating_cash_flow": "cashflow_statement.operating_cash_flow",
-        "cash_flow.opening_cash": "cashflow_statement.opening_cash",
-        "cash_flow.net_cash_flow": "cashflow_statement.net_cash_change",
-        "cash_flow.closing_cash": "cashflow_statement.closing_cash",
-    }
-
-
-def _default_focus_fields() -> set[str]:
-    return {
-        "balance_sheet.total_assets",
-        "balance_sheet.total_liabilities",
-        "balance_sheet.total_equity",
-        "income_statement.revenue_or_interest_income",
-        "income_statement.net_profit",
-        "cashflow_statement.operating_cash_flow",
-    }
-
-
-def _cash_reconciliation_focus() -> set[str]:
-    return {
-        "cashflow_statement.opening_cash",
-        "cashflow_statement.net_cash_change",
-        "cashflow_statement.closing_cash",
-        "cashflow_statement.operating_cash_flow",
-    }
-
-
-def _net_income_focus() -> set[str]:
-    return {
-        "income_statement.net_profit",
-        "cashflow_statement.net_income",
-        "equity_statement.net_income",
-        "equity_statement.change_in_retained_earnings",
-    }
-
-
-def _balance_identity_focus() -> set[str]:
-    return {
-        "balance_sheet.total_assets",
-        "balance_sheet.total_liabilities",
-        "balance_sheet.total_equity",
-    }
-
-
-def _extract_focus_fields(strict_analysis: dict[str, Any]) -> dict[str, set[str]]:
-    focus_by_year: dict[str, set[str]] = {}
-    mapping = _strict_focus_field_map()
-    missing_by_year = strict_analysis.get("missing_fields_by_year") if isinstance(strict_analysis.get("missing_fields_by_year"), dict) else {}
-
-    for year, fields in missing_by_year.items():
-        if not isinstance(year, str) or not year.isdigit() or not isinstance(fields, list):
-            continue
-        year_focus = focus_by_year.setdefault(year, set())
-        for field in fields:
-            if isinstance(field, str):
-                year_focus.add(mapping.get(field, field))
-
-    for flag in strict_analysis.get("validation_flags", []) if isinstance(strict_analysis.get("validation_flags"), list) else []:
-        if not isinstance(flag, dict):
-            continue
-        year = str(flag.get("year") or "").strip()
-        if not year.isdigit():
-            continue
-        code = str(flag.get("code") or "")
-        message = str(flag.get("message") or "")
-        year_focus = focus_by_year.setdefault(year, set())
-
-        if code == "BALANCE_SHEET_EQUATION_FAILED":
-            year_focus.update(_balance_identity_focus())
-        elif code == "CASH_RECONCILIATION_FAILED":
-            year_focus.update(_cash_reconciliation_focus())
-        elif code == "NET_INCOME_LINKAGE_FAILED":
-            year_focus.update(_net_income_focus())
-        elif code == "MULTI_YEAR_CONTINUITY_FAILED":
-            field_match = None
-            for token in message.split():
-                if "." in token:
-                    field_match = token.strip().rstrip(":")
-                    break
-            if field_match:
-                year_focus.add(mapping.get(field_match, field_match))
-            year_focus.update(_default_focus_fields())
-        elif code == "MINIMUM_COMPLETENESS_FAILED":
-            year_focus.update(_default_focus_fields())
-
-    for year in focus_by_year:
-        if not focus_by_year[year]:
-            focus_by_year[year] = set(_default_focus_fields())
-
-    return focus_by_year
-
-
-def _build_reextract_targets(strict_analysis: dict[str, Any], temp_docs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    rejected_years = {
-        year for year in strict_analysis.get("rejected_years", [])
-        if isinstance(year, str) and year.isdigit()
-    }
-    if not rejected_years:
-        return []
-
-    focus_by_year = _extract_focus_fields(strict_analysis)
-    docs_by_year: dict[str, dict[str, Any]] = {}
-
-    for doc in temp_docs:
-        if not isinstance(doc, dict):
-            continue
-        if doc.get("is_placeholder_year"):
-            continue
-        year = str(doc.get("year") or "")
-        if not year.isdigit() or year not in rejected_years:
-            continue
-        source_file = doc.get("source_file")
-        if not isinstance(source_file, str) or not source_file.strip():
-            continue
-        existing = docs_by_year.get(year)
-        if existing is None:
-            docs_by_year[year] = doc
-            continue
-        current_conf = float(existing.get("extraction_confidence", 0.0) or 0.0)
-        next_conf = float(doc.get("extraction_confidence", 0.0) or 0.0)
-        if next_conf > current_conf:
-            docs_by_year[year] = doc
-
-    targets: list[dict[str, Any]] = []
-    for year, doc in docs_by_year.items():
-        source_file = doc.get("source_file")
-        if not isinstance(source_file, str) or not os.path.exists(source_file):
-            continue
-        focus_fields = sorted(focus_by_year.get(year) or _default_focus_fields())
-        targets.append(
-            {
-                "file_path": source_file,
-                "target_year": int(year),
-                "focus_fields": focus_fields,
-            }
-        )
-    return targets
-
-
-def _run_targeted_reextract(report_id: str, targets: list[dict[str, Any]]) -> dict[str, Any] | None:
-    if not targets:
-        return None
-    payload = {
-        "report_id": report_id,
-        "execution_mode": "DEEP_AUDIT_MODE",
-        "targets": targets,
-        "reason": "deep_audit_second_pass",
-    }
-    body = json.dumps(payload).encode("utf-8")
-    req = urllib_request.Request(
-        f"{EXTRACTION_SERVICE_URL}/extract-targeted",
-        data=body,
-        method="POST",
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urllib_request.urlopen(req, timeout=1800) as resp:
-            raw = resp.read().decode("utf-8", errors="ignore")
-    except (HTTPError, URLError):
-        return None
-    try:
-        return json.loads(raw)
-    except Exception:
-        return None
-
-
-def _build_extraction_incomplete_result(
-    strict_extraction: dict[str, Any],
-    reasons: list[str],
-) -> dict[str, Any]:
-    base = build_validation_failed_diagnostic(strict_extraction, reasons)
-    base["status"] = "EXTRACTION_INCOMPLETE"
-    base["reasons"] = reasons
-    base.setdefault("valid_years", [])
-    base.setdefault("rejected_years", [])
-    base.setdefault("validation_flags", [])
-    base["validation_flags"].append(
-        {
-            "code": "EXTRACTION_INCOMPLETE",
-            "message": reasons[0] if reasons else "Extraction incomplete",
-            "severity": "error",
-        }
-    )
-    return base
-
-
-def _strict_deterministic_checks(strict_extraction: dict[str, Any], strict_analysis: dict[str, Any]) -> DeterministicChecks:
-    years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
-    flags = strict_analysis.get("validation_flags") if isinstance(strict_analysis.get("validation_flags"), list) else []
-    failed_codes = {str(flag.get("code")) for flag in flags if isinstance(flag, dict)}
-    valid_years = strict_analysis.get("valid_years") if isinstance(strict_analysis.get("valid_years"), list) else []
-
-    net_income_linkage = bool(valid_years)
-    for year in valid_years:
-        payload = years.get(year) if isinstance(years.get(year), dict) else {}
-        income_statement = payload.get("income_statement") if isinstance(payload.get("income_statement"), dict) else {}
-        if _strict_metric(income_statement, "net_profit") is None:
-            net_income_linkage = False
-            break
-
-    return DeterministicChecks(
-        balance_sheet_identity="BALANCE_SHEET_EQUATION_FAILED" not in failed_codes,
-        cash_reconciliation="CASH_RECONCILIATION_FAILED" not in failed_codes,
-        net_income_linkage=net_income_linkage,
-    )
-
-
-def _growth_or_none(current: float | None, previous: float | None) -> float | None:
-    if current is None or previous is None or abs(previous) <= 1e-12:
-        return None
-    return round((current - previous) / abs(previous), 6)
-
-
-def _strict_confidence(strict_extraction: dict[str, Any], strict_analysis: dict[str, Any], issues: list[ValidationIssue]) -> dict[str, Any]:
-    years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
-    total_years = len([y for y in years.keys() if isinstance(y, str) and y.isdigit()])
-    valid_years = strict_analysis.get("valid_years") if isinstance(strict_analysis.get("valid_years"), list) else []
-    extraction_scores = []
-    for year in years.values():
-        if isinstance(year, dict) and isinstance(year.get("extraction_confidence"), (int, float)):
-            extraction_scores.append(float(year.get("extraction_confidence")) / 100.0)
-
-    year_acceptance = (len(valid_years) / float(total_years)) if total_years else 0.0
-    avg_extraction_confidence = (sum(extraction_scores) / float(len(extraction_scores))) if extraction_scores else 0.0
-    issue_penalty = min(0.35, 0.04 * len(issues))
-    score = max(0.0, min(1.0, (0.6 * year_acceptance) + (0.4 * avg_extraction_confidence) - issue_penalty))
-
-    if score >= 0.8:
-        band = "high"
-    elif score >= 0.5:
-        band = "moderate"
-    else:
-        band = "low"
-
-    return {
-        "score": round(score, 4),
-        "raw_score": round(score, 4),
-        "overall_data_quality_score": round(score, 4),
-        "band": band,
-        "valid_years": valid_years,
-        "rejected_years": strict_analysis.get("rejected_years", []),
-    }
-
-
-def _strict_patterns(strict_analysis: dict[str, Any], valid_years: list[str], rejected_years: list[str]) -> list[str]:
-    patterns: list[str] = []
-    if rejected_years:
-        patterns.append("Validation friction detected")
-        patterns.append("One or more reporting years were rejected by deterministic gates")
-    if len(valid_years) >= 2:
-        patterns.append("Consistent multi-year validation coverage available")
-    elif len(valid_years) == 1:
-        patterns.extend(_trend_limitations(1))
-    else:
-        patterns.append("No validated years are available for analytics")
-
-    for flag in strict_analysis.get("validation_flags", []) if isinstance(strict_analysis.get("validation_flags"), list) else []:
-        if not isinstance(flag, dict):
-            continue
-        code = str(flag.get("code") or "")
-        if code == "MULTI_YEAR_CONTINUITY_FAILED":
-            patterns.append("Multi-year continuity anomaly detected")
-        if code == "BALANCE_SHEET_EQUATION_FAILED":
-            patterns.append("Balance sheet consistency issue detected")
-        if code == "CASH_RECONCILIATION_FAILED":
-            patterns.append("Cash reconciliation issue detected")
-
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for pattern in patterns:
-        if pattern in seen:
-            continue
-        seen.add(pattern)
-        deduped.append(pattern)
-    return deduped
-
-
-def _strict_ratios_payload(
-    strict_extraction: dict[str, Any],
-    strict_analysis: dict[str, Any],
-    confidence: dict[str, Any],
-) -> dict[str, Any]:
-    years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
-    valid_years = sorted(
-        [y for y in strict_analysis.get("valid_years", []) if isinstance(y, str) and y in years],
-        key=int,
-    )
-    by_year: dict[str, dict[str, Any]] = {}
-
-    for index, year in enumerate(valid_years):
-        payload = years.get(year) if isinstance(years.get(year), dict) else {}
-        ratios = strict_analysis.get("financial_ratios", {}).get(year, {}) if isinstance(strict_analysis.get("financial_ratios"), dict) else {}
-        income_statement = payload.get("income_statement") if isinstance(payload.get("income_statement"), dict) else {}
-        balance_sheet = payload.get("balance_sheet") if isinstance(payload.get("balance_sheet"), dict) else {}
-        cash_flow = payload.get("cash_flow") if isinstance(payload.get("cash_flow"), dict) else {}
-
-        revenue = _strict_metric(income_statement, "revenue")
-        net_profit = _strict_metric(income_statement, "net_profit")
-        total_assets = _strict_metric(balance_sheet, "total_assets")
-        total_liabilities = _strict_metric(balance_sheet, "total_liabilities")
-        total_equity = _strict_metric(balance_sheet, "total_equity")
-        operating_cash_flow = _strict_metric(cash_flow, "operating_cash_flow")
-        investing_cash_flow = _strict_metric(cash_flow, "investing_cash_flow")
-        financing_cash_flow = _strict_metric(cash_flow, "financing_cash_flow")
-        total_cash_flow = None
-        if None not in (operating_cash_flow, investing_cash_flow, financing_cash_flow):
-            total_cash_flow = float(operating_cash_flow) + float(investing_cash_flow) + float(financing_cash_flow)
-
-        prev_year = valid_years[index - 1] if index > 0 else None
-        prev_payload = years.get(prev_year) if prev_year and isinstance(years.get(prev_year), dict) else {}
-        prev_income = prev_payload.get("income_statement") if isinstance(prev_payload.get("income_statement"), dict) else {}
-
-        by_year[year] = {
-            "revenue": revenue,
-            "net_income": net_profit,
-            "gross_profit_margin": _growth_or_none(_strict_metric(income_statement, "gross_profit"), revenue),
-            "net_profit_margin": ratios.get("Net Margin"),
-            "return_on_equity": ratios.get("ROE"),
-            "return_on_assets": ratios.get("ROA"),
-            "current_ratio": ratios.get("Current Ratio"),
-            "debt_to_equity": ratios.get("Debt to Equity"),
-            "asset_turnover": ratios.get("Asset Turnover"),
-            "revenue_growth_yoy": _growth_or_none(revenue, _strict_metric(prev_income, "revenue")),
-            "net_profit_growth_yoy": _growth_or_none(net_profit, _strict_metric(prev_income, "net_profit")),
-            "operating_cash_flow": operating_cash_flow,
-            "total_assets": total_assets,
-            "total_liabilities": total_liabilities,
-            "total_equity": total_equity,
-            "total_cash_flow": total_cash_flow,
-        }
-
-    latest_year = valid_years[-1] if valid_years else None
-    latest = by_year.get(latest_year, {}) if isinstance(latest_year, str) else {}
-    previous_year = valid_years[-2] if len(valid_years) >= 2 else None
-
-    return {
-        **latest,
-        "by_year": by_year,
-        "detected_years": valid_years,
-        "latest_year": latest_year,
-        "latest_growth_snapshot": {
-            "period": latest_year,
-            "previous_period": previous_year,
-            "revenue_growth_yoy": latest.get("revenue_growth_yoy"),
-            "net_profit_growth_yoy": latest.get("net_profit_growth_yoy"),
-        },
-        "data_quality_score": confidence.get("score"),
-        "data_coverage": {
-            "valid_years": valid_years,
-            "rejected_years": strict_analysis.get("rejected_years", []),
-        },
-        "data_reliability_report": {
-            "score": round(float(confidence.get("score", 0.0) or 0.0) * 100.0, 2),
-            "band": confidence.get("band"),
-            "gate_failures": [issue.code for issue in _strict_validation_issues(strict_analysis)],
-            "inconsistencies": [issue.message for issue in _strict_validation_issues(strict_analysis)],
-        },
-    }
-
-
-def _strict_risk_payload(strict_analysis: dict[str, Any]) -> dict[str, Any]:
-    financial_health_score = float(strict_analysis.get("financial_health_score", 0.0) or 0.0)
-    overall_risk_score = round(max(0.0, 100.0 - financial_health_score), 2)
-    if overall_risk_score >= 66.0:
-        overall_risk_level = "high"
-    elif overall_risk_score >= 33.0:
-        overall_risk_level = "moderate"
-    else:
-        overall_risk_level = "low"
-
-    risk_flags = []
-    for flag in strict_analysis.get("validation_flags", []) if isinstance(strict_analysis.get("validation_flags"), list) else []:
-        if isinstance(flag, dict) and isinstance(flag.get("message"), str):
-            risk_flags.append(str(flag.get("message")))
-
-    return {
-        "overall_risk_score": overall_risk_score,
-        "overall_risk_level": overall_risk_level,
-        "risk_flags": risk_flags,
-        "final_financial_health_score": round(financial_health_score, 2),
-    }
-
-
-def _strict_analysis_coverage(
-    strict_extraction: dict[str, Any],
-    strict_analysis: dict[str, Any],
-    issues: list[ValidationIssue],
-) -> dict[str, Any]:
-    detected_years = _strict_years_sorted(strict_extraction)
-    valid_years = [y for y in strict_analysis.get("valid_years", []) if isinstance(y, str)]
-    rejected_years = [y for y in strict_analysis.get("rejected_years", []) if isinstance(y, str)]
-    issue_codes = {issue.code for issue in issues}
-    return {
-        "detected_years": detected_years,
-        "valid_years": valid_years,
-        "rejected_years": rejected_years,
-        "validation_issue_count": len(issues),
-        "metrics_coverage": {
-            "years_detected": len(detected_years),
-            "years_accepted": len(valid_years),
-            "years_rejected": len(rejected_years),
-            "hard_validation": {
-                "status": "passed" if not issues else "failed",
-                "gates": {
-                    "minimum_completeness": "MINIMUM_COMPLETENESS_FAILED" not in issue_codes,
-                    "balance_sheet_identity": "BALANCE_SHEET_EQUATION_FAILED" not in issue_codes,
-                    "cash_reconciliation": "CASH_RECONCILIATION_FAILED" not in issue_codes,
-                    "multi_year_continuity": "MULTI_YEAR_CONTINUITY_FAILED" not in issue_codes,
-                },
-                "failures": [issue.code for issue in issues],
-            },
-        },
-    }
-
-
-def _clear_analytics_artifacts(redis: Any, report_id: str) -> None:
-    redis.delete(
-        f"report:{report_id}:ratios",
-        f"report:{report_id}:patterns",
-        f"report:{report_id}:sector_comparison",
-        f"report:{report_id}:risk",
-        f"report:{report_id}:analysis_coverage",
-    )
-
-
 @app.post('/analyze')
 def analyze(request: AnalyzeRequest) -> dict[str, Any]:
     redis = get_redis()
     try:
         mark_running(redis, request.report_id)
-        extraction_coverage = get_json(redis, f"report:{request.report_id}:extraction_coverage", default={})
-        report_meta = get_json(redis, f"report:{request.report_id}:meta", default={})
-        expected_docs = int(report_meta.get("document_count", 0) or 0) if isinstance(report_meta, dict) else 0
-        if expected_docs <= 0:
-            expected_docs = int(extraction_coverage.get("pdfs_processed", 0) or 0) if isinstance(extraction_coverage, dict) else 0
-        valid_docs = int(extraction_coverage.get("valid_pdfs", 0) or 0) if isinstance(extraction_coverage, dict) else 0
-        document_errors = extraction_coverage.get("document_errors") if isinstance(extraction_coverage, dict) else []
-        has_errors = isinstance(document_errors, list) and len(document_errors) > 0
 
-        strict_extraction = get_json(redis, f"report:{request.report_id}:strict_extraction", default={})
-        if expected_docs and (valid_docs < expected_docs or has_errors):
-            reasons = [
-                f"Extraction incomplete: {valid_docs} of {expected_docs} documents extracted successfully",
-            ]
-            if has_errors:
-                reasons.append("One or more documents failed extraction")
-            strict_analysis = _build_extraction_incomplete_result(strict_extraction, reasons)
-        elif not isinstance(strict_extraction, dict) or not isinstance(strict_extraction.get("years"), dict):
-            strict_analysis = build_validation_failed_diagnostic(
-                {"years": {}},
-                ["Strict extraction artifact not found for analysis"],
-            )
-        else:
-            strict_analysis = build_strict_analysis_result(strict_extraction)
-
-        issues = _strict_validation_issues(strict_analysis)
-        checks = _strict_deterministic_checks(strict_extraction, strict_analysis)
-        canonical_raw = _strict_to_canonical_raw(request.report_id, strict_extraction)
-        save_canonical_validated(redis, request.report_id, canonical_raw, checks, issues, cfg.redis_ttl_seconds)
-
-        confidence = _strict_confidence(strict_extraction, strict_analysis, issues)
-        set_json(redis, f"report:{request.report_id}:confidence", confidence, cfg.redis_ttl_seconds)
-
-        analysis_coverage = _strict_analysis_coverage(strict_extraction, strict_analysis, issues)
-        set_json(redis, f"report:{request.report_id}:analysis_coverage", analysis_coverage, cfg.redis_ttl_seconds)
-
-        valid_years = strict_analysis.get("valid_years") if isinstance(strict_analysis.get("valid_years"), list) else []
-        if valid_years:
-            ratios = _strict_ratios_payload(strict_extraction, strict_analysis, confidence)
-            patterns = _strict_patterns(
-                strict_analysis,
-                [y for y in valid_years if isinstance(y, str)],
-                [y for y in strict_analysis.get("rejected_years", []) if isinstance(y, str)],
-            )
-            risk = _strict_risk_payload(strict_analysis)
-            sector = {
-                "sector": "diversified",
-                "status": "report_only",
-                "benchmarking": "not_enabled",
+        temp_docs = fetch_temporary_financial_statements(request.report_id)
+        merged = _merge_temp_docs(temp_docs)
+        if not merged["years"]:
+            extraction_failure = get_json(redis, f"report:{request.report_id}:extraction_failure", default={})
+            extraction_coverage = get_json(redis, f"report:{request.report_id}:extraction_coverage", default={})
+            meta = get_json(redis, f"report:{request.report_id}:meta", default={})
+            failure_report = {
+                "status": "extraction_failed",
+                "report_id": request.report_id,
+                "pdfs_processed": int(meta.get("document_count", 0) or extraction_coverage.get("pdfs_processed", 0) or len(temp_docs)),
+                "years_detected": extraction_failure.get("years_detected", extraction_coverage.get("years_detected", [])),
+                "metrics_extracted_count": int(extraction_failure.get("metrics_extracted_count", extraction_coverage.get("metrics_extracted_count", 0) or 0)),
+                "missing_required_metrics": [
+                    "balance_sheet.total_assets",
+                    "balance_sheet.total_liabilities",
+                    "balance_sheet.total_equity",
+                    "income_statement.revenue_or_interest_income",
+                    "income_statement.net_profit",
+                ],
+                "document_errors": extraction_failure.get("document_errors", []),
             }
-            save_analytics(redis, request.report_id, ratios, patterns, confidence, sector, risk, cfg.redis_ttl_seconds)
-        else:
-            _clear_analytics_artifacts(redis, request.report_id)
+            raise HTTPException(status_code=422, detail=failure_report)
 
-        set_json(redis, f"report:{request.report_id}:strict_analysis", strict_analysis, cfg.redis_ttl_seconds)
+        canonical_raw = _canonical_raw_from_merged(request.report_id, merged)
+        set_json(redis, f"report:{request.report_id}:raw_extracted_values", {"documents": temp_docs}, cfg.redis_ttl_seconds)
+        set_json(redis, f"report:{request.report_id}:normalized_values", merged, cfg.redis_ttl_seconds)
+        set_json(redis, f"report:{request.report_id}:reconstructed_statements", canonical_raw.model_dump(), cfg.redis_ttl_seconds)
+        set_json(redis, f"report:{request.report_id}:canonical_raw", canonical_raw.model_dump(), cfg.redis_ttl_seconds)
+
+        hard_validation = _hard_validation_gates(merged)
+        issues = []
+        issues.extend(validate_schema(canonical_raw))
+        issues.extend(validate_accounting(canonical_raw))
+        issues.extend(validate_cross_statement(canonical_raw))
+        issues.extend(detect_anomalies(canonical_raw))
+
+        post_extraction_flags = merged.get("post_extraction_flags") if isinstance(merged.get("post_extraction_flags"), list) else []
+        for flag in post_extraction_flags:
+            if not isinstance(flag, str):
+                continue
+            issues.append(
+                ValidationIssue(
+                    code="POST_EXTRACTION_VALIDATION_FLAG",
+                    message=flag,
+                    severity="error" if flag.startswith("negative_revenue_detected") else "warning",
+                )
+            )
+
+        if int(merged.get("duplicate_year_merges", 0) or 0) > 0:
+            issues.append(
+                ValidationIssue(
+                    code="DUPLICATE_YEAR_DETECTED",
+                    message=f"duplicate_year_merged_count={int(merged.get('duplicate_year_merges', 0) or 0)}",
+                    severity="warning",
+                )
+            )
+
+        if not hard_validation.get("all_passed"):
+            for failure in hard_validation.get("failures", []):
+                issues.append(
+                    ValidationIssue(
+                        code="HARD_VALIDATION_GATE_FAILED",
+                        message=str(failure),
+                        severity="error",
+                    )
+                )
+
+        corrected = run_self_correction_loop(canonical_raw, issues)
+        checks, check_issues = validate_accounting(corrected, with_checks=True)
+        issues.extend(check_issues)
+
+        validated = save_canonical_validated(redis, request.report_id, corrected, checks, issues, cfg.redis_ttl_seconds)
+        data_reliability_report = _build_data_reliability_report(merged, hard_validation, issues)
+        set_json(redis, f"report:{request.report_id}:data_reliability_report", data_reliability_report, cfg.redis_ttl_seconds)
+
+        required_coverage_by_year = {
+            y: int(merged["financials"].get(y, {}).get("required_metrics_count", 0))
+            for y in merged["years"]
+        }
+        ratio_eligible_years = [y for y, count in required_coverage_by_year.items() if count >= 5]
+
+        restricted_mode = not bool(hard_validation.get("all_passed"))
+
+        if ratio_eligible_years:
+            ratios = compute_ratios(validated)
+            ratios["restatement_events"] = merged.get("restatement_events", [])
+            ratios["data_reliability_report"] = data_reliability_report
+            ratios, guardrail_anomalies = _apply_ratio_guardrails(ratios)
+            ratios["gating"] = {
+                "status": "restricted" if restricted_mode else "executed",
+                "ratio_eligible_years": ratio_eligible_years,
+                "required_metric_coverage_by_year": required_coverage_by_year,
+                "hard_validation": hard_validation,
+            }
+            if guardrail_anomalies:
+                ratios.setdefault("limitations", {})
+                ratios["limitations"]["ratio_guardrail_anomalies"] = guardrail_anomalies
+                for failure in guardrail_anomalies:
+                    issues.append(
+                        ValidationIssue(
+                            code="RATIO_GUARDRAIL_ANOMALY",
+                            message=str(failure),
+                            severity="warning",
+                        )
+                    )
+            if restricted_mode:
+                ratios["status"] = "restricted"
+                ratios["reason"] = "hard_validation_failed"
+        else:
+            ratios = {
+                "status": "blocked",
+                "reason": "ratio_gate_failed",
+                "required_metric_coverage_by_year": required_coverage_by_year,
+                "ratio_eligible_years": [],
+                "detected_years": merged["years"],
+                "gating": {
+                    "hard_validation": hard_validation,
+                },
+                "limitations": {
+                    "blocked_message": "Ratio engine blocked because each year requires Total Assets, Total Liabilities, Equity, Net Profit, and Revenue/Interest Income",
+                },
+            }
+
+        ratios = _enforce_analysis_years_on_ratios(ratios, merged["years"])
+        ratios["analysis_years"] = list(merged["years"])
+        ratios["post_extraction_flags"] = post_extraction_flags
+
+        kpis = compute_kpis(validated)
+
+        if ratios.get("status") == "blocked":
+            patterns = [
+                "Ratio analysis blocked due to insufficient required metric coverage",
+                "Trend analysis limited due to available data scope",
+            ]
+        elif restricted_mode:
+            patterns = [
+                "Hard validation gates failed; analytics restricted to ratio-only diagnostics",
+                *[str(x) for x in hard_validation.get("failures", [])],
+            ]
+        else:
+            patterns = compute_patterns(validated, issues, ratios)
+
+        ratio_coverage = _latest_ratio_coverage(ratios) if ratios.get("status") != "blocked" else 0.0
+        extraction_coverage = get_json(redis, f"report:{request.report_id}:extraction_coverage", default={})
+        confidence = compute_confidence(issues, ratios, kpis, merged, extraction_coverage=extraction_coverage)
+        confidence["extraction_confidence"] = float(extraction_coverage.get("avg_extraction_confidence", 0.0) or 0.0)
+        confidence["extraction_agreement_score"] = float(extraction_coverage.get("avg_extraction_agreement", 0.0) or 0.0)
+        confidence["re_extraction_attempts_average"] = float(extraction_coverage.get("avg_re_extraction_attempts", 1.0) or 1.0)
+        confidence["metrics_extracted_count"] = int(extraction_coverage.get("metrics_extracted_count", 0) or 0)
+        confidence["detected_years"] = merged["years"]
+        confidence["hard_validation"] = hard_validation
+
+        if restricted_mode:
+            risk = {
+                "status": "blocked",
+                "reason": "risk_model_disabled_due_to_hard_validation_failure",
+                "hard_validation": hard_validation,
+            }
+        elif float(confidence.get("score", 0.0) or 0.0) < 0.75:
+            risk = {
+                "status": "blocked",
+                "reason": "risk_model_blocked_due_to_low_confidence",
+                "required_confidence": 0.75,
+                "actual_confidence": float(confidence.get("score", 0.0) or 0.0),
+            }
+        elif ratio_coverage >= 0.25:
+            risk = compute_risk_signals(ratios)
+            risk["gating"] = {"status": "executed", "ratio_coverage": ratio_coverage}
+        else:
+            risk = {
+                "status": "blocked",
+                "reason": "risk_gate_failed",
+                "required_ratio_coverage": 0.25,
+                "actual_ratio_coverage": ratio_coverage,
+            }
+
+        if restricted_mode:
+            sector = {
+                "status": "blocked",
+                "reason": "sector_model_disabled_due_to_hard_validation_failure",
+                "hard_validation": hard_validation,
+            }
+        elif ratio_coverage >= 0.50:
+            sector = compare_sector(ratios)
+            sector["gating"] = {"status": "executed", "ratio_coverage": ratio_coverage}
+        else:
+            sector = {
+                "status": "blocked",
+                "reason": "sector_gate_failed",
+                "required_ratio_coverage": 0.50,
+                "actual_ratio_coverage": ratio_coverage,
+            }
+
+        if restricted_mode:
+            confidence["score"] = min(float(confidence.get("score", 0.0) or 0.0), 0.25)
+            confidence["band"] = "low"
+
+        save_analytics(redis, request.report_id, ratios, patterns, confidence, sector, risk, cfg.redis_ttl_seconds)
+
+        numeric_years = [y for y in merged["years"] if isinstance(y, str) and y.isdigit()]
+        meta = get_json(redis, f"report:{request.report_id}:meta", default={})
+        metrics_coverage = {
+            "required_metric_coverage_by_year": required_coverage_by_year,
+            "ratio_coverage": ratio_coverage,
+            "ratio_engine": "restricted" if restricted_mode else ("executed" if ratios.get("status") != "blocked" else "blocked"),
+            "risk_engine": "executed" if risk.get("status") != "blocked" else "blocked",
+            "sector_comparison": "executed" if sector.get("status") != "blocked" else "blocked",
+            "hard_validation": hard_validation,
+            "restatement_events": merged.get("restatement_events", []),
+            "duplicate_year_merges": int(merged.get("duplicate_year_merges", 0) or 0),
+            "post_extraction_flags": post_extraction_flags,
+            "data_gaps": merged.get("data_gaps", []),
+            "comparative_availability": merged.get("comparative_availability", False),
+            "data_reliability_report": data_reliability_report,
+        }
+        set_json(redis, f"report:{request.report_id}:analysis_coverage", metrics_coverage, cfg.redis_ttl_seconds)
+
+        transparency = {
+            "documents_uploaded": int(meta.get("document_count", 1) or 1),
+            "detected_reporting_years": numeric_years,
+            "analysis_executed": [
+                "normalization",
+                "validation",
+                "ratio_engine",
+                "risk_analysis",
+                "pattern_logic",
+                "confidence_scoring",
+            ],
+            "analysis_limited": _trend_limitations(len(numeric_years)) + ([] if ratios.get("status") != "blocked" else ["Ratio analysis blocked due to required metric gate"]) + ([] if risk.get("status") != "blocked" else ["Risk analysis blocked due to ratio coverage below 25%"]) + ([] if sector.get("status") != "blocked" else ["Sector comparison blocked due to ratio coverage below 50%"]),
+        }
+        if restricted_mode:
+            transparency["analysis_limited"].append("Hard validation gates failed; advanced analytics disabled and output restricted to available ratios")
+
         mark_success(redis, request.report_id)
-        return strict_analysis
+        return {
+            "status": "completed",
+            "report_id": request.report_id,
+            "validation_issues": len(issues),
+            "reextraction_required": validated.reextraction_required,
+            "detected_years": numeric_years,
+            "transparency": transparency,
+            "metrics_coverage": metrics_coverage,
+        }
     except HTTPException as exc:
         mark_failed(redis, request.report_id, str(exc.detail))
         raise

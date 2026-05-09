@@ -5,12 +5,12 @@ from pymongo import MongoClient
 
 @lru_cache()
 def get_mongo_client():
-    uri = os.environ.get("MONGO_URI") or os.environ.get("DATABASE_URL") or "mongodb://localhost:27017"
+    uri = os.environ.get("MONGO_DB_UR") or os.environ.get("DATABASE_URL") or "mongodb://localhost:27017"
     return MongoClient(uri)
 
 
 def get_mongo_db(db_name: str | None = None):
-    db = os.environ.get("MONGO_DB") or db_name or "plc"
+    db = os.environ.get("MONGO_DB_URL") or db_name or "plc"
     client = get_mongo_client()
     return client[db]
 
