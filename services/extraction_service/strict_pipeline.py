@@ -6,7 +6,10 @@ from collections import defaultdict
 from typing import Any
 
 
-_YEAR_ENTITY_RE = re.compile(r"^(?P<year>\d{4})\s*\((?P<entity>Group|Bank)\)$", re.IGNORECASE)
+_YEAR_ENTITY_RE = re.compile(
+    r"^(?P<year>\d{4})\s*\((?P<entity>Group|Bank|Company|Entity|Parent|Standalone)\)$",
+    re.IGNORECASE,
+)
 
 _SECTION_ALIASES = {
     "cashflow_statement": "cash_flow",
@@ -16,7 +19,7 @@ _SECTION_ALIASES = {
     "balance": "balance_sheet",
 }
 
-_ENTITY_PRIORITY = ("Group", "Bank")
+_ENTITY_PRIORITY = ("Group", "Bank", "Company", "Entity", "Parent", "Standalone")
 
 _DIRECT_FIELD_ALIASES = {
     "balance_sheet": {
@@ -56,7 +59,13 @@ def _parse_number(value: Any) -> float | None:
     text = text.replace("*", "")
     negative = text.startswith("(") and text.endswith(")")
     text = text.strip("()")
-    text = text.replace(",", "").replace(" ", "")
+    text = text.replace(" ", "")
+    if "." in text and "," not in text:
+        dot_parts = [part for part in text.split(".") if part != ""]
+        if len(dot_parts) > 1 and all(part.isdigit() for part in dot_parts):
+            if all(len(part) == 3 for part in dot_parts[1:]):
+                text = "".join(dot_parts)
+    text = text.replace(",", "")
     if not text:
         return None
     try:
@@ -203,28 +212,33 @@ def _detect_master_years(rows: list[dict[str, Any]]) -> list[str]:
     if len(sorted_years) < 2:
         logging.warning(f"Detected fewer than 2 financial years: {sorted_years}")
         
-    logging.info(f"Detected financial years from statement columns: {sorted_years}. Using Group columns when available, Bank as fallback.")
+    logging.info(
+        "Detected financial years from statement columns: %s. Using Group columns when available, "
+        "then Bank/Company-style standalone columns as same-year fallback.",
+        sorted_years,
+    )
     return sorted_years
 
 
 def _get_year_value(row: dict[str, Any], year: str, currency_hint: str) -> float | None:
-    group_key = f"{year} (Group)"
-    bank_key = f"{year} (Bank)"
-    
+    matched_values: dict[str, float] = {}
+
     for key, value in row.items():
         if not isinstance(key, str):
             continue
-        clean_key = key.strip()
-        if clean_key.lower() == group_key.lower():
-            return _normalize_value(value, currency_hint)
-            
-    for key, value in row.items():
-        if not isinstance(key, str):
+        match = _YEAR_ENTITY_RE.match(key.strip())
+        if not match or match.group("year") != year:
             continue
-        clean_key = key.strip()
-        if clean_key.lower() == bank_key.lower():
-            return _normalize_value(value, currency_hint)
-            
+        parsed = _normalize_value(value, currency_hint)
+        if parsed is None:
+            continue
+        entity = match.group("entity").title()
+        matched_values[entity] = parsed
+
+    for entity in _ENTITY_PRIORITY:
+        if entity in matched_values:
+            return matched_values[entity]
+
     return None
 
 
@@ -238,7 +252,7 @@ def _field_map(statement_key: str, label: str) -> str | None:
 
     if statement_key == "income_statement":
         mapping = [
-            ("gross income", "revenue_or_interest_income"),
+            ("gross income", "revenue_or_gross_income"),
             ("interest income", "revenue_or_interest_income"),
             ("net interest income", "net_interest_income"),
             ("less: interest expenses", "interest_expense"),

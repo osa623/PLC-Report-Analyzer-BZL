@@ -31,6 +31,7 @@ from src.extractor.shareholder_extractor import ShareholderExtractor
 from src.locator.toc_detector import TOCDetector
 from src.extractor.table_parser import TableParser, ColumnDef, ColumnType
 from src.pipeline.llm_extractor import LLMFinancialExtractor
+from src.pipeline.llm_normalizer import LLMNormalizer
 
 # Configure logging first
 logging.basicConfig(level=logging.INFO)
@@ -112,6 +113,7 @@ shareholder_extractor = ShareholderExtractor()
 toc_detector = TOCDetector()
 table_parser = TableParser()
 llm_extractor = LLMFinancialExtractor()
+llm_normalizer = LLMNormalizer()
 
 
 def extract_data_from_selected_pages(pdf_path, pdf_id, selected_pages):
@@ -742,16 +744,14 @@ def extract_data_from_pages(pdf_id):
                 company = "Unknown"
                 year = "Unknown"
 
-            # Use the structured data from lines 715
-            db_payload = {
-                "sector": sector,
-                "company": company,
-                "year": year,
-                "type": "financial_statements",
-                "data": extracted_data['statements'], # This contains the actual extracted keys/values
-                "pdfId": pdf_id
-            }
-            save_to_db(db_payload)
+            # Apply LLM Normalization before MongoDB insertion
+            normalized_db_payload = llm_normalizer.normalize(
+                raw_data=extracted_data['statements'],
+                company_name=company,
+                source_pdf=filename
+            )
+            
+            save_to_db(normalized_db_payload)
         except Exception as e:
             logger.error(f"Error preparing DB payload during extraction: {e}")
         

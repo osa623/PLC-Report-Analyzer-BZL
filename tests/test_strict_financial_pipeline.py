@@ -64,6 +64,47 @@ def test_strict_extraction_keeps_most_complete_duplicate_year_and_converts_to_lk
     assert year_2023["extraction_confidence"] == 100
 
 
+def test_strict_extraction_prefers_group_and_falls_back_to_company_for_same_year():
+    payload = build_strict_extraction_dataset(
+        [
+            {
+                "pdf_name": "Example_Bank_2017.pdf",
+                "statements": {
+                    "income_statement": {
+                        "currency": "Rs 000",
+                        "sections": [
+                            {
+                                "name": "Main Section",
+                                "rows": [
+                                    {
+                                        "label": "Gross income",
+                                        "2017 (Bank)": "106,295,194",
+                                        "2016 (Company)": "95,990,771",
+                                        "2017 (Group)": "119.759.106",
+                                    },
+                                    {
+                                        "label": "PROFIT FOR THE YEAR",
+                                        "2017 (Company)": "16,466,790",
+                                        "2016 (Group)": "15,664,962",
+                                    },
+                                ],
+                            }
+                        ],
+                    }
+                },
+            }
+        ]
+    )
+
+    year_2017 = payload["years"]["2017"]["income_statement"]
+    year_2016 = payload["years"]["2016"]["income_statement"]
+
+    assert year_2017["revenue_or_interest_income"] == 119759.0
+    assert year_2017["net_profit"] == 16467.0
+    assert year_2016["revenue_or_interest_income"] == 95991.0
+    assert year_2016["net_profit"] == 15665.0
+
+
 def test_strict_analysis_rejects_incomplete_and_inconsistent_years():
     extraction_dataset = {
         "company": "Example PLC",

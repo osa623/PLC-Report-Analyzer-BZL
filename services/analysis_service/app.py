@@ -41,6 +41,7 @@ def _detected_years_from_ratios(ratios: dict) -> list[str]:
 
 
 def _trend_limitations(year_count: int) -> list[str]:
+
     if year_count >= 3:
         return []
     if year_count <= 1:
@@ -56,6 +57,7 @@ def _trend_limitations(year_count: int) -> list[str]:
 
 
 def _required_ratio_metric_count(financials: dict[str, Any]) -> int:
+    
     required = [
         "total_assets",
         "total_liabilities",
@@ -142,6 +144,7 @@ def _normalize_year_scale(by_year: dict[str, dict[str, Any]]) -> list[dict[str, 
     """Harmonize obvious unit/scale drift across years (e.g., raw vs thousands)."""
     adjustments: list[dict[str, Any]] = []
     metric_paths = [
+
         "balance_sheet.total_assets",
         "balance_sheet.total_liabilities",
         "balance_sheet.total_equity",
