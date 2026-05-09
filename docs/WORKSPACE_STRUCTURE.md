@@ -1,0 +1,117 @@
+Project Workspace Structure (generated Apr 15, 2026)
+
+Top-level layout (folders and important files):
+
+- NEW_STRUCTURE.md
+- README.md
+- database/
+  - schema.sql
+- docs/
+  - BETA_TUNING_PLAN.md
+  - DATA_RETENTION_PRIVACY.md
+  - ERROR_CODES.md
+  - LAUNCH_CHECKLIST.md
+  - OBSERVABILITY_DASHBOARDS.md
+  - OPERATIONS_BASELINE.md
+  - RELEASE_NOTES_TEMPLATE.md
+  - ROLLBACK_PLAYBOOK.md
+  - RUNBOOK.md
+  - architecture/
+    - DATA_FIRST_DEEP_SUMMARY.md
+    - DATA_FIRST_PROJECT_STRUCTURE.md
+  - frontend_connection_roadmaps/
+    - 00_INDEX.md
+    - 01_node_orchestrator.md
+    - 02_document_parser.md
+    - 03_structure_detector.md
+    - 04_income_statement_extractor.md
+    - 05_balance_sheet_extractor.md
+    - 06_cashflow_statement_extractor.md
+    - 07_income_notes_extractor.md
+    - 08_segment_extractor.md
+    - 09_governance_extractor.md
+    - 10_risk_extractor.md
+    - 11_esg_extractor.md
+    - 12_strategy_nlp.md
+    - 13_ratio_calculator.md
+    - 14_kpi_sector_engine.md
+    - 15_pattern_detection.md
+    - 16_report_generator.md
+    - 17_oci_extractor.md
+    - 18_equity_extractor.md
+    - 19_data_validator.md
+    - 20_comparative_analysis.md
+    - 21_aggregation_service.md
+    - 22_validation_engine.md
+- frontend/
+  - index.html
+  - package.json
+  - postcss.config.js
+  - tailwind.config.js
+  - vite.config.js
+  - src/
+    - api.js
+    - App.jsx
+    - DashboardApp.jsx
+    - index.css
+    - main.jsx
+    - PipelineApp.jsx
+    - components/ (UI components)
+- nodeBackend/
+  - package.json
+  - README.md
+  - src/
+    - app.js
+    - config.js
+    - server.js
+    - routes/
+    - services/
+    - utils/
+- platform_core/
+  - __init__.py
+  - contracts/
+    - __init__.py
+    - canonical_dataset.py
+    - pipeline_stage.py
+    - redis_keys.py
+  - shared_infra/
+    - __init__.py
+    - config_loader.py
+    - job_status.py
+    - logging.py
+    - postgres_client.py
+    - redis_client.py
+- services/
+  - analysis_service/
+    - app.py
+    - config.py
+    - Dockerfile
+    - postgres_client.py
+    - redis_client.py
+    - requirements.txt
+    - aggregation/
+    - analytics/
+    - confidence/
+    - storage/
+    - validation/
+  - extraction_service/
+    - app.py
+    - config.py
+    - Dockerfile
+    - job_manager.py
+    - postgres_client.py
+    - redis_client.py
+    - ...
+  - reporting_service/
+    - ...
+- tests/
+  - __init__.py
+  - README.md
+  - step_01/ ... step_14/ (test suites and rollout checks)
+
+Notes:
+- This file is a concise, developer-oriented snapshot of the repository layout used for engineering planning.
+- For the authoritative, detailed structure and design rationale see docs/architecture/DATA_FIRST_PROJECT_STRUCTURE.md and docs/architecture/DATA_FIRST_DEEP_SUMMARY.md.
+
+Next steps:
+- Tell me if you want the full recursive file tree written into NEW_STRUCTURE.md itself (long).

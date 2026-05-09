@@ -1,0 +1,26 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px'}}}%%
+sequenceDiagram
+    participant Client
+    participant ExtractionService
+    participant DocumentAI
+    participant Textract
+    participant Gemini
+    participant Redis
+
+    Client->>ExtractionService: Upload PDF
+    ExtractionService->>Redis: check cache(hash)
+    alt cache hit
+        Redis-->>ExtractionService: cached JSON
+        ExtractionService-->>Client: structured JSON
+    else cache miss
+        ExtractionService->>DocumentAI: process document
+        DocumentAI-->>ExtractionService: structured result + confidence
+        alt low confidence
+            ExtractionService->>Textract: fallback OCR
+            Textract-->>ExtractionService: fallback result
+        end
+        ExtractionService->>Gemini: normalize tables & sections
+        Gemini-->>ExtractionService: normalized JSON
+        ExtractionService->>Redis: set cache(hash, JSON)
+        ExtractionService-->>Client: structured JSON
+    end

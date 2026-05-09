@@ -1,0 +1,28 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "start-all-services-no-docker",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-ExecutionPolicy",
+				"Bypass",
+				"-File",
+				"scripts/start_services.ps1",
+				"-NoReload"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "check-service-ports",
+			"type": "shell",
+			"command": "powershell",
+			"args": [
+				"-Command",
+				"$ports=3000,8001,8002,8003,8100,5000; foreach($p in $ports){ try{$r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 -Uri \"http://localhost:$p/health\"; Write-Output \"$p up health $($r.StatusCode)\" } catch { try{$r2=Invoke-WebRequest -UseBasicParsing -TimeoutSec 3 -Uri \"http://localhost:$p/healthz\"; Write-Output \"$p up healthz $($r2.StatusCode)\"} catch { Write-Output \"$p down\" } } }"
+			],
+			"isBackground": false
+		}
+	]
+}

@@ -1,6 +1,12 @@
 {
-  "window": "beta-week-01",
-  "p95_latency_ms": 2100,
+  "snapshot_time": "2026-04-21T00:00:00Z",
+  "p95_latency_ms": 2200,
   "failure_rate": 0.018,
-  "queue_depth": 42
+  "queue_depth": 42,
+  "services": {
+    "extraction_service": "healthy",
+    "analysis_service": "healthy",
+    "reporting_service": "healthy"
+  },
+  "notes": "Baseline beta snapshot for CI rollout gating. Replace with current ops telemetry when available."
 }

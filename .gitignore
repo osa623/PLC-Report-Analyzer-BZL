@@ -14,3 +14,17 @@
 start_all_backends_local.ps1
 ROAD_MAP.md
 /.tmp_ci_env/
+.env
+.env.sample
+/services/analysis_service/_pycache__/
+/services/extraction_service/_pycache__/
+/services/reporting_service/_pycache__/
+# Python bytecode cache and compiled files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyc
+*.
+/services/data*
+/services/extract/
+/
