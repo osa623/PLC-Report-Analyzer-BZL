@@ -26,10 +26,11 @@ logging.basicConfig(
 # CONFIGURATION: Add your PDF paths here
 # -------------------------------------------------------------------
 PDF_PATHS = [
-   "data/raw/ntb/NTB_Banking_2019.pdf",
-   "data/raw/ntb/NTB_Banking_2021.pdf",
-   "data/raw/ntb/NTB_Banking_2023.pdf",
-   "data/raw/ntb/NTB_Banking_2025.pdf"
+   "data/raw/amana/AMANA_Banking_2016.pdf",
+   "data/raw/amana/AMANA_Banking_2018.pdf",
+   "data/raw/amana/AMANA_Banking_2020.pdf",
+   "data/raw/amana/AMANA_Banking_2022.pdf",
+   "data/raw/amana/AMANA_Banking_2024.pdf",
 ]
 
 def main():
