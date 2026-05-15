@@ -791,7 +791,59 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
     try:
         mark_running(redis, request.report_id)
 
-        temp_docs = fetch_temporary_financial_statements(request.report_id)
+        import json
+        import os
+        from pathlib import Path
+        
+        # Data Retrieval Layer Swap: read from normalize.json as primary, fallback to MongoDB
+        normalize_path = Path("normalize.json")
+        temp_docs = []
+        if normalize_path.exists():
+            with open(normalize_path, "r", encoding="utf-8") as f:
+                raw_data = json.load(f)
+                
+            if not isinstance(raw_data, list):
+                raw_data = [raw_data]
+                
+            for item in raw_data:
+                # Mapping layer: Handles variations in field names from the JSON
+                # Default validation: Convert missing/null numeric values to 0.0 or None as needed
+                mapped_doc = {
+                    "year": item.get("year", item.get("Year")),
+                    "balance_sheet": {
+                        "total_assets": item.get("total_assets", item.get("Total Assets", item.get("totalAssets"))),
+                        "total_liabilities": item.get("total_liabilities", item.get("Total Liabilities", item.get("totalLiabilities"))),
+                        "total_equity": item.get("total_equity", item.get("Total Equity", item.get("totalEquity"))),
+                        "borrowings": item.get("borrowings", item.get("Borrowings", item.get("borrowings"))),
+                        "cash_and_equivalents": item.get("cash_and_equivalents", item.get("Cash and Equivalents", item.get("cashAndEquivalents")))
+                    },
+                    "income_statement": {
+                        "revenue_or_interest_income": item.get("revenue_or_interest_income", item.get("Revenue", item.get("revenue"))),
+                        "net_profit": item.get("net_profit", item.get("Net Profit", item.get("netProfit"))),
+                        "operating_expenses": item.get("operating_expenses", item.get("Operating Expenses", item.get("operatingExpenses"))),
+                        "operating_profit": item.get("operating_profit", item.get("Operating Profit", item.get("operatingProfit")))
+                    },
+                    "cashflow_statement": {
+                        "net_cash_change": item.get("net_cash_change", item.get("Net Cash Change", item.get("netCashChange"))),
+                        "investing_cash_flow": item.get("investing_cash_flow", item.get("Investing Cash Flow", item.get("investingCashFlow")))
+                    },
+                    "source_file": "normalize.json",
+                    "extraction_confidence": 1.0,
+                    "metrics_extracted_count": 0
+                }
+                
+                # Validation: None/missing check. For analysis, typically None is preserved, but we ensure structure.
+                for section in ["balance_sheet", "income_statement", "cashflow_statement"]:
+                    for k, v in mapped_doc[section].items():
+                        if v is not None:
+                            try:
+                                mapped_doc[section][k] = float(v)
+                            except (ValueError, TypeError):
+                                mapped_doc[section][k] = None
+
+                temp_docs.append(mapped_doc)
+        else:
+            temp_docs = fetch_temporary_financial_statements(request.report_id)
         merged = _merge_temp_docs(temp_docs)
         if not merged["years"]:
             extraction_failure = get_json(redis, f"report:{request.report_id}:extraction_failure", default={})

@@ -1,0 +1,184 @@
+==========================================================================================
+  AMANA BANKING PLC — COMPREHENSIVE FINANCIAL ANALYSIS REPORT
+  Analysis Period: 2015 – 2024 (10 years)
+==========================================================================================
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  1. EXECUTIVE SUMMARY
+──────────────────────────────────────────────────────────────────────────────────────────
+  Overall Financial Health Score: 67.1/100
+  Investment Outlook: BULLISH
+  Sector: Banking (Sri Lanka)
+  Based on year: 2022
+
+  Component Scores:
+    Profitability:  49.1/100
+    Leverage:       79.3/100
+    Growth:         61.4/100
+    Efficiency:     86.0/100
+    Banking Health: 76.3/100
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  2. FINANCIAL RATIO DASHBOARD
+──────────────────────────────────────────────────────────────────────────────────────────
+  Metric                                   2015         2016         2017         2018         2019         2021         2022  Trend
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  ── RETURN RATIOS ──
+  Return on Equity (ROE)                  2.77%        0.71%        5.88%        4.85%        7.92%        6.05%        5.63%  DN  [NP / Avg Equity]
+  Return on Assets (ROA)                  0.33%        0.08%        0.85%        0.79%        1.19%        0.68%        0.60%  DN  [NP / Avg Assets]
+  Return on Cap Employed                  0.78%        0.50%        1.67%        1.71%          N/A        1.19%        1.23%  UP  [EBIT / Total Assets]
+  Return on Invested Cap                  4.70%        1.85%        6.36%        7.01%          N/A        8.08%        7.89%  DN  [NOPAT / Equity]
+
+  ── PER-SHARE RATIOS ──
+  Earnings Per Share (EPS)                 0.13         0.03         0.29         0.22         0.18         0.30         0.28  DN
+  Book Value Per Share                      N/A          N/A         4.52         4.65          N/A          N/A          N/A  UP
+
+  ── PROFITABILITY ──
+  Net Profit Margin                       7.67%        1.67%       14.84%       13.56%       10.83%       17.18%       12.38%  DN  [NP / Op Income]
+  Operating Margin                       17.95%       11.14%       31.25%       32.21%       32.34%       30.10%       27.28%  DN  [Op Profit / Op Income]
+  Net Interest Margin                     3.10%        3.77%        4.67%        4.77%        8.19%        3.49%        3.62%  UP  [NII / Avg Assets]
+  Cost-to-Income Ratio                   81.92%       79.93%       60.20%       56.17%       60.87%       53.54%       46.99%  DN  [OpEx / Op Income]
+  Effective Tax Rate                     27.47%       60.47%       31.99%       38.32%       45.44%       23.71%       34.71%  UP  [Tax / PBT]
+  EBITDA Margin                          27.22%       21.06%       37.09%       36.47%       39.56%       37.15%       32.40%  DN  [EBITDA / Op Income]
+
+  ── GROWTH RATES ──
+  Revenue Growth (YoY)                      N/A       17.71%       39.23%       21.16%        3.70%       13.35%       32.65%  UP
+  Net Profit Growth (YoY)                   N/A      -74.38%     1137.26%       10.66%      -17.17%       77.85%       -4.43%  DN
+  Asset Growth (YoY)                        N/A       13.77%       16.98%       21.61%          N/A          N/A       16.22%  DN
+  Loan Growth (YoY)                         N/A       16.26%       11.61%       23.16%          N/A          N/A        9.72%  DN
+  Deposit Growth (YoY)                      N/A       21.96%        8.54%       21.21%          N/A          N/A       17.04%  DN
+  EPS Growth (YoY)                          N/A      -76.92%      866.67%      -24.14%      -18.18%       66.67%       -6.67%  DN
+  EBIT vs Revenue Growth                    N/A        -1.52         7.40         1.18         1.11         1.88         0.62  DN
+  Expense Elasticity                        N/A         0.84         0.12         0.62         3.34         0.01         0.50  UP
+
+  ── LEVERAGE & SOLVENCY ──
+  Debt-to-Equity Ratio                     7.34         8.38         4.62         5.64          N/A         7.94         8.87  UP  [Liabilities / Equity]
+  Debt Ratio                             88.01%       89.34%       82.19%       84.94%          N/A       88.81%       89.86%  UP  [Liabilities / Assets]
+  Equity Ratio                           11.99%       10.66%       17.81%       15.06%          N/A       11.19%       10.14%  DN  [Equity / Assets]
+  Equity Multiplier                        8.34         9.38         5.62         6.64          N/A         8.94         9.87  UP  [Assets / Equity]
+
+  ── BANKING SPECIFIC ──
+  Loan-to-Deposit Ratio                  85.98%       81.96%       84.27%       85.63%          N/A       78.85%       73.91%  DN  [Loans / Deposits]
+  Loan-to-Asset Ratio                    69.28%       70.79%       67.54%       68.40%          N/A       62.19%       58.71%  DN  [Loans / Assets]
+  Deposit-to-Asset Ratio                 80.57%       86.38%       80.14%       79.88%          N/A       78.88%       79.43%  UP  [Deposits / Assets]
+  Impairment-to-Loans                     0.01%        0.56%        0.68%        0.90%          N/A        1.04%        1.97%  UP  [Impairment / Loans]
+  Net Interest Spread                     5.07%        6.00%        7.44%        7.32%          N/A        6.57%        8.04%  UP
+  Personnel/OpEx Ratio                   52.95%       52.70%       53.73%       54.05%       53.32%       54.46%       49.76%  DN
+  Revenue per Employee                      N/A          N/A        4.57M        4.51M          N/A          N/A          N/A  DN
+  Profit per Employee                       N/A          N/A      677.67K      610.81K          N/A          N/A          N/A  DN
+
+  ── EFFICIENCY ──
+  Asset Turnover                           0.04         0.05         0.06         0.06         0.11         0.04         0.05  UP  [Revenue / Avg Assets]
+  Fixed Asset Intensity                   2.66%        2.30%        2.83%        2.45%          N/A        2.01%        1.74%  DN  [PPE / Assets]
+  Depreciation Ratio                      9.27%        9.91%        5.84%        4.25%        7.22%        7.05%        5.12%  DN  [D&A / Revenue]
+
+  ── CASH FLOW ──
+  Operating Cash Flow                       N/A          N/A       -1.72B        4.23B        3.96B       14.13B       11.00B  DN
+  Free Cash Flow                            N/A          N/A       -1.78B        3.99B        3.68B       14.04B       10.93B  DN
+  OCF / Net Profit                          N/A          N/A        -3.42         7.61         8.59        17.13        13.95  DN
+  OCF / Total Assets                        N/A          N/A       -2.71%        5.48%          N/A       11.59%        7.76%  DN
+  Dividend Payout Ratio                     N/A          N/A          N/A       30.83%       42.69%        0.01%        0.01%  UP
+  Cash Interest Coverage                    N/A          N/A        -0.62         1.20         0.87         4.13         1.50  DN
+
+  ── EARNINGS QUALITY ──
+  Earnings Quality Ratio                    N/A          N/A        -3.42         7.61         8.59        17.13        13.95  DN  [OCF / Net Profit]
+  Impairment Coverage                     0.14%        8.93%        8.55%       11.62%        6.79%       16.36%       25.74%  UP  [Impairment / Revenue]
+  Core Earnings                           2.06B        2.22B        3.10B        3.63B        3.97B        4.01B        4.73B  UP
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  3. RISK DETECTION
+──────────────────────────────────────────────────────────────────────────────────────────
+  • No major risk flags detected
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  4. STRICT PIPELINE ENGINE RESULTS
+──────────────────────────────────────────────────────────────────────────────────────────
+  Status: COMPLETED
+  Reliability Score: 69.23
+  Risk Score: 30.77
+  Confidence: 0.93
+  Risk Level: low
+
+  Validation Gates by Year:
+    2015: 1/1 gates passed
+    2016: 2/2 gates passed
+    2017: 1/2 gates passed
+    2018: 2/2 gates passed
+    2019: 1/1 gates passed
+    2020: 1/1 gates passed
+    2021: 2/2 gates passed
+    2022: 2/2 gates passed
+    2023: 2/2 gates passed
+    2024: 2/2 gates passed
+
+  Strict Pipeline Ratios (latest available):
+    2015: 8 ratios computed
+      Operating Margin: 0.9986  (conf: 0.9)
+      Net Profit Margin: 0.0767  (conf: 0.9)
+      ROA: 0.0033  (conf: 1.0)
+      ROE: 0.0277  (conf: 1.0)
+      EBIT Margin: 0.9986  (conf: 0.9)
+    2016: 8 ratios computed
+      Operating Margin: 0.9107  (conf: 0.9)
+      Net Profit Margin: 0.0167  (conf: 0.9)
+      ROA: 0.0008  (conf: 0.9)
+      ROE: 0.0071  (conf: 0.9)
+      EBIT Margin: 0.9107  (conf: 0.9)
+    2017: 8 ratios computed
+      Operating Margin: 0.9145  (conf: 0.9)
+      Net Profit Margin: 0.1484  (conf: 0.9)
+      ROA: 0.0085  (conf: 0.9)
+      ROE: 0.0588  (conf: 0.9)
+      EBIT Margin: 0.9145  (conf: 0.9)
+    2018: 8 ratios computed
+      Operating Margin: 0.8838  (conf: 0.9)
+      Net Profit Margin: 0.1356  (conf: 0.9)
+      ROA: 0.0079  (conf: 0.9)
+      ROE: 0.0485  (conf: 0.9)
+      EBIT Margin: 0.8838  (conf: 0.9)
+    2019: 3 ratios computed
+      Operating Margin: 0.9321  (conf: 0.9)
+      Net Profit Margin: 0.1083  (conf: 0.9)
+      EBIT Margin: 0.9321  (conf: 0.9)
+    2020: 3 ratios computed
+      Operating Margin: 0.8787  (conf: 0.9)
+      Net Profit Margin: 0.1095  (conf: 0.9)
+      EBIT Margin: 0.8787  (conf: 0.9)
+    2021: 8 ratios computed
+      Operating Margin: 0.8364  (conf: 0.9)
+      Net Profit Margin: 0.1718  (conf: 0.9)
+      ROA: 0.0068  (conf: 1.0)
+      ROE: 0.0605  (conf: 1.0)
+      EBIT Margin: 0.8364  (conf: 0.9)
+    2022: 8 ratios computed
+      Operating Margin: 0.7426  (conf: 0.9)
+      Net Profit Margin: 0.1238  (conf: 0.9)
+      ROA: 0.0060  (conf: 0.9)
+      ROE: 0.0563  (conf: 0.9)
+      EBIT Margin: 0.7426  (conf: 0.9)
+    2023: 2 ratios computed
+      Debt to Equity: 6.3492  (conf: 1.0)
+      Debt Ratio: 0.8639  (conf: 1.0)
+    2024: 2 ratios computed
+      Debt to Equity: 6.9826  (conf: 1.0)
+      Debt Ratio: 0.8747  (conf: 1.0)
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  5. AI INVESTMENT CONCLUSION
+──────────────────────────────────────────────────────────────────────────────────────────
+  Financial Quality Score: 67.1/100
+  Investment Outlook: BULLISH
+  Long-term: POSITIVE — Strong fundamentals with consistent growth trajectory
+  Short-term: ACCUMULATE — Banking sector tailwinds support near-term performance
+
+  Key Catalysts:
+    ✓ Strong revenue growth (32.65%) in 2022
+    ✓ Robust loan book expansion (23.16%) in 2018
+
+  Key Threats:
+    ✗ No major risk flags detected
+
+==========================================================================================
+  END OF REPORT
+==========================================================================================
