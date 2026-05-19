@@ -3,7 +3,13 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
-const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline } = require('../services/pipelineClient');
+const { triggerExtract, triggerAnalyze, triggerGenerateReport } = require('../services/pipelineClient');
+const {
+  derivePipelineStatus,
+  parseDocumentStatuses,
+  buildPipelineMonitor,
+  buildExtractionAuditReport,
+} = require('../services/pipelineContract');
 
 const router = Router();
 
@@ -263,7 +269,7 @@ function normalizeValidationIssues(validationIssues = []) {
     }));
 }
 
-function selectCanonicalQualityScore(calculatedScore, confidencePayload = null) {
+function selectCanonicalQualityScore(_calculatedScore, confidencePayload = null) {
   let selected = null;
   if (confidencePayload && typeof confidencePayload === 'object') {
     if (typeof confidencePayload.raw_score === 'number' && Number.isFinite(confidencePayload.raw_score)) {
@@ -271,9 +277,6 @@ function selectCanonicalQualityScore(calculatedScore, confidencePayload = null) 
     } else if (typeof confidencePayload.score === 'number' && Number.isFinite(confidencePayload.score)) {
       selected = confidencePayload.score;
     }
-  }
-  if (selected == null && typeof calculatedScore === 'number' && Number.isFinite(calculatedScore)) {
-    selected = calculatedScore;
   }
   if (selected == null) {
     return null;
@@ -459,103 +462,119 @@ function deriveQualityScore(validatedRows = [], validationIssues = [], determini
   return clamp01(score);
 }
 
-function mapLegacyStages(stageState = {}, hasUpload = false, artifacts = {}, extractionSubstages = {}) {
+function mapLegacyStages(
+  stageState = {},
+  hasUpload = false,
+  artifacts = {},
+  extractionSubstages = {},
+  strictAnalysis = null,
+) {
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
+  const strictStatus = String(strictAnalysis?.status || '').toUpperCase();
 
-  // Use granular extraction sub-stages when available.
   const textExtractionStatus = extractionSubstages.text_extraction?.status || null;
   const tableDetectionStatus = extractionSubstages.table_detection?.status || null;
   const fieldMappingStatus = extractionSubstages.field_mapping?.status || null;
   const normalizationStatus = extractionSubstages.normalization?.status || null;
   const validationSubStatus = extractionSubstages.validation?.status || null;
 
-  // PARSING maps to text_extraction sub-stage.
-  const parsingStatus =
-    extraction === 'failed' && !textExtractionStatus
-      ? 'failed'
-      : textExtractionStatus === 'completed' || artifacts.hasCanonicalRaw
+  const documentIngestionStatus =
+    !hasUpload
+      ? 'pending'
+      : textExtractionStatus === 'completed' || extraction === 'completed' || extraction === 'failed'
       ? 'completed'
-      : textExtractionStatus === 'running'
+      : textExtractionStatus === 'running' || extraction === 'running'
       ? 'running'
-      : extraction === 'running'
+      : 'pending';
+
+  const pageClassificationStatus =
+    !hasUpload
+      ? 'pending'
+      : tableDetectionStatus === 'completed' || extraction === 'completed' || extraction === 'failed'
+      ? 'completed'
+      : tableDetectionStatus === 'running' || (documentIngestionStatus === 'completed' && extraction === 'running')
       ? 'running'
       : normalizeStatus(extraction);
 
-  // STRUCTURE maps to table_detection sub-stage.
-  const structureStatus =
+  const statementDetectionStatus =
     extraction === 'failed' && !tableDetectionStatus
       ? 'failed'
       : tableDetectionStatus === 'completed' || artifacts.hasCanonicalRaw
       ? 'completed'
-      : tableDetectionStatus === 'running'
-      ? 'running'
-      : parsingStatus === 'completed' && extraction === 'running'
-      ? 'running'
-      : parsingStatus;
-
-  // EXTRACTION maps to the full extraction completion (field_mapping + normalization + validation).
-  const extractionStatus =
-    extraction === 'failed'
-      ? 'failed'
-      : artifacts.hasCanonicalRaw
-      ? 'completed'
-      : validationSubStatus === 'completed'
-      ? 'completed'
-      : normalizationStatus === 'running' || validationSubStatus === 'running'
-      ? 'running'
-      : fieldMappingStatus === 'completed' && extraction === 'running'
-      ? 'running'
-      : normalizeStatus(extraction);
-
-  const aggregationStatus =
-    analysis === 'failed'
-      ? 'failed'
-      : artifacts.hasCanonicalValidated
-      ? 'completed'
-      : analysis === 'running'
+      : tableDetectionStatus === 'running' || extraction === 'running'
       ? 'running'
       : 'pending';
 
-  const validationStatus =
-    analysis === 'failed'
+  const multiExtractorExecutionStatus =
+    extraction === 'failed' && !fieldMappingStatus
       ? 'failed'
-      : artifacts.hasCanonicalValidated
+      : fieldMappingStatus === 'completed' || artifacts.hasCanonicalRaw
       ? 'completed'
-      : analysis === 'running'
+      : fieldMappingStatus === 'running' || extraction === 'running'
       ? 'running'
       : 'pending';
 
-  const analyticsStatus =
-    analysis === 'failed'
+  const crossExtractorReconciliationStatus =
+    extraction === 'failed' && !normalizationStatus
       ? 'failed'
-      : artifacts.hasAnalytics
+      : normalizationStatus === 'completed' || artifacts.hasCanonicalRaw
       ? 'completed'
-      : analysis === 'running'
+      : normalizationStatus === 'running' || extraction === 'running'
       ? 'running'
       : 'pending';
 
-  const reportStatus =
-    reporting === 'failed'
+  const accountingValidationStatus =
+    extraction === 'failed' && !validationSubStatus
       ? 'failed'
-      : reporting === 'skipped'
+      : validationSubStatus === 'completed' || artifacts.hasCanonicalRaw
+      ? 'completed'
+      : validationSubStatus === 'running' || extraction === 'running'
+      ? 'running'
+      : 'pending';
+
+  const coverageScoringGateStatus =
+    strictStatus === 'VALIDATED_READY'
+      ? 'completed'
+      : strictStatus === 'EXTRACTION_INCOMPLETE' || analysis === 'skipped'
+      ? 'failed'
+      : analysis === 'running' || analysis === 'completed'
+      ? 'running'
+      : 'pending';
+
+  const financialAnalysisStatus =
+    coverageScoringGateStatus === 'failed'
       ? 'skipped'
-      : (artifacts.hasFinalReport && analyticsStatus === 'completed' && validationStatus === 'completed')
+      : analysis === 'failed'
+      ? 'failed'
+      : strictStatus === 'VALIDATED_READY' && (artifacts.hasAnalytics || analysis === 'completed')
+      ? 'completed'
+      : analysis === 'running'
+      ? 'running'
+      : 'pending';
+
+  const reportGenerationStatus =
+    coverageScoringGateStatus === 'failed' || reporting === 'skipped'
+      ? 'skipped'
+      : reporting === 'failed'
+      ? 'failed'
+      : strictStatus === 'VALIDATED_READY' && artifacts.hasFinalReport
       ? 'completed'
       : reporting === 'running'
       ? 'running'
       : 'pending';
 
   return [
-    { stage: 'UPLOAD', status: hasUpload ? 'completed' : 'pending' },
-    { stage: 'PARSING', status: parsingStatus },
-    { stage: 'STRUCTURE', status: structureStatus },
-    { stage: 'EXTRACTION', status: extractionStatus },
-    { stage: 'AGGREGATION', status: aggregationStatus },
-    { stage: 'VALIDATION', status: validationStatus },
-    { stage: 'ANALYTICS', status: analyticsStatus },
-    { stage: 'REPORT', status: reportStatus },
+    { stage: 'DOCUMENT_INGESTION', status: documentIngestionStatus },
+    { stage: 'PAGE_CLASSIFICATION', status: pageClassificationStatus },
+    { stage: 'STATEMENT_DETECTION', status: statementDetectionStatus },
+    { stage: 'MULTI_EXTRACTOR_EXECUTION', status: multiExtractorExecutionStatus },
+    { stage: 'CROSS_EXTRACTOR_RECONCILIATION', status: crossExtractorReconciliationStatus },
+    { stage: 'ACCOUNTING_VALIDATION', status: accountingValidationStatus },
+    { stage: 'COVERAGE_SCORING_GATE', status: coverageScoringGateStatus },
+    { stage: 'FINANCIAL_ANALYSIS', status: financialAnalysisStatus },
+    { stage: 'REPORT_GENERATION', status: reportGenerationStatus },
   ];
 }
 
@@ -587,16 +606,29 @@ function deriveWorkflowState(stageState = {}, confidence = null) {
   return 'UPLOADED';
 }
 
-function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confidence = null) {
+function deriveWorkflowStateFromArtifacts(stageState = {}, artifacts = {}, confidence = null, strictAnalysis = null) {
   const extraction = stageState.EXTRACTION?.status || 'pending';
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
   const confidenceScore = Number(confidence?.score || 0);
   const lowConfidence = confidence?.band === 'low' && confidenceScore < 0.85;
 
+  // Extraction validation gate: if analysis determined extraction is incomplete,
+  // this is a terminal state — no analytics or reporting should follow.
+  const analysisStatus = String(strictAnalysis?.status || '').toUpperCase();
+  if (analysisStatus === 'EXTRACTION_INCOMPLETE') {
+    return 'EXTRACTION_FAILED';
+  }
+
   if ([extraction, analysis, reporting].includes('failed')) {
     return 'FAILED';
   }
+
+  // Skipped stages are terminal: analysis or reporting was gated off.
+  if (analysis === 'skipped' || reporting === 'skipped') {
+    return 'EXTRACTION_FAILED';
+  }
+
   if (artifacts.hasFinalReport || (extraction === 'completed' && analysis === 'completed' && reporting === 'completed')) {
     return 'COMPLETED';
   }
@@ -637,7 +669,9 @@ function analysisBlocksReporting(analysisPayload = {}) {
   const validYears = Array.isArray(analysisPayload?.valid_years)
     ? analysisPayload.valid_years.filter((year) => typeof year === 'string' && /^\d{4}$/.test(year))
     : [];
-  return status === 'VALIDATION_FAILED' || validYears.length === 0;
+  return status === 'VALIDATION_FAILED'
+    || status === 'EXTRACTION_INCOMPLETE'
+    || validYears.length === 0;
 }
 
 async function markReportingSkipped(reportId, analysisPayload = {}) {
@@ -667,31 +701,102 @@ async function markReportingSkipped(reportId, analysisPayload = {}) {
   );
 }
 
+async function markAnalysisSkipped(reportId, reason = 'Analysis skipped because extraction did not satisfy audit gates') {
+  const redis = await getRedis();
+  const raw = await redis.get(`report:${reportId}:pipeline_stages`);
+  const stages = parseJson(raw, {});
+  const now = new Date().toISOString();
+  const analysis = stages.ANALYSIS && typeof stages.ANALYSIS === 'object' ? stages.ANALYSIS : {};
+
+  stages.ANALYSIS = {
+    ...analysis,
+    status: 'skipped',
+    start_time: analysis.start_time || now,
+    end_time: now,
+    diagnostics: {
+      ...(analysis.diagnostics && typeof analysis.diagnostics === 'object' ? analysis.diagnostics : {}),
+      reason,
+    },
+  };
+
+  await redis.set(
+    `report:${reportId}:pipeline_stages`,
+    JSON.stringify(stages),
+    'EX',
+    86400
+  );
+}
+
 async function startPipeline(reportId, filePath) {
-  // Batch mode: if filePath is an array with multiple items, use the pipeline orchestrator
-  if (Array.isArray(filePath) && filePath.length > 1) {
-    const result = await triggerFullPipeline(reportId, filePath);
-    return result.data;
+  let extractPayload;
+  try {
+    const extract = await triggerExtract(reportId, filePath);
+    extractPayload = extract.data;
+  } catch (error) {
+    const extractionFailure = error?.response?.status === 422 ? error.response.data : null;
+    if (extractionFailure && typeof extractionFailure === 'object') {
+      await markAnalysisSkipped(reportId, 'Extraction incomplete. Analysis blocked before financial calculations.');
+      await markReportingSkipped(reportId, {
+        reasons: ['Extraction failed — report generation blocked by validation gate'],
+      });
+      // Still generate a failure report so the frontend has an artifact to display.
+      const report = await triggerGenerateReport(reportId).catch(() => ({ data: null }));
+      return {
+        pipeline_status: 'EXTRACTION_INCOMPLETE',
+        extract: extractionFailure,
+        analyze: {
+          status: 'EXTRACTION_INCOMPLETE',
+          reasons: ['Extraction failed before analysis could start'],
+        },
+        report: report?.data || {
+          status: 'EXTRACTION_INCOMPLETE',
+          reason: 'Extraction failure report could not be generated',
+        },
+      };
+    }
+    throw error;
   }
 
-  // Single-file mode: use per-service HTTP calls (existing flow)
-  const extract = await triggerExtract(reportId, filePath);
-  const analyze = await triggerAnalyze(reportId);
-
-  if (analysisBlocksReporting(analyze.data)) {
-    await markReportingSkipped(reportId, analyze.data);
+  // ── VALIDATION GATE: analysis must pass before reporting proceeds ──
+  let analyzePayload;
+  try {
+    const analyze = await triggerAnalyze(reportId);
+    analyzePayload = analyze.data;
+  } catch (error) {
+    // Analysis service failure is non-recoverable.
+    await markReportingSkipped(reportId, {
+      reasons: ['Analysis service failed — report generation blocked'],
+    });
+    const report = await triggerGenerateReport(reportId).catch(() => ({ data: null }));
     return {
-      extract: extract.data,
-      analyze: analyze.data,
-      report: {
-        status: 'skipped',
-        reason: 'Analysis did not produce a valid analytics payload for report generation',
-      },
+      pipeline_status: 'EXTRACTION_INCOMPLETE',
+      extract: extractPayload,
+      analyze: { status: 'EXTRACTION_INCOMPLETE', reasons: ['Analysis service error'] },
+      report: report?.data || { status: 'EXTRACTION_INCOMPLETE' },
     };
   }
 
+  // ── Check if analysis determined extraction data is insufficient ──
+  if (analysisBlocksReporting(analyzePayload)) {
+    await markReportingSkipped(reportId, analyzePayload);
+    // Generate a failure/diagnostic report instead of a financial report.
+    const report = await triggerGenerateReport(reportId).catch(() => ({ data: null }));
+    return {
+      pipeline_status: 'EXTRACTION_INCOMPLETE',
+      extract: extractPayload,
+      analyze: analyzePayload,
+      report: report?.data || { status: 'EXTRACTION_INCOMPLETE' },
+    };
+  }
+
+  // ── Validation gate passed: proceed to full report generation ──
   const report = await triggerGenerateReport(reportId);
-  return { extract: extract.data, analyze: analyze.data, report: report.data };
+  return {
+    pipeline_status: 'VALIDATED_READY',
+    extract: extractPayload,
+    analyze: analyzePayload,
+    report: report.data,
+  };
 }
 
 function extractUploadedPaths(req, fieldName) {
@@ -717,7 +822,6 @@ function inferFailedStage(error) {
   if (url.includes('/extract')) return 'EXTRACTION';
   if (url.includes('/analyze')) return 'ANALYSIS';
   if (url.includes('/generate-report')) return 'REPORTING';
-  if (url.includes('/run-full-pipeline')) return 'EXTRACTION';
   return 'EXTRACTION';
 }
 
@@ -780,6 +884,7 @@ router.post('/reports', upload.array('report', 20), async (req, res, next) => {
 
     return res.status(201).json({
       report_id: reportId,
+      pipeline_status: 'PROCESSING',
       workflow_state: 'UPLOADED',
       message: 'Report created. Pipeline started.',
     });
@@ -855,7 +960,7 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, riskRaw, finalReportRaw, rawExtractionSubstages] = await Promise.all([
+    const [rawStages, uploadedFile, rawConfidence, canonicalRaw, canonicalValidated, ratiosRaw, patternsRaw, sectorRaw, riskRaw, finalReportRaw, rawExtractionSubstages, strictAnalysisRaw, strictExtractionRaw, extractionFailureRaw, extractionCoverageRaw, rawDocumentStatuses] = await Promise.all([
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
       redis.get(`report:${reportId}:confidence`),
@@ -867,27 +972,56 @@ router.get('/pipeline/:reportId/stages', async (req, res, next) => {
       redis.get(`report:${reportId}:risk`),
       redis.get(`report:${reportId}:final_report`),
       redis.get(`report:${reportId}:extraction_substages`),
+      redis.get(`report:${reportId}:strict_analysis`),
+      redis.get(`report:${reportId}:strict_extraction`),
+      redis.get(`report:${reportId}:extraction_failure`),
+      redis.get(`report:${reportId}:extraction_coverage`),
+      redis.hGetAll(`report:${reportId}:document_statuses`),
     ]);
 
     const stageState = parseJson(rawStages, {});
     const confidence = parseJson(rawConfidence, null);
     const extractionSubstages = parseJson(rawExtractionSubstages, {});
+    const strictAnalysis = parseJson(strictAnalysisRaw, null);
+    const strictExtraction = parseJson(strictExtractionRaw, null);
+    const extractionFailure = parseJson(extractionFailureRaw, null);
+    const extractionCoverage = parseJson(extractionCoverageRaw, null);
+    const finalReport = parseJson(finalReportRaw, null);
     const artifacts = {
       hasCanonicalRaw: Boolean(canonicalRaw),
       hasCanonicalValidated: Boolean(canonicalValidated),
       hasAnalytics: Boolean(ratiosRaw || patternsRaw || sectorRaw || riskRaw),
       hasFinalReport: Boolean(finalReportRaw),
     };
-    const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts, extractionSubstages);
+    const stages = mapLegacyStages(stageState, Boolean(uploadedFile), artifacts, extractionSubstages, strictAnalysis);
+    const documents = parseDocumentStatuses(rawDocumentStatuses);
+    const pipelineStatus = derivePipelineStatus({
+      stageState,
+      strictAnalysis,
+      extractionFailure,
+      finalReport,
+    });
+    const pipelineMonitor = buildPipelineMonitor({
+      pipelineStatus,
+      stageState,
+      extractionSubstages,
+      documents,
+      strictAnalysis,
+      strictExtraction,
+      extractionCoverage,
+      extractionFailure,
+    });
 
     return res.json({
       report_id: reportId,
+      pipeline_status: pipelineStatus,
       workflow_state: deriveWorkflowStateFromArtifacts(stageState, {
         ...artifacts,
         hasUploadedFile: Boolean(uploadedFile),
       }, confidence),
       stages,
       extraction_substages: extractionSubstages,
+      pipeline_monitor: pipelineMonitor,
     });
   } catch (error) {
     return next(error);
@@ -920,12 +1054,16 @@ router.get('/pipeline/:reportId/validated', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [validatedRaw, confidenceRaw] = await Promise.all([
+    const [validatedRaw, confidenceRaw, strictAnalysisRaw, extractionFailureRaw] = await Promise.all([
       redis.get(`report:${reportId}:canonical_validated`),
       redis.get(`report:${reportId}:confidence`),
+      redis.get(`report:${reportId}:strict_analysis`),
+      redis.get(`report:${reportId}:extraction_failure`),
     ]);
     const validated = parseJson(validatedRaw, null);
     const confidence = parseJson(confidenceRaw, null);
+    const strictAnalysis = parseJson(strictAnalysisRaw, null);
+    const extractionFailure = parseJson(extractionFailureRaw, null);
     const validatedRows = buildValidatedRows(validated);
     const derivedQualityScore = deriveQualityScore(
       validatedRows,
@@ -935,6 +1073,7 @@ router.get('/pipeline/:reportId/validated', async (req, res, next) => {
     const qualityScore = selectCanonicalQualityScore(derivedQualityScore, confidence) ?? derivedQualityScore;
     return res.json({
       report_id: reportId,
+      pipeline_status: derivePipelineStatus({ strictAnalysis, extractionFailure }),
       validated: {
         ...(validated || {}),
         validated_rows: validatedRows,
@@ -950,7 +1089,7 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [ratiosRaw, patternsRaw, sectorRaw, riskRaw, confidenceRaw, analysisCoverageRaw, finalReportRaw] = await Promise.all([
+    const [ratiosRaw, patternsRaw, sectorRaw, riskRaw, confidenceRaw, analysisCoverageRaw, finalReportRaw, strictAnalysisRaw, extractionFailureRaw] = await Promise.all([
       redis.get(`report:${reportId}:ratios`),
       redis.get(`report:${reportId}:patterns`),
       redis.get(`report:${reportId}:sector_comparison`),
@@ -958,18 +1097,24 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
       redis.get(`report:${reportId}:confidence`),
       redis.get(`report:${reportId}:analysis_coverage`),
       redis.get(`report:${reportId}:final_report`),
+      redis.get(`report:${reportId}:strict_analysis`),
+      redis.get(`report:${reportId}:extraction_failure`),
     ]);
 
     const finalReport = parseJson(finalReportRaw, null);
+    const strictAnalysis = parseJson(strictAnalysisRaw, null);
+    const extractionFailure = parseJson(extractionFailureRaw, null);
     const confidencePayload = normalizeConfidencePayload(parseJson(confidenceRaw, {}));
     return res.json({
       report_id: reportId,
+      pipeline_status: derivePipelineStatus({ strictAnalysis, extractionFailure, finalReport }),
       ratios: parseJson(ratiosRaw, {}),
       patterns: parseJson(patternsRaw, []),
       risk: parseJson(riskRaw, {}),
       sector_kpis: parseJson(sectorRaw, {}),
       confidence: confidencePayload,
       analysis_coverage: parseJson(analysisCoverageRaw, {}),
+      yearly_audit: strictAnalysis?.yearly_audit || {},
       sections: finalReport?.sections || {},
       transparency: finalReport?.transparency || {},
     });
@@ -1076,11 +1221,20 @@ router.get('/pipeline/:reportId/errors', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const extractionFailure = parseJson(await redis.get(`report:${reportId}:extraction_failure`), null);
+    const [extractionFailureRaw, strictAnalysisRaw] = await Promise.all([
+      redis.get(`report:${reportId}:extraction_failure`),
+      redis.get(`report:${reportId}:strict_analysis`),
+    ]);
+    const extractionFailure = parseJson(extractionFailureRaw, null);
+    const strictAnalysis = parseJson(strictAnalysisRaw, null);
+    const pipelineStatus = derivePipelineStatus({ strictAnalysis, extractionFailure });
+    const extractionAudit = buildExtractionAuditReport({ strictAnalysis, extractionFailure });
 
     if (extractionFailure) {
       return res.json({
         report_id: reportId,
+        pipeline_status: pipelineStatus,
+        extraction_audit: extractionAudit,
         extraction_failure: extractionFailure,
         error_catalog: [
           'EXTRACTION_FAILED: deterministic extraction gate not satisfied',
@@ -1132,6 +1286,8 @@ router.get('/pipeline/:reportId/errors', async (req, res, next) => {
 
     return res.json({
       report_id: reportId,
+      pipeline_status: pipelineStatus,
+      extraction_audit: pipelineStatus === 'EXTRACTION_INCOMPLETE' ? extractionAudit : null,
       error_catalog: normalizedIssues,
       missing_values: missingValues,
       validation_summary: {
@@ -1152,7 +1308,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr, extractionFailureStr] = await Promise.all([
+    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr, extractionFailureStr, strictAnalysisStr, strictExtractionStr, extractionCoverageStr, rawExtractionSubstages, rawDocumentStatuses] = await Promise.all([
       redis.get(`report:${reportId}:meta`),
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
@@ -1165,6 +1321,11 @@ router.get('/reports/:reportId', async (req, res, next) => {
       redis.get(`report:${reportId}:confidence`),
       redis.get(`report:${reportId}:final_report`),
       redis.get(`report:${reportId}:extraction_failure`),
+      redis.get(`report:${reportId}:strict_analysis`),
+      redis.get(`report:${reportId}:strict_extraction`),
+      redis.get(`report:${reportId}:extraction_coverage`),
+      redis.get(`report:${reportId}:extraction_substages`),
+      redis.hGetAll(`report:${reportId}:document_statuses`),
     ]);
 
     const meta = parseJson(rawMeta, {});
@@ -1178,11 +1339,36 @@ router.get('/reports/:reportId', async (req, res, next) => {
     const confidence = parseJson(confidenceStr, null);
     const finalReport = parseJson(finalReportStr, null);
     const extractionFailure = parseJson(extractionFailureStr, null);
+    const strictAnalysis = parseJson(strictAnalysisStr, null);
+    const strictExtraction = parseJson(strictExtractionStr, null);
+    const extractionCoverage = parseJson(extractionCoverageStr, null);
+    const extractionSubstages = parseJson(rawExtractionSubstages, {});
+    const documents = parseDocumentStatuses(rawDocumentStatuses);
+    const pipelineStatus = derivePipelineStatus({
+      stageState,
+      strictAnalysis,
+      extractionFailure,
+      finalReport,
+    });
+    const pipelineMonitor = buildPipelineMonitor({
+      pipelineStatus,
+      stageState,
+      extractionSubstages,
+      documents,
+      strictAnalysis,
+      strictExtraction,
+      extractionCoverage,
+      extractionFailure,
+    });
+    const extractionAudit = buildExtractionAuditReport({ strictAnalysis, extractionFailure });
 
     if (extractionFailure) {
       return res.status(422).json({
         id: reportId,
+        pipeline_status: pipelineStatus,
         workflow_state: 'FAILED',
+        pipeline_monitor: pipelineMonitor,
+        extraction_audit: extractionAudit,
         extraction_failure: extractionFailure,
         transparency: {
           documents_uploaded: Number(meta.document_count || extractionFailure.pdfs_processed || 1),
@@ -1201,7 +1387,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
       hasFinalReport: Boolean(finalReport),
     };
     const workflowState = deriveWorkflowStateFromArtifacts(stageState, artifacts, confidence);
-    const pipelineTracker = mapLegacyStages(stageState, artifacts.hasUploadedFile, artifacts);
+    const pipelineTracker = mapLegacyStages(stageState, artifacts.hasUploadedFile, artifacts, extractionSubstages, strictAnalysis);
 
     const validatedRows = buildValidatedRows(validated);
     const derivedQualityScore = deriveQualityScore(
@@ -1242,8 +1428,11 @@ router.get('/reports/:reportId', async (req, res, next) => {
       symbol: meta.symbol || 'UNKNOWN',
       name: meta.name || 'Unknown Company',
       sector: meta.sector || 'Diversified',
+      pipeline_status: pipelineStatus,
       workflow_state: workflowState,
       pipeline_tracker: pipelineTracker,
+      pipeline_monitor: pipelineMonitor,
+      extraction_audit: pipelineStatus === 'EXTRACTION_INCOMPLETE' ? extractionAudit : null,
       data_views: {
         raw_data: canonicalRaw || null,
         cleaned_data: canonicalRaw || null,

@@ -1,0 +1,30 @@
+{
+  "_id": {
+    "$oid": "69e27cab18bcb3434a62bbc8"
+  },
+  "report_id": "5f2bd140-8669-4524-ac90-03fc2047aa50",
+  "year": 2032,
+  "balance_sheet": {
+    "total_liabilities": 7700000.0,
+    "total_equity": 11200000.0,
+    "total_assets": 1200000.0,
+    "borrowings": -19000000.0,
+    "cash_and_equivalents": -21200000.0
+  },
+  "income_statement": {
+    "operating_expenses": 18700000.0,
+    "net_profit": 64099999.99999999,
+    "revenue_or_interest_income": 26100000.0,
+    "operating_profit": 28600000.0
+  },
+  "cashflow_statement": {
+    "net_cash_change": -3926770000000.0,
+    "investing_cash_flow": -122828071000000.0
+  },
+  "source_file": "D:\\PLC-Report-Analyzer-BZL\\nodeBackend\\uploads\\1776450665375-431_1646390362476.pdf",
+  "extraction_confidence": 1.0,
+  "metrics_extracted_count": 5,
+  "created_at": {
+    "$date": "2026-04-17T18:31:47.088Z"
+  }
+}

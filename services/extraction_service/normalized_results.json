@@ -1,0 +1,1457 @@
+[
+  {
+    "company": "Banking",
+    "source_pdf": "AMANA_Banking_2016.pdf",
+    "financials": {
+      "2016": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "4,039,624,179",
+            "financing_expenses": "(2,115,335,249)",
+            "net_financing_income": "1,924,288,930",
+            "net_fees_and_commission_income": "246,568,285",
+            "net_trading_income": "257,454,611",
+            "net_other_operating_income": "4,961,144",
+            "total_operating_income": "2,433,272,970",
+            "impairment_on_financial_assets": "(217,177,926)",
+            "net_operating_income": "2,216,095,045",
+            "personnel_expenses": "1,025,032,323",
+            "depreciation_of_property_plant_and_equipment": "162,620,642",
+            "amortisation_of_intangible_assets": "78,634,792",
+            "other_operating_expenses": "678,729,131",
+            "total_operating_expenses": "1,945,016,888",
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax": "271,078,157",
+            "value_added_tax_on_financial_services_nation_building_tax": "(168,266,307)",
+            "profit_before_tax": "102,811,850",
+            "tax_expenses": "(62,171,499)",
+            "profit_for_the_year": "40,640,351",
+            "earnings_per_share": "0.03"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 5686924056,
+            "balance_with_central_bank_of_sri_lanka": 2816770223,
+            "derivative_financial_assets": 59483044,
+            "placements_with_banks": 4662466350,
+            "placements_with_licensed_finance_companies": 20517,
+            "financial_investments_held_for_trading": 45181589,
+            "financing_and_receivables_to_other_customers": 38451662449,
+            "financial_investments_available_for_sale": 394775149,
+            "other_financial_assets": 307321725,
+            "other_non_financial_assets": 227058761,
+            "property_plant_and_equipment": 1247590879,
+            "intangible_assets": 269376298,
+            "deferred_tax_assets": 146355559,
+            "total_assets": 54314986599,
+            "due_to_banks": 751963513,
+            "derivative_financial_liabilities": 98341433,
+            "due_to_other_customers": 46915289690,
+            "other_financial_liabilities": 566565119,
+            "other_non_financial_liabilities": 112175024,
+            "retirement_benefit_liability": 82606302,
+            "total_liabilities": 48526941081,
+            "stated_capital": 5866808141,
+            "statutory_reserve_fund": 17263212,
+            "other_reserves": -243794538,
+            "revaluation_reserve": 526908060,
+            "retained_earnings": -379139357,
+            "total_equity": 5788045518,
+            "total_liabilities_and_shareholders_funds": 54314986599,
+            "commitments_and_contingencies": 26191124490
+          },
+          "equity": {
+            "as_at_1_january_2015": {
+              "2016_bank": 5866808141,
+              "statutory_reserve_fund": 7299733,
+              "revenue_reserve": -216926328,
+              "available_for_sale_reserve": -54780969,
+              "retained_earnings": -576161646,
+              "total": 5026238931
+            },
+            "profit_for_the_year": {
+              "retained_earnings": 158629246,
+              "total": 158629246
+            },
+            "other_comprehensive_income": {
+              "notes": "36",
+              "available_for_sale_reserve": 10182244,
+              "revaluation_reserve": 527799509,
+              "retained_earnings": 146670,
+              "total": 538128423
+            },
+            "transfers_to_statutory_reserve_fund": {
+              "notes": "35",
+              "statutory_reserve_fund": 7931462,
+              "retained_earnings": -7931462
+            },
+            "as_at_1_january_2016": {
+              "2016_bank": 5866808141,
+              "statutory_reserve_fund": 15231195,
+              "revenue_reserve": -216926328,
+              "available_for_sale_reserve": -44598725,
+              "revaluation_reserve": 527799509,
+              "retained_earnings": -425317193,
+              "total": 5722996600
+            },
+            "profit_for_the_year_0": {
+              "retained_earnings": 40640351,
+              "total": 40640351
+            },
+            "other_comprehensive_income_0": {
+              "notes": "36",
+              "available_for_sale_reserve": -5418752,
+              "retained_earnings": 6678054,
+              "total": 1259302
+            },
+            "transfers_to_statutory_reserve_fund_0": {
+              "notes": "35",
+              "statutory_reserve_fund": 2032018,
+              "retained_earnings": -2032018
+            },
+            "reclassifying_to_profit_or_loss_as_impairment": {
+              "notes": "36"
+            },
+            "transferred_to_retained_earnings": {
+              "notes": "37",
+              "available_for_sale_reserve": 23149267,
+              "total": 23149267
+            },
+            "transferred_to_retained_earnings_0": {
+              "revaluation_reserve": -891449,
+              "retained_earnings": 891449
+            },
+            "as_at_31_december_2016": {
+              "2016_bank": 5866808141,
+              "statutory_reserve_fund": 17263212,
+              "revenue_reserve": -216926328,
+              "available_for_sale_reserve": -26868210,
+              "revaluation_reserve": 526908060,
+              "retained_earnings": -379139357,
+              "total": 5788045518
+            }
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 40640351,
+            "other_comprehensive_income_expense": null,
+            "other_comprehensive_income_to_be_reclassified_to_profit_or_loss_in_subsequent_periodsfinancial_investments_available_for_sale": null,
+            "net_gainloss_on_financial_investments_available_for_sale": -131461592,
+            "reclassification_to_profit_or_loss_as_impairment": 126042840,
+            "net_other_comprehensive_income_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -5418752,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": null,
+            "revaluation_surplus_on_property_plant_and_equipment": null,
+            "deferred_tax_effect_on_revaluation_surplus": null,
+            "re_measurement_gain_on_defined_benefit_plans": 9275075,
+            "deferred_tax_effect_on_defined_benefit_plans": -2597021,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 6678054,
+            "other_comprehensive_income_for_the_year_net_of_tax": 1259302,
+            "total_comprehensive_income_for_the_year_net_of_tax": 41899653
+          }
+        }
+      },
+      "2015": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "2,885,931,540",
+            "financing_expenses": "(1,405,258,772)",
+            "net_financing_income": "1,480,672,767",
+            "net_fees_and_commission_income": "168,555,950",
+            "net_trading_income": "390,234,591",
+            "net_other_operating_income": "27,659,037",
+            "total_operating_income": "2,067,122,345",
+            "impairment_on_financial_assets": "(2,817,355)",
+            "net_operating_income": "2,064,304,990",
+            "personnel_expenses": "896,614,338",
+            "depreciation_of_property_plant_and_equipment": "150,818,192",
+            "amortisation_of_intangible_assets": "40,881,465",
+            "other_operating_expenses": "605,026,871",
+            "total_operating_expenses": "1,693,340,866",
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax": "370,964,125",
+            "value_added_tax_on_financial_services_nation_building_tax": "(152,248,222)",
+            "profit_before_tax": "218,715,903",
+            "tax_expenses": "(60,086,657)",
+            "profit_for_the_year": "158,629,246",
+            "earnings_per_share": "0.13"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 5016458817,
+            "balance_with_central_bank_of_sri_lanka": 2292887937,
+            "derivative_financial_assets": 61037310,
+            "placements_with_banks": 3624928993,
+            "placements_with_licensed_finance_companies": 954528071,
+            "financial_investments_held_for_trading": 59474357,
+            "financing_and_receivables_to_other_customers": 33073596195,
+            "financial_investments_available_for_sale": 432056080,
+            "other_financial_assets": 315749183,
+            "other_non_financial_assets": 257216898,
+            "property_plant_and_equipment": 1271732452,
+            "intangible_assets": 236502947,
+            "deferred_tax_assets": 145702993,
+            "total_assets": 47741872233,
+            "due_to_banks": 2955277882,
+            "derivative_financial_liabilities": 67405185,
+            "due_to_other_customers": 38467460755,
+            "other_financial_liabilities": 341597683,
+            "other_non_financial_liabilities": 113063448,
+            "retirement_benefit_liability": 74070679,
+            "total_liabilities": 42018875633,
+            "stated_capital": 5866808141,
+            "statutory_reserve_fund": 15231195,
+            "other_reserves": -261525053,
+            "revaluation_reserve": 527799509,
+            "retained_earnings": -425317193,
+            "total_equity": 5722996600,
+            "total_liabilities_and_shareholders_funds": 47741872233,
+            "commitments_and_contingencies": 18413142582
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 158629246,
+            "other_comprehensive_income_expense": null,
+            "other_comprehensive_income_to_be_reclassified_to_profit_or_loss_in_subsequent_periodsfinancial_investments_available_for_sale": null,
+            "net_gainloss_on_financial_investments_available_for_sale": 10182244,
+            "reclassification_to_profit_or_loss_as_impairment": null,
+            "net_other_comprehensive_income_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 10182244,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": null,
+            "revaluation_surplus_on_property_plant_and_equipment": 533340869,
+            "deferred_tax_effect_on_revaluation_surplus": -5541360,
+            "re_measurement_gain_on_defined_benefit_plans": 203709,
+            "deferred_tax_effect_on_defined_benefit_plans": -57039,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 527946180,
+            "other_comprehensive_income_for_the_year_net_of_tax": 538128423,
+            "total_comprehensive_income_for_the_year_net_of_tax": 696757669
+          }
+        }
+      }
+    },
+    "normalization_meta": {
+      "status": "success",
+      "version": "4.0",
+      "normalized_by": "gemini-chunked",
+      "db_ready": true,
+      "normalized_at": "2026-05-09T20:39:18.640410"
+    }
+  },
+  {
+    "company": "Banking",
+    "source_pdf": "AMANA_Banking_2018.pdf",
+    "financials": {
+      "2018": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "6,883,221,870",
+            "financing_expenses": "(3,522,889,356)",
+            "net_financing_income": "3,360,332,514",
+            "net_fees_and_commission_income": "297,048,806",
+            "net_trading_income": "461,155,830",
+            "net_gains_losses_from_financial_assets_measured_at_fair_value_through_profit_or_loss": "(22,436,152)",
+            "net_gains_from_derecognition_of_financial_assets": "1,892,185",
+            "net_other_operating_income": "6,662,241",
+            "total_operating_income": "4,104,655,424",
+            "impairment_on_financial_assets": "(476,765,687)",
+            "net_operating_income": "3,627,889,737",
+            "personnel_expenses": "1,246,223,287",
+            "depreciation_of_property_plant_and_equipment": "126,685,717",
+            "amortisation_of_intangible_assets": "47,939,212",
+            "other_operating_expenses": "884,804,269",
+            "total_operating_expenses": "2,305,652,485",
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax_and_debt_repayment_levy": "1,322,237,252",
+            "value_added_tax_on_financial_services_nation_building_tax_and_debt_repayment_levy": "(420,038,265)",
+            "profit_before_tax": "902,198,987",
+            "tax_expenses": "(345,753,279)",
+            "profit_for_the_year": "556,445,708",
+            "earnings_per_share_basic_diluted": "0.22"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 5338090636,
+            "balance_with_central_bank_of_sri_lanka": 3543444781,
+            "placements_with_banks": 9264699249,
+            "placements_with_licensed_finance_companies": 2427970097,
+            "derivative_financial_assets": 445732740,
+            "financial_assets_measured_at_fair_value_through_profit_or_loss": 113249108,
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": 52853663356,
+            "financial_assets_measured_at_fair_value_through_other_comprehensive_income": 186655424,
+            "other_assets_financial": 585704833,
+            "property_plant_and_equipment": 1890194155,
+            "intangible_assets": 238311383,
+            "other_assets_non_financial": 382051706,
+            "total_assets": 77269767468,
+            "due_to_banks": 1210204847,
+            "derivative_financial_liabilities": 1441005622,
+            "financial_liabilities_at_amortised_cost_due_to_depositors": 61722682595,
+            "other_liabilities_financial": 480628881,
+            "current_tax_liabilities": 330606614,
+            "dividend_payable": 3562069,
+            "deferred_tax_liability": 221536935,
+            "retirement_benefit_liability": 127517726,
+            "other_liabilities_non_financial": 97921864,
+            "total_liabilities": 65635667153,
+            "stated_capital": 10619450156,
+            "statutory_reserve_fund": 70226882,
+            "other_reserves": -60456037,
+            "revaluation_reserve": 819630323,
+            "retained_earnings": 185248991,
+            "total_equity": 11634100315,
+            "total_liabilities_and_shareholders_funds": 77269767468,
+            "net_asset_value_per_share": 4.65,
+            "commitments_and_contingencies": 46485430714,
+            "number_of_employees": 911,
+            "number_of_branches": 29
+          },
+          "cash_flow": {
+            "financing_income_received": 6416841127,
+            "fees_and_commission_received": 339789092,
+            "financing_expenses_paid": -3429654751,
+            "foreign_exchange_income_received": 418175710,
+            "gratuity_payments_made": -9948748,
+            "payments_to_employees_and_suppliers": -2470080200,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 1265122230,
+            "increase_decrease_in_operating_assets": -10037289447,
+            "financing_and_receivables_to_other_customers": -496773924,
+            "other_assets_financial": -171564085,
+            "balance_with_central_bank_of_sri_lanka": 584366791,
+            "increase_decrease_in_operating_liabilities": 10709291756,
+            "due_to_other_customers": 1207800000,
+            "due_to_banks": 1236090598,
+            "net_cash_flow_from_operating_activities_before_income_tax": 4297043919,
+            "income_tax_paid": -63107752,
+            "net_cash_flow_from_operating_activities": 4233936167,
+            "acquisition_of_property_plant_and_equipment": -247972369,
+            "proceeds_from_sale_of_property_plant_and_equipment": 8500,
+            "acquisition_of_intangible_assets": -47748557,
+            "investments_in_placements_with_licensed_finance_companies": -314535285,
+            "investments_in_placements_with_banks": -3991415246,
+            "dividend_received_from_financial_assets": 6654850,
+            "financial_assets_measured_at_fair_value_through_profit_or_loss": 12290376,
+            "net_cash_flows_used_in_investing_activities": -4582717731,
+            "dividend_paid": -171535268,
+            "net_cash_flows_from_financing_activities": -171535268,
+            "net_increase_decrease_in_cash_and_cash_equivalents": -520316832,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 5859766950,
+            "cash_and_cash_equivalents_at_the_end_of_the_year_gross_of_allowance_for_impairment_losses": 5339450118,
+            "profit_before_taxation": 902198987,
+            "depreciation_of_property_plant_and_equipment": 126685717,
+            "amortisation_of_intangible_assets": 47939212,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -7391,
+            "impairment_for_financing_and_receivables_to_other_customers_and_financial_assets": 476765687,
+            "provision_for_gratuity": 33542300,
+            "increase_decrease_in_placement_income_receivable": 9598766,
+            "increase_decrease_in_profit_payable": 93234605,
+            "other_non_cash_items": -408232055,
+            "dividend_income_net": -6654850,
+            "gratuity_payments": -9948748
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 556445708,
+            "net_gain_loss_on_financial_investments_fair_value_through_other_comprehensive_income": -32411016,
+            "re_measurement_gain_loss_on_defined_benefit_plans": 15316850,
+            "deferred_tax_effect_on_defined_benefit_plans": -4288718,
+            "net_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -21382884,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": -21382884,
+            "total_comprehensive_income_for_the_year": 535062824
+          }
+        },
+        "equity": {
+          "as_at_1_january_2018": {
+            "stated_capital": "10,619,450,156",
+            "statutory_reserve": "42,404,597",
+            "fair_value_reserve": "(28,031,817)",
+            "revaluation_reserve": "820,716,783",
+            "retained_earnings": "(140,737,324)",
+            "total": "11,313,802,395"
+          },
+          "impact_of_adopting_slfrs_9": {
+            "note": "37",
+            "fair_value_reserve": "(13,204)",
+            "retained_earnings": "(39,654,363)",
+            "total": "(39,667,567)"
+          },
+          "restated_opening_balance_under_slfrs_9": {
+            "stated_capital": "10,619,450,156",
+            "statutory_reserve": "42,404,597",
+            "fair_value_reserve": "(28,045,021)",
+            "revaluation_reserve": "820,716,783",
+            "retained_earnings": "(180,391,687)",
+            "total": "11,274,134,828"
+          },
+          "profit_for_the_year": {
+            "retained_earnings": "556,445,708",
+            "total": "556,445,708"
+          },
+          "other_comprehensive_income": {
+            "note": "39",
+            "fair_value_reserve": "(32,411,016)",
+            "retained_earnings": "11,028,132",
+            "total": "(21,382,884)"
+          },
+          "interim_dividend_2018_dividend_per_share_rs_007": {
+            "retained_earnings": "(175,097,337)",
+            "total": "(175,097,337)"
+          },
+          "transfers_to_statutory_reserve_fund": {
+            "note": "38",
+            "statutory_reserve": "27,822,285",
+            "retained_earnings": "(27,822,285)"
+          },
+          "transferred_to_retained_earnings": {
+            "note": "40",
+            "revaluation_reserve": "(1,086,460)",
+            "retained_earnings": "1,086,460"
+          },
+          "as_at_31_december_2018": {
+            "stated_capital": "10,619,450,156",
+            "statutory_reserve": "70,226,882",
+            "fair_value_reserve": "(60,456,037)",
+            "revaluation_reserve": "819,630,323",
+            "retained_earnings": "185,248,991",
+            "total": "11,634,100,315"
+          }
+        }
+      },
+      "2017": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "5,544,237,256",
+            "financing_expenses": "(2,790,618,052)",
+            "net_financing_income": "2,753,619,204",
+            "net_fees_and_commission_income": "236,134,326",
+            "net_trading_income": "388,699,264",
+            "net_gains_losses_from_financial_assets_measured_at_fair_value_through_profit_or_loss": null,
+            "net_gains_from_derecognition_of_financial_assets": null,
+            "net_other_operating_income": "9,467,520",
+            "total_operating_income": "3,387,920,314",
+            "impairment_on_financial_assets": "(289,782,674)",
+            "net_operating_income": "3,098,137,640",
+            "personnel_expenses": "1,095,792,424",
+            "depreciation_of_property_plant_and_equipment": "148,879,193",
+            "amortisation_of_intangible_assets": "48,967,708",
+            "other_operating_expenses": "745,933,727",
+            "total_operating_expenses": "2,039,573,052",
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax_and_debt_repayment_levy": "1,058,564,588",
+            "value_added_tax_on_financial_services_nation_building_tax_and_debt_repayment_levy": "(319,245,989)",
+            "profit_before_tax": "739,318,599",
+            "tax_expenses": "(236,490,936)",
+            "profit_for_the_year": "502,827,663",
+            "earnings_per_share_basic_diluted": "0.29"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 5859766950,
+            "balance_with_central_bank_of_sri_lanka": 4127811572,
+            "placements_with_banks": 5285796238,
+            "placements_with_licensed_finance_companies": 2112166496,
+            "derivative_financial_assets": 127616662,
+            "financial_assets_held_for_trading": 41645557,
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": 42914143571,
+            "financial_assets_available_for_sale": 323264501,
+            "other_assets_financial": 388890295,
+            "property_plant_and_equipment": 1795135517,
+            "intangible_assets": 230675871,
+            "other_assets_non_financial": 333169325,
+            "total_assets": 63540082555,
+            "derivative_financial_liabilities": 29924292,
+            "financial_liabilities_at_amortised_cost_due_to_depositors": 50922561081,
+            "other_liabilities_financial": 680470646,
+            "current_tax_liabilities": 187075365,
+            "deferred_tax_liability": 216241918,
+            "retirement_benefit_liability": 119241024,
+            "other_liabilities_non_financial": 70765834,
+            "total_liabilities": 52226280160,
+            "stated_capital": 10619450156,
+            "statutory_reserve_fund": 42404597,
+            "other_reserves": -28031817,
+            "revaluation_reserve": 820716783,
+            "retained_earnings": -140737324,
+            "total_equity": 11313802395,
+            "total_liabilities_and_shareholders_funds": 63540082555,
+            "net_asset_value_per_share": 4.52,
+            "commitments_and_contingencies": 27813190776,
+            "number_of_employees": 742,
+            "number_of_branches": 28
+          },
+          "cash_flow": {
+            "financing_income_received": 5445156050,
+            "fees_and_commission_received": 239617456,
+            "financing_expenses_paid": -2595124827,
+            "foreign_exchange_income_received": 394172149,
+            "gratuity_payments_made": -8354105,
+            "payments_to_employees_and_suppliers": -2095442059,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 1380024664,
+            "increase_decrease_in_operating_assets": -4674618472,
+            "financing_and_receivables_to_other_customers": -153516506,
+            "other_assets_financial": -1497563,
+            "balance_with_central_bank_of_sri_lanka": -1311041349,
+            "increase_decrease_in_operating_liabilities": 3810314654,
+            "due_to_other_customers": -750500000,
+            "due_to_banks": -18900040,
+            "net_cash_flow_from_operating_activities_before_income_tax": -1719734612,
+            "net_cash_flow_from_operating_activities": -1719734612,
+            "acquisition_of_property_plant_and_equipment": -62099109,
+            "proceeds_from_sale_of_property_plant_and_equipment": 456517,
+            "acquisition_of_intangible_assets": -113738668,
+            "investments_in_placements_with_licensed_finance_companies": -2097301257,
+            "investments_in_placements_with_banks": -612069817,
+            "dividend_received_from_financial_assets": 8420541,
+            "sale_acquisition_of_financial_investments_available_for_sale": 27409639,
+            "sale_acquisition_of_financial_investments_held_for_trading": -1605671,
+            "net_cash_flows_used_in_investing_activities": -2850527825,
+            "rights_issue_of_shares": 4752642015,
+            "share_issue_expenses": -9536684,
+            "net_cash_flows_from_financing_activities": 4743105331,
+            "net_increase_decrease_in_cash_and_cash_equivalents": 172842894,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 5686924056,
+            "cash_and_cash_equivalents_at_the_end_of_the_year_gross_of_allowance_for_impairment_losses": 5859766950,
+            "profit_before_taxation": 739318599,
+            "depreciation_of_property_plant_and_equipment": 148879193,
+            "amortisation_of_intangible_assets": 48967708,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -212466,
+            "impairment_for_financing_and_receivables_to_other_customers_and_financial_assets": 289782675,
+            "provision_for_gratuity": 26427071,
+            "increase_decrease_in_placement_income_receivable": -26104794,
+            "increase_decrease_in_profit_payable": 195493225,
+            "other_non_cash_items": -25751901,
+            "dividend_income_net": -8420541,
+            "gratuity_payments": -8354105
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 502827663,
+            "net_gain_loss_on_financial_investments_available_for_sale": -47348976,
+            "reclassification_to_profit_or_loss_as_impairment": 20339796,
+            "net_other_comprehensive_income_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -27009180,
+            "revaluation_surplus_on_property_plant_and_equipment": 608536162,
+            "deferred_tax_effect_on_revaluation_surplus": -314184209,
+            "re_measurement_gain_loss_on_defined_benefit_plans": -18561756,
+            "deferred_tax_effect_on_defined_benefit_plans": 5197292,
+            "net_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 280987489,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": 253978309,
+            "total_comprehensive_income_for_the_year": 756805972
+          }
+        },
+        "equity": {
+          "as_at_1_january_2017": {
+            "stated_capital": "5,866,808,141",
+            "statutory_reserve": "17,263,213",
+            "revenue_reserve": "(216,926,328)",
+            "fair_value_reserve": "(26,868,210)",
+            "revaluation_reserve": "526,908,060",
+            "retained_earnings": "(379,139,357)",
+            "total": "5,788,045,519"
+          },
+          "rights_issue": {
+            "stated_capital": "4,752,642,015",
+            "total": "4,752,642,015"
+          },
+          "share_issue_expenses": {
+            "revenue_reserve": "(9,536,684)",
+            "total": "(9,536,684)"
+          },
+          "profit_for_the_year": {
+            "retained_earnings": "502,827,663",
+            "total": "502,827,663"
+          },
+          "other_comprehensive_income": {
+            "note": "39",
+            "fair_value_reserve": "(27,009,180)",
+            "revaluation_reserve": "294,351,953",
+            "retained_earnings": "(13,364,464)",
+            "total": "253,978,309"
+          },
+          "transfers_to_statutory_reserve_fund": {
+            "note": "38",
+            "statutory_reserve": "25,141,384",
+            "retained_earnings": "(25,141,384)"
+          },
+          "reclassifying_to_profit_or_loss_as_impairment": {
+            "note": "39",
+            "fair_value_reserve": "25,845,573",
+            "total": "25,845,573"
+          },
+          "transferred_to_retained_earnings": {
+            "note": "40",
+            "revenue_reserve": "226,463,012",
+            "revaluation_reserve": "(543,230)",
+            "retained_earnings": "(225,919,782)"
+          }
+        }
+      }
+    },
+    "normalization_meta": {
+      "status": "success",
+      "version": "4.0",
+      "normalized_by": "gemini-chunked",
+      "db_ready": true,
+      "normalized_at": "2026-05-09T20:39:47.747173"
+    }
+  },
+  {
+    "company": "Banking",
+    "source_pdf": "AMANA_Banking_2020.pdf",
+    "financials": {
+      "2020": {
+        "bank": {
+          "income_statement": {
+            "financing_income": 7211643435,
+            "financing_expenses": -3757313167,
+            "net_financing_income": 3454330268,
+            "net_fee_and_commission_income": 328562743,
+            "net_trading_income": 444376037,
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": 3260627,
+            "net_gains_losses_from_derecognition_of_financial_assets": 928646,
+            "net_other_operating_income": 2302448,
+            "total_operating_income": 4233760769,
+            "impairment_on_financial_assets": -513726961,
+            "net_operating_income": 3720033808,
+            "personnel_expenses": 1446138333,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 281177308,
+            "amortisation_of_intangible_assets": 70374848,
+            "other_operating_expenses": 767727520,
+            "total_operating_expenses": 2565418009,
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax_debt_repayment_levy": 1154615799,
+            "value_added_tax_on_financial_services_nation_building_tax_debt_repayment_levy": -393167272,
+            "profit_before_tax": 761448527,
+            "tax_expenses": -297753065,
+            "profit_for_the_year": 463695462,
+            "earnings_per_share_basic_diluted": 0.18
+          },
+          "balance_sheet": {
+            "due_to_depositors": 104331986,
+            "financing_expenses": 5942018
+          }
+        },
+        "cash_flow": {
+          "financing_income_received": "7,211,643,435",
+          "fee_and_commission_received": "50,075,573",
+          "financing_expenses_paid": "(3,977,767,966)",
+          "foreign_exchange_income_received": "497.356.054",
+          "gratuity_payments_made": "(5,664,065)",
+          "payments_to_employees_and_suppliers": "(2,590,103,305)",
+          "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": "1,185,539,726",
+          "financing_and_receivables_to_other_customers": "(5,363,730,242)",
+          "other_financial_assets": "(63,080,010)",
+          "other_non_financial_assets": "223,410,268",
+          "balance_with_central_bank_of_sri_lanka": "(7,961,673,232)",
+          "due_to_depositors": "12,199,263,852",
+          "due_to_banks": "864,852,278",
+          "other_liabilities": "(223,939,036)",
+          "net_cash_flow_from_operating_activities_before_income_tax": "860,643,604",
+          "income_tax_paid": "(198,638,012)",
+          "net_cash_flow_from_operating_activities": "662,005,592",
+          "acquisition_of_property_plant_and_equipment": "(29,130,963)",
+          "proceeds_from_sale_of_property_plant_and_equipment": null,
+          "acquisition_of_intangible_assets": "(90,540,449)",
+          "placements_with_licensed_finance_companies": "(2,960,869,081)",
+          "placements_with_banks": "(810,904,622)",
+          "dividend_received_from_financial_assets": "2,302,448",
+          "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": "20,127,822",
+          "net_cash_flows_used_in_investing_activities": "(3,869,014,845)",
+          "rights_issue_of_shares": null,
+          "share_issue_expenses": "(200,000)",
+          "dividend_paid": "(365,154)",
+          "net_cash_flows_from_financing_activities": "(565,154)",
+          "net_increase_decrease_in_cash_and_cash_equivalents": "(3,207,574,407)",
+          "cash_and_cash_equivalents_at_the_beginning_of_the_year": "10,068,030,937",
+          "cash_and_cash_equivalents_at_the_end_of_the_year": "6,860,456,530",
+          "profit_before_tax": "761,448,527",
+          "depreciation_of_property_plant_equipment_and_right_of_use_assets": "281,177,308",
+          "amortisation_of_intangible_assets": "70,374,848",
+          "profit_loss_on_disposal_of_property_plant_and_equipment": null,
+          "impairment_for_financing_and_receivables_to_other_customers_and_financial_assets": "513,726,961",
+          "provision_for_gratuity": "37,403,708",
+          "increase_decrease_in_placement_income_receivable": "(279,415,816)",
+          "increase_decrease_in_profit_payable": "(259,776,339)",
+          "other_non_cash_items": "71,827,669",
+          "dividend_income_net": "(2,302,448)",
+          "gratuity_payments": "(5,664,065)",
+          "profit_loss_on_mark_to_market_valuation": "(3,260,627)"
+        }
+      },
+      "2019": {
+        "bank": {
+          "income_statement": {
+            "financing_income": 7709286294,
+            "financing_expenses": -4544370605,
+            "net_financing_income": 3164915689,
+            "net_fee_and_commission_income": 329040746,
+            "net_trading_income": 738397355,
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": 4862561,
+            "net_gains_losses_from_derecognition_of_financial_assets": 11150575,
+            "net_other_operating_income": 8251376,
+            "total_operating_income": 4256618302,
+            "impairment_on_financial_assets": -288928583,
+            "net_operating_income": 3967689719,
+            "personnel_expenses": 1381445709,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 256195369,
+            "amortisation_of_intangible_assets": 51025609,
+            "other_operating_expenses": 902349033,
+            "total_operating_expenses": 2591015720,
+            "operating_profit_before_value_added_tax_on_financial_services_nation_building_tax_debt_repayment_levy": 1376673999,
+            "value_added_tax_on_financial_services_nation_building_tax_debt_repayment_levy": -531825986,
+            "profit_before_tax": 844848013,
+            "tax_expenses": -383916616,
+            "profit_for_the_year": 460931397,
+            "earnings_per_share_basic_diluted": 0.18
+          },
+          "balance_sheet": {
+            "due_to_depositors": 11210153,
+            "financing_expenses": 1179496
+          },
+          "equity": {
+            "as_at_1_january_2019": 185248990,
+            "impact_of_adopting_slfrs_16": -9138391,
+            "restated_opening_balance": 176110599,
+            "profit_for_the_year": 460931397,
+            "other_comprehensive_income": 8299723,
+            "interim_dividend_2019": -200111243,
+            "transfers_to_statutory_reserve_fund": -23046570,
+            "transferred_to_retained_earnings": 1086460,
+            "as_at_1_january_2020": 423270366,
+            "profit_for_the_year_0": 463695462,
+            "other_comprehensive_income_0": 4365285,
+            "interim_scrip_dividend_2020": -200111242,
+            "share_issue_expenses": -200000,
+            "transfers_to_statutory_reserve_fund_0": -23184773,
+            "transferred_to_retained_earnings_0": 1086460,
+            "as_at_31_december_2020": 668921558
+          }
+        },
+        "cash_flow": {
+          "financing_income_received": "7,160,433,762",
+          "fee_and_commission_received": "329,040,746",
+          "financing_expenses_paid": "(4,499,462,313)",
+          "foreign_exchange_income_received": "737,305,876",
+          "gratuity_payments_made": "(14,709,868)",
+          "payments_to_employees_and_suppliers": "(2,732,597,013)",
+          "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": "980,011,190",
+          "financing_and_receivables_to_other_customers": "(4,813,177,353)",
+          "other_financial_assets": "(83,035,024)",
+          "other_non_financial_assets": "(251,141,545)",
+          "balance_with_central_bank_of_sri_lanka": "94,647,450",
+          "due_to_depositors": "9,804,054,143",
+          "due_to_banks": "(107,800,000)",
+          "other_liabilities": "(1,316,928,160)",
+          "net_cash_flow_from_operating_activities_before_income_tax": "4,306,630,701",
+          "income_tax_paid": "(345,688,902)",
+          "net_cash_flow_from_operating_activities": "3,960,941,799",
+          "acquisition_of_property_plant_and_equipment": "(277,670,943)",
+          "proceeds_from_sale_of_property_plant_and_equipment": "964,652",
+          "acquisition_of_intangible_assets": "(49,788,947)",
+          "placements_with_licensed_finance_companies": "2,403,218,172",
+          "placements_with_banks": "(1,177,298,188)",
+          "dividend_received_from_financial_assets": "7,431,422",
+          "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": "57,564,723",
+          "net_cash_flows_used_in_investing_activities": "964,420,891",
+          "rights_issue_of_shares": null,
+          "share_issue_expenses": null,
+          "dividend_paid": "(196,781,871)",
+          "net_cash_flows_from_financing_activities": "(196,781,871)",
+          "net_increase_decrease_in_cash_and_cash_equivalents": "4,728,580,819",
+          "cash_and_cash_equivalents_at_the_beginning_of_the_year": "5,339,450,118",
+          "cash_and_cash_equivalents_at_the_end_of_the_year": "10,068,030,937",
+          "profit_before_tax": "844,848,013",
+          "depreciation_of_property_plant_equipment_and_right_of_use_assets": "256,195,369",
+          "amortisation_of_intangible_assets": "51,025,609",
+          "profit_loss_on_disposal_of_property_plant_and_equipment": "(819,954)",
+          "impairment_for_financing_and_receivables_to_other_customers_and_financial_assets": "288,928,583",
+          "provision_for_gratuity": "43,707,162",
+          "increase_decrease_in_placement_income_receivable": "(170,487,106)",
+          "increase_decrease_in_profit_payable": "88,652,712",
+          "other_non_cash_items": "(399,897,909)",
+          "dividend_income_net": "(7,431,422)",
+          "gratuity_payments": "(14,709,868)",
+          "profit_loss_on_mark_to_market_valuation": null
+        },
+        "group": {
+          "equity": {
+            "as_at_1_january_2019": 11634100314,
+            "impact_of_adopting_slfrs_16": -9138391,
+            "restated_opening_balance": 11624961923,
+            "profit_for_the_year": 460931397,
+            "other_comprehensive_income": -32214047,
+            "interim_dividend_2019": -200111243,
+            "transfers_to_statutory_reserve_fund": null,
+            "transferred_to_retained_earnings": null,
+            "as_at_1_january_2020": 11853568031,
+            "profit_for_the_year_0": 463695462,
+            "other_comprehensive_income_0": 150214857,
+            "share_issue_expenses": -200000,
+            "transfers_to_statutory_reserve_fund_0": null,
+            "transferred_to_retained_earnings_0": null,
+            "as_at_31_december_2020": 12467278350
+          }
+        }
+      }
+    },
+    "normalization_meta": {
+      "status": "success",
+      "version": "4.0",
+      "normalized_by": "gemini-chunked",
+      "db_ready": true,
+      "normalized_at": "2026-05-09T20:59:35.928939"
+    }
+  },
+  {
+    "company": "Banking",
+    "source_pdf": "AMANA_Banking_2022.pdf",
+    "financials": {
+      "2022": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "12,113,112,544",
+            "financing_expenses": "(7,344,487,821)",
+            "net_financing_income": "4,768,624,723",
+            "net_fee_and_commission_income": "750,312,668",
+            "net_trading_income": "864,699,138",
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": "(21,646,296)",
+            "net_gains_losses_from_derecognition_of_financial_assets": "(1,453,173)",
+            "net_other_operating_income": "5,159,290",
+            "total_operating_income": "6,365,696,350",
+            "impairment_on_financial_assets": "(1,638,483,485)",
+            "net_operating_income": "4,727,212,865",
+            "personnel_expenses": "1,488,370,644",
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": "274,607,079",
+            "amortisation_of_intangible_assets": "51,327,168",
+            "other_operating_expenses": "1,176,643,239",
+            "total_operating_expenses": "2,990,948,130",
+            "operating_profit_before_vat_on_financial_services_social_security_contribution_levy": "1,736,264,735",
+            "vat_on_financial_services_social_security_contribution_levy": "(528,989,373)",
+            "profit_before_tax": "1,207,275,362",
+            "tax_expenses": "(419,098,458)",
+            "profit_for_the_year": "788,176,904",
+            "earnings_per_share_basic_diluted": "0.28"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": "22,603,294,374",
+            "balance_with_central_bank_of_sri_lanka": "5,085,679,063",
+            "placements_with_banks": "24,570,292,448",
+            "placements_with_licensed_finance_companies": "77,154",
+            "derivative_financial_assets": "70,733,336",
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": "59,561,097",
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": "83,185,916,541",
+            "financial_assets_measured_at_fair_value_through_other_comprehensive_income": "332,504,996",
+            "other_assets_financial": "2,323,565,713",
+            "property_plant_equipment_and_right_of_use_assets": "2,466,761,457",
+            "intangible_assets": "319,253,349",
+            "other_assets_non_financial": "262,467,487",
+            "deferred_tax_asset": "407,785,544",
+            "total_assets": "141,687,892,559",
+            "due_to_banks": "11,856,722,935",
+            "derivative_financial_liabilities": "20,880,000",
+            "financial_liabilities_at_amortised_cost_due_to_depositors": "112,546,017,229",
+            "other_liabilities_financial": "2,041,967,432",
+            "current_tax_liabilities": "645,606,465",
+            "dividend_payable": "6,351,708",
+            "retirement_benefit_liability": "109,411,635",
+            "other_liabilities_non_financial": "99,580,091",
+            "total_liabilities": "127,326,537,495"
+          },
+          "cash_flow": {
+            "financing_income_received": 11693445345,
+            "fee_and_commission_received": 748859495,
+            "financing_expenses_paid": -6463893804,
+            "foreign_exchange_income_received": 862745140,
+            "gratuity_payments_made": -28185205,
+            "payments_to_employees_and_suppliers": -3165088968,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 3647882003,
+            "financing_and_receivables_to_other_customers": -8923852269,
+            "other_financial_assets": -1109611149,
+            "other_non_financial_assets": -135891370,
+            "balance_with_central_bank_of_sri_lanka": -285652470,
+            "due_to_depositors": 15547636262,
+            "due_to_banks": 2846736752,
+            "other_liabilities": -143859705,
+            "net_cash_flow_from_operating_activities_before_income_tax": 11443388054,
+            "income_tax_paid": -444759164,
+            "net_cash_flow_from_operating_activities": 10998628890,
+            "acquisition_of_property_plant_and_equipment": -65867597,
+            "proceeds_from_sale_of_property_plant_and_equipment": 315625,
+            "acquisition_of_intangible_assets": -137746011,
+            "placements_with_licensed_finance_companies": -3828,
+            "placements_with_banks": 3149994271,
+            "dividend_received_from_financial_assets": 4843665,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": -16573309,
+            "net_cash_flows_used_in_investing_activities": 2934962816,
+            "share_issue_expenses": -205228,
+            "dividend_paid": -107365,
+            "net_cash_flows_from_financing_activities": -312593,
+            "net_increase_decrease_in_cash_and_cash_equivalents": 13933279113,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 8674644482,
+            "cash_and_cash_equivalents_at_the_end_of_the_year": 22607923595,
+            "profit_before_tax": 1207275362,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 274607079,
+            "amortisation_of_intangible_assets": 51327168,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -315625,
+            "impairment_on_financial_assets": 1638483485,
+            "provision_for_gratuity": 28914288,
+            "increase_decrease_in_placement_income_receivable": -419667199,
+            "increase_decrease_in_profit_payable": 840604851,
+            "other_non_cash_items": 38035168,
+            "dividend_income_net": -4843665,
+            "gratuity_payments": -28185205,
+            "profit_loss_on_mark_to_market_valuation": 21646296
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 788176904,
+            "net_profit_loss_on_financial_assets_fair_value_through_other_comprehensive_income": -13504590,
+            "re_measurement_gain_loss_on_defined_benefit_plans": 22398615,
+            "deferred_tax_effect_on_defined_benefit_plans": -6719585,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 15679030,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -65150747,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": -65150747,
+            "total_comprehensive_income_for_the_year": 723026157
+          }
+        },
+        "equity": {
+          "as_at_1_january_2022": {
+            "notes": null,
+            "stated_capital": 11079706011,
+            "statutory_reserve_fund": 157693120,
+            "fair_value_reserve": 98898126,
+            "revaluation_reserve": 1076687938,
+            "retained_earnings": 1225548940,
+            "total": 13638534135
+          },
+          "profit_for_the_year": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": 788176904,
+            "total": 788176904
+          },
+          "other_comprehensive_income": {
+            "notes": "38",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": -13504590,
+            "revaluation_reserve": -67325187,
+            "retained_earnings": 15679030,
+            "total": -65150747
+          },
+          "interim_scrip_dividend_2022": {
+            "notes": null,
+            "stated_capital": 269115119,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -269115119,
+            "total": null
+          },
+          "share_issue_expenses": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -205228,
+            "total": -205228
+          },
+          "transfers_to_statutory_reserve_fund": {
+            "notes": "37",
+            "stated_capital": null,
+            "statutory_reserve_fund": 39408845,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -39408845,
+            "total": null
+          },
+          "transferred_to_retained_earnings": {
+            "notes": "40",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": -1086460,
+            "retained_earnings": 1086460,
+            "total": null
+          },
+          "as_at_31_december_2022": {
+            "notes": null,
+            "stated_capital": 11348821130,
+            "statutory_reserve_fund": 197101965,
+            "fair_value_reserve": 85393536,
+            "revaluation_reserve": 1008276291,
+            "retained_earnings": 1721762142,
+            "total": 14361355064
+          }
+        }
+      },
+      "2021": {
+        "bank": {
+          "income_statement": {
+            "financing_income": "7,674,186,731",
+            "financing_expenses": "(3,418,693,290)",
+            "net_financing_income": "4,255,493,441",
+            "net_fee_and_commission_income": "401,922,403",
+            "net_trading_income": "155,105,107",
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": "(7,013,153)",
+            "net_gains_losses_from_derecognition_of_financial_assets": "(11,732,213)",
+            "net_other_operating_income": "5,226,813",
+            "total_operating_income": "4,799,002,398",
+            "impairment_on_financial_assets": "(784,952,089)",
+            "net_operating_income": "4,014,050,309",
+            "personnel_expenses": "1,399,260,032",
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": "279,632,013",
+            "amortisation_of_intangible_assets": "58,685,409",
+            "other_operating_expenses": "831,827,820",
+            "total_operating_expenses": "2,569,405,274",
+            "operating_profit_before_vat_on_financial_services_social_security_contribution_levy": "1,444,645,035",
+            "vat_on_financial_services_social_security_contribution_levy": "(363,632,453)",
+            "profit_before_tax": "1,081,012,582",
+            "tax_expenses": "(256,314,684)",
+            "profit_for_the_year": "824,697,898",
+            "earnings_per_share_basic_diluted": "0.30"
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": "8,673,811,858",
+            "balance_with_central_bank_of_sri_lanka": "4,800,026,593",
+            "placements_with_banks": "27,302,269,408",
+            "placements_with_licensed_finance_companies": "73,341",
+            "derivative_financial_assets": "510,066,210",
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": "64,634,084",
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": "75,816,397,323",
+            "financial_assets_measured_at_fair_value_through_other_comprehensive_income": "346,009,586",
+            "other_assets_financial": "1,213,996,086",
+            "property_plant_equipment_and_right_of_use_assets": "2,447,149,785",
+            "intangible_assets": "232,834,506",
+            "other_assets_non_financial": "449,563,025",
+            "deferred_tax_asset": "52,071,523",
+            "total_assets": "121,908,903,328",
+            "due_to_banks": "9,009,986,183",
+            "derivative_financial_liabilities": "783,199,782",
+            "financial_liabilities_at_amortised_cost_due_to_depositors": "96,157,776,116",
+            "other_liabilities_financial": "1,696,126,980",
+            "current_tax_liabilities": "419,795,391",
+            "dividend_payable": "6,459,073",
+            "retirement_benefit_liability": "131,081,167",
+            "other_liabilities_non_financial": "65,944,501",
+            "total_liabilities": "108,270,369,193"
+          },
+          "cash_flow": {
+            "financing_income_received": 7246032366,
+            "fee_and_commission_received": 390190190,
+            "financing_expenses_paid": -3353863652,
+            "foreign_exchange_income_received": 155105107,
+            "gratuity_payments_made": -13465655,
+            "payments_to_employees_and_suppliers": -2578176631,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 1845821725,
+            "financing_and_receivables_to_other_customers": -14022678701,
+            "other_financial_assets": 229652779,
+            "other_non_financial_assets": -39780042,
+            "balance_with_central_bank_of_sri_lanka": 6610443970,
+            "due_to_depositors": 12577708993,
+            "due_to_banks": 7042093083,
+            "other_liabilities": 347551326,
+            "net_cash_flow_from_operating_activities_before_income_tax": 14590813133,
+            "income_tax_paid": -462065809,
+            "net_cash_flow_from_operating_activities": 14128747324,
+            "acquisition_of_property_plant_and_equipment": -83813857,
+            "proceeds_from_sale_of_property_plant_and_equipment": 130000,
+            "acquisition_of_intangible_assets": -34279592,
+            "placements_with_licensed_finance_companies": 2969402445,
+            "placements_with_banks": -15155102537,
+            "dividend_received_from_financial_assets": 5096813,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": -15725432,
+            "net_cash_flows_used_in_investing_activities": -12314292160,
+            "share_issue_expenses": -200000,
+            "dividend_paid": -67212,
+            "net_cash_flows_from_financing_activities": -267212,
+            "net_increase_decrease_in_cash_and_cash_equivalents": 1814187952,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 6860456530,
+            "cash_and_cash_equivalents_at_the_end_of_the_year": 8674644482,
+            "profit_before_tax": 1081012582,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 279632013,
+            "amortisation_of_intangible_assets": 58685409,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -130000,
+            "impairment_on_financial_assets": 784952089,
+            "provision_for_gratuity": 16543674,
+            "increase_decrease_in_placement_income_receivable": -428154365,
+            "increase_decrease_in_profit_payable": 25826135,
+            "other_non_cash_items": 39003503,
+            "dividend_income_net": -5096813,
+            "gratuity_payments": -13465655,
+            "profit_loss_on_mark_to_market_valuation": 7013153
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 824697898,
+            "net_profit_loss_on_financial_assets_fair_value_through_other_comprehensive_income": 54018360,
+            "revaluation_surplus_on_property_plant_and_equipment": 274905537,
+            "deferred_tax_effect_on_revaluation_surplus": -14588542,
+            "re_measurement_gain_loss_on_defined_benefit_plans": 42661226,
+            "deferred_tax_effect_on_defined_benefit_plans": -10238694,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 32422532,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": 346757887,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": 346757887,
+            "total_comprehensive_income_for_the_year": 1171455785
+          }
+        },
+        "equity": {
+          "as_at_1_january_2021": {
+            "notes": null,
+            "stated_capital": 10819561398,
+            "statutory_reserve_fund": 116458225,
+            "fair_value_reserve": 44879766,
+            "revaluation_reserve": 817457403,
+            "retained_earnings": 668921558,
+            "total": 12467278350
+          },
+          "profit_for_the_year": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": 824697898,
+            "total": 824697898
+          },
+          "other_comprehensive_income": {
+            "notes": "38",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": 54018360,
+            "revaluation_reserve": 260316995,
+            "retained_earnings": 32422532,
+            "total": 346757887
+          },
+          "interim_scrip_dividend_2021": {
+            "notes": null,
+            "stated_capital": 260144613,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -260144613,
+            "total": null
+          },
+          "share_issue_expenses": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -200000,
+            "total": -200000
+          },
+          "transfers_to_statutory_reserve_fund": {
+            "notes": "37",
+            "stated_capital": null,
+            "statutory_reserve_fund": 41234895,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -41234895,
+            "total": null
+          },
+          "transferred_to_retained_earnings": {
+            "notes": "40",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": -1086460,
+            "retained_earnings": 1086460,
+            "total": null
+          }
+        }
+      }
+    },
+    "normalization_meta": {
+      "status": "success",
+      "version": "4.0",
+      "normalized_by": "gemini-chunked",
+      "db_ready": true,
+      "normalized_at": "2026-05-09T21:00:06.277864"
+    }
+  },
+  {
+    "company": "Banking",
+    "source_pdf": "AMANA_Banking_2024.pdf",
+    "financials": {
+      "2024": {
+        "bank": {
+          "income_statement": {
+            "due_to_depositors": 39652,
+            "financing_expenses": 46489
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 17070764566,
+            "balance_with_central_bank_of_sri_lanka": 7078039326,
+            "placements_with_banks": 38311689750,
+            "placements_with_licensed_finance_companies": 507640396,
+            "derivative_financial_assets": 177460850,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 70216929,
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": 111301849020,
+            "financial_assets_measured_at_fair_value_through_other_comprehensive_income": 348710504,
+            "other_assets_financial": 2829580181,
+            "property_plant_equipment_and_right_of_use_assets": 2968026601,
+            "intangible_assets": 337562608,
+            "other_assets_non_financial": 510950335,
+            "deferred_tax_assets": 824316848,
+            "total_assets": 182336807914,
+            "due_to_banks": 18949309,
+            "derivative_financial_liabilities": 22856743,
+            "financial_liabilities_at_amortised_cost_due_to_depositors": 154405710056,
+            "other_liabilities_financial": 4099974790,
+            "current_tax_liabilities": 473465041,
+            "dividend_payable": 99470636,
+            "retirement_benefit_liability": 186730809,
+            "other_liabilities_non_financial": 187790136,
+            "total_liabilities": 159494947520
+          },
+          "cash_flow": {
+            "financing_income_received": 15707102349,
+            "fee_and_commission_received": 1074221675,
+            "financing_expenses_paid": -9296579758,
+            "foreign_exchange_income_received": 693112850,
+            "gratuity_payments_made": -13472750,
+            "payments_to_employees_and_suppliers": -5230147153,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 2934237213,
+            "increase_decrease_in_operating_assets": -21933497525,
+            "financing_and_receivables_to_other_customers": -921644258,
+            "other_financial_assets": -207916684,
+            "balance_with_central_bank_of_sri_lanka": 2368823342,
+            "due_to_depositors": 22251557030,
+            "due_to_banks": -302217217,
+            "other_liabilities": 689896255,
+            "net_cash_generated_from_operating_activities_before_income_tax": 4879238156,
+            "income_tax_paid": -1289906511,
+            "net_cash_used_in_from_operating_activities": 3589331645,
+            "acquisition_of_property_plant_and_equipment": -257710731,
+            "proceeds_from_sale_of_property_plant_and_equipment": 72034,
+            "acquisition_of_intangible_assets": -130399413,
+            "placements_with_licensed_finance_companies": -500002951,
+            "placements_with_banks": 3849994807,
+            "dividend_received_from_financial_assets": 5917689,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": -19191316,
+            "net_cash_used_from_investing_activities": 2948680119,
+            "rights_issue_of_shares": null,
+            "share_issue_expenses": null,
+            "dividend_paid": -568205943,
+            "net_cash_used_in_from_financing_activities": -568205943,
+            "net_increase_decrease_in_cash_and_cash_equivalents": 5969805821,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 11107767402,
+            "cash_and_cash_equivalents_at_the_end_of_the_year": 17077573223,
+            "profit_before_tax": 2786843324,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 256903664,
+            "amortisation_of_intangible_assets": 64936795,
+            "profit_loss_on_disposal_of_equity": -3046269,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -72034,
+            "impairment_on_financial_assets": 289612927,
+            "provision_for_gratuity": 33662105,
+            "increase_decrease_in_placement_income_receivable": 307540088,
+            "increase_decrease_in_profit_payable": -783454021,
+            "other_non_cash_items": 39686184,
+            "dividend_income_net": -5917689,
+            "gratuity_payments": -13472750,
+            "profit_loss_on_mark_to_market_valuation": -38985111
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 1774665732,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": null,
+            "financial_assets_fair_value_through_other_comprehensive_income": null,
+            "change_in_fair_value_of_financial_assets_fair_value_through_other_comprehensive_income": 29710098,
+            "re_measurement_gain_loss_on_defined_benefit_plans": -36125421,
+            "deferred_tax_effect_on_defined_benefit_plans": 10837626,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -25287795,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": 4422303,
+            "total_comprehensive_income_for_the_year": 1779088035
+          }
+        },
+        "company": {
+          "equity": {
+            "profit_for_the_year": {
+              "retained_earnings_rs": 1774665732,
+              "total_rs": 1774665732
+            },
+            "other_comprehensive_income": {
+              "note": "38",
+              "fair_value_reserve_rs": 29710098,
+              "retained_earnings_rs": -25287795,
+              "total_rs": 4422303
+            },
+            "interim_dividend_2024": {
+              "retained_earnings_rs": -661350895,
+              "total_rs": -661350895
+            },
+            "share_based_payment_expense": {
+              "note": "51",
+              "esop_reserve_rs": 27539030
+            },
+            "transfers_to_statutory_reserve_fund": {
+              "note": "37",
+              "statutory_reserve_fund_rs": 88733287,
+              "retained_earnings_rs": -88733287
+            },
+            "transferred_to_retained_earnings": {
+              "note": "40",
+              "revaluation_reserve_rs": -1124945,
+              "retained_earnings_rs": 1124945
+            },
+            "as_at_31_december_2024": {
+              "stated_capital_rs": 17633461196,
+              "esop_reserve_rs": 78517838,
+              "statutory_reserve_fund_rs": 355174057,
+              "fair_value_reserve_rs": 101599044,
+              "revaluation_reserve_rs": 1006064886,
+              "retained_earnings_rs": 3667043373,
+              "total_rs": 22841860394
+            }
+          }
+        }
+      },
+      "2023": {
+        "bank": {
+          "income_statement": {
+            "due_to_depositors": 485495,
+            "financing_expenses": 10535606
+          },
+          "balance_sheet": {
+            "cash_and_cash_equivalents": 11100863400,
+            "balance_with_central_bank_of_sri_lanka": 9446862668,
+            "placements_with_banks": 42474569846,
+            "placements_with_licensed_finance_companies": 80783,
+            "derivative_financial_assets": 194267095,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 8994233,
+            "financial_assets_at_amortised_cost_financing_and_receivables_to_other_customers": 89658059768,
+            "financial_assets_measured_at_fair_value_through_other_comprehensive_income": 319000406,
+            "other_assets_financial": 2006908679,
+            "property_plant_equipment_and_right_of_use_assets": 2775396192,
+            "intangible_assets": 379309190,
+            "other_assets_non_financial": 303033651,
+            "deferred_tax_assets": 784429734,
+            "total_assets": 159451775645,
+            "due_to_banks": 321166526,
+            "derivative_financial_liabilities": 947739,
+            "financial_liabilities_at_amortised_cost_due_to_depositors": 132937607047,
+            "other_liabilities_financial": 3391138093,
+            "current_tax_liabilities": 722144473,
+            "dividend_payable": 6325683,
+            "retirement_benefit_liability": 130416033,
+            "other_liabilities_non_financial": 245445827,
+            "total_liabilities": 137755191421
+          },
+          "cash_flow": {
+            "financing_income_received": 17935909395,
+            "fee_and_commission_received": 932293539,
+            "financing_expenses_paid": -9910639207,
+            "foreign_exchange_income_received": 1765213774,
+            "gratuity_payments_made": -18784553,
+            "payments_to_employees_and_suppliers": -4384224212,
+            "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": 6319768736,
+            "increase_decrease_in_operating_assets": -8583665332,
+            "financing_and_receivables_to_other_customers": -351643742,
+            "other_financial_assets": -128321076,
+            "balance_with_central_bank_of_sri_lanka": -4361183605,
+            "due_to_depositors": 19621914385,
+            "due_to_banks": -11535556409,
+            "other_liabilities": 1501531152,
+            "net_cash_generated_from_operating_activities_before_income_tax": 2482844109,
+            "income_tax_paid": -1136264701,
+            "net_cash_used_in_from_operating_activities": 1346579408,
+            "acquisition_of_property_plant_and_equipment": -101650537,
+            "proceeds_from_sale_of_property_plant_and_equipment": 47826,
+            "acquisition_of_intangible_assets": -118193401,
+            "placements_with_licensed_finance_companies": -3671,
+            "placements_with_banks": -18610005525,
+            "dividend_received_from_financial_assets": 2934708,
+            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 65679670,
+            "net_cash_used_from_investing_activities": -18761190930,
+            "rights_issue_of_shares": 6000677221,
+            "share_issue_expenses": -86195867,
+            "dividend_paid": -26025,
+            "net_cash_used_in_from_financing_activities": 5914455329,
+            "net_increase_decrease_in_cash_and_cash_equivalents": -11500156193,
+            "cash_and_cash_equivalents_at_the_beginning_of_the_year": 22607923595,
+            "cash_and_cash_equivalents_at_the_end_of_the_year": 11107767402,
+            "profit_before_tax": 2312190600,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 249465480,
+            "amortisation_of_intangible_assets": 58137560,
+            "profit_loss_on_disposal_of_equity": null,
+            "profit_loss_on_disposal_of_property_plant_and_equipment": -47826,
+            "impairment_on_financial_assets": 2120743289,
+            "provision_for_gratuity": 34785369,
+            "increase_decrease_in_placement_income_receivable": 697536789,
+            "increase_decrease_in_profit_payable": 769675433,
+            "other_non_cash_items": 114114109,
+            "dividend_income_net": -2934708,
+            "gratuity_payments": -18784553,
+            "profit_loss_on_mark_to_market_valuation": -15112806
+          },
+          "comprehensive_income": {
+            "profit_for_the_year": 1386776095,
+            "other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": null,
+            "financial_assets_fair_value_through_other_comprehensive_income": null,
+            "change_in_fair_value_of_financial_assets_fair_value_through_other_comprehensive_income": -13504590,
+            "re_measurement_gain_loss_on_defined_benefit_plans": -5003581,
+            "deferred_tax_effect_on_defined_benefit_plans": 1501074,
+            "net_other_comprehensive_income_not_to_be_reclassified_to_profit_or_loss_in_subsequent_periods": -3502507,
+            "other_comprehensive_income_loss_for_the_year_net_of_tax": -17007097,
+            "total_comprehensive_income_for_the_year": 1369768998
+          }
+        },
+        "company": {
+          "equity": {
+            "as_at_1_january_2023": {
+              "note": "36",
+              "stated_capital_rs": 11348821130,
+              "statutory_reserve_fund_rs": 197101965,
+              "fair_value_reserve_rs": 85393536,
+              "revaluation_reserve_rs": 1008276291,
+              "retained_earnings_rs": 1721762142,
+              "total_rs": 14361355064
+            },
+            "profit_for_the_year": {
+              "retained_earnings_rs": 1386776095,
+              "total_rs": 1386776095
+            },
+            "other_comprehensive_income": {
+              "note": "38",
+              "fair_value_reserve_rs": -13504590,
+              "retained_earnings_rs": -3502507,
+              "total_rs": -17007097
+            },
+            "interim_scrip_dividend_2023": {
+              "stated_capital_rs": 283962845,
+              "retained_earnings_rs": -283962845
+            },
+            "wht_on_scrip_dividend": {
+              "retained_earnings_rs": -50111096,
+              "total_rs": -50111096
+            },
+            "rights_issue": {
+              "note": "36",
+              "stated_capital_rs": 6000677221,
+              "total_rs": 6000677221
+            },
+            "share_issue_expenses": {
+              "retained_earnings_rs": -36084771,
+              "total_rs": -36084771
+            },
+            "share_based_payment_expense": {
+              "note": "51",
+              "esop_reserve_rs": 50978808
+            },
+            "transfers_to_statutory_reserve_fund": {
+              "note": "37",
+              "statutory_reserve_fund_rs": 69338805,
+              "retained_earnings_rs": -69338805
+            },
+            "transferred_to_retained_earnings": {
+              "note": "40",
+              "revaluation_reserve_rs": -1086460,
+              "retained_earnings_rs": 1086460
+            },
+            "as_at_31_december_2023": {
+              "stated_capital_rs": 17633461196,
+              "esop_reserve_rs": 50978808,
+              "statutory_reserve_fund_rs": 266440770,
+              "fair_value_reserve_rs": 71888946,
+              "revaluation_reserve_rs": 1007189831,
+              "retained_earnings_rs": 2666624673,
+              "total_rs": 21696584224
+            }
+          }
+        }
+      }
+    },
+    "normalization_meta": {
+      "status": "success",
+      "version": "4.0",
+      "normalized_by": "gemini-chunked",
+      "db_ready": true,
+      "normalized_at": "2026-05-09T21:00:48.194698"
+    }
+  }
+]

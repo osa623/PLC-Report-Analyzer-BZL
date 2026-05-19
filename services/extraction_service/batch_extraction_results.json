@@ -1,53 +1,3302 @@
 [
   {
-    "pdf_name": "hsenid_2022.pdf",
+    "pdf_name": "AMANA_Banking_2016.pdf",
     "statement_pages": {
-      "income_statement": 84,
-      "balance_sheet": 65,
-      "cash_flow": 68,
-      "equity": 66,
+      "income_statement": 130,
+      "balance_sheet": 132,
+      "cash_flow": 135,
+      "equity": 133,
+      "comprehensive_income": 131
+    },
+    "statements": {
+      "income_statement": {
+        "parse_meta": {
+          "version": "0.0.1",
+          "confidence": "100"
+        },
+        "header": {
+          "title": "STATEMENT OF PROFIT OR LOSS",
+          "subtitle": "Year ended 31 December"
+        },
+        "columns": [
+          "2016 (Bank)",
+          "2015 (Bank)"
+        ],
+        "rows": [
+          {
+            "label": "Financing Income",
+            "2016 (Bank)": "4,039,624,179",
+            "2015 (Bank)": "2,885,931,540",
+            "note": "4"
+          },
+          {
+            "label": "Financing Expenses",
+            "2016 (Bank)": "(2,115,335,249)",
+            "2015 (Bank)": "(1,405,258,772)",
+            "note": "5"
+          },
+          {
+            "label": "Net Financing Income",
+            "2016 (Bank)": "1,924,288,930",
+            "2015 (Bank)": "1,480,672,767"
+          },
+          {
+            "label": "Net Fees and Commission Income",
+            "2016 (Bank)": "246,568,285",
+            "2015 (Bank)": "168,555,950",
+            "note": "6"
+          },
+          {
+            "label": "Net Trading Income",
+            "2016 (Bank)": "257,454,611",
+            "2015 (Bank)": "390,234,591",
+            "note": "7"
+          },
+          {
+            "label": "Net Other Operating Income",
+            "2016 (Bank)": "4,961,144",
+            "2015 (Bank)": "27,659,037",
+            "note": "8"
+          },
+          {
+            "label": "Total Operating Income",
+            "2016 (Bank)": "2,433,272,970",
+            "2015 (Bank)": "2,067,122,345"
+          },
+          {
+            "label": "Impairment on Financial Assets",
+            "2016 (Bank)": "(217,177,926)",
+            "2015 (Bank)": "(2,817,355)",
+            "note": "9"
+          },
+          {
+            "label": "Net Operating Income",
+            "2016 (Bank)": "2,216,095,045",
+            "2015 (Bank)": "2,064,304,990"
+          },
+          {
+            "label": "Personnel Expenses",
+            "2016 (Bank)": "1,025,032,323",
+            "2015 (Bank)": "896,614,338",
+            "note": "10"
+          },
+          {
+            "label": "Depreciation of Property, Plant and Equipment",
+            "2016 (Bank)": "162,620,642",
+            "2015 (Bank)": "150,818,192",
+            "note": "25"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "2016 (Bank)": "78,634,792",
+            "2015 (Bank)": "40,881,465",
+            "note": "26"
+          },
+          {
+            "label": "Other Operating Expenses",
+            "2016 (Bank)": "678,729,131",
+            "2015 (Bank)": "605,026,871",
+            "note": "11"
+          },
+          {
+            "label": "Total Operating Expenses",
+            "2016 (Bank)": "1,945,016,888",
+            "2015 (Bank)": "1,693,340,866"
+          },
+          {
+            "label": "Operating Profit Before Value Added Tax on Financial Services & Nation Building Tax",
+            "2016 (Bank)": "271,078,157",
+            "2015 (Bank)": "370,964,125"
+          },
+          {
+            "label": "Value Added Tax on Financial Services & Nation Building Tax",
+            "2016 (Bank)": "(168,266,307)",
+            "2015 (Bank)": "(152,248,222)"
+          },
+          {
+            "label": "Profit Before Tax",
+            "2016 (Bank)": "102,811,850",
+            "2015 (Bank)": "218,715,903"
+          },
+          {
+            "label": "Tax Expenses",
+            "2016 (Bank)": "(62,171,499)",
+            "2015 (Bank)": "(60,086,657)",
+            "note": "12"
+          },
+          {
+            "label": "Profit for the Year",
+            "2016 (Bank)": "40,640,351",
+            "2015 (Bank)": "158,629,246"
+          },
+          {
+            "label": "Earnings Per Share",
+            "2016 (Bank)": "0.03",
+            "2015 (Bank)": "0.13",
+            "note": "13"
+          }
+        ]
+      },
+      "balance_sheet": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "header": {
+          "title": "STATEMENT OF FINANCIAL POSITION",
+          "subtitle": "As at 31 December"
+        },
+        "rows": [
+          {
+            "label": "Cash and Cash Equivalents",
+            "Notes": "15",
+            "2016 (Bank)": "5,686,924,056",
+            "2015 (Bank)": "5,016,458,817"
+          },
+          {
+            "label": "Balance with Central Bank of Sri Lanka",
+            "Notes": "16",
+            "2016 (Bank)": "2,816,770,223",
+            "2015 (Bank)": "2,292,887,937"
+          },
+          {
+            "label": "Derivative Financial Assets",
+            "Notes": "17",
+            "2016 (Bank)": "59,483,044",
+            "2015 (Bank)": "61,037,310"
+          },
+          {
+            "label": "Placements with Banks",
+            "Notes": "18",
+            "2016 (Bank)": "4,662,466,350",
+            "2015 (Bank)": "3,624,928,993"
+          },
+          {
+            "label": "Placements with Licensed Finance Companies",
+            "Notes": "19",
+            "2016 (Bank)": "20,517",
+            "2015 (Bank)": "954,528,071"
+          },
+          {
+            "label": "Financial Investments - Held for Trading",
+            "Notes": "20",
+            "2016 (Bank)": "45,181,589",
+            "2015 (Bank)": "59,474,357"
+          },
+          {
+            "label": "Financing and Receivables to Other Customers",
+            "Notes": "21",
+            "2016 (Bank)": "38,451,662,449",
+            "2015 (Bank)": "33,073,596,195"
+          },
+          {
+            "label": "Financial Investments - Available for Sale",
+            "Notes": "22",
+            "2016 (Bank)": "394,775,149",
+            "2015 (Bank)": "432,056,080"
+          },
+          {
+            "label": "Other Financial Assets",
+            "Notes": "23",
+            "2016 (Bank)": "307,321,725",
+            "2015 (Bank)": "315,749,183"
+          },
+          {
+            "label": "Other Non Financial Assets",
+            "Notes": "24",
+            "2016 (Bank)": "227,058,761",
+            "2015 (Bank)": "257,216,898"
+          },
+          {
+            "label": "Property, Plant and Equipment",
+            "Notes": "25",
+            "2016 (Bank)": "1,247,590,879",
+            "2015 (Bank)": "1,271,732,452"
+          },
+          {
+            "label": "Intangible Assets",
+            "Notes": "26",
+            "2016 (Bank)": "269,376,298",
+            "2015 (Bank)": "236,502,947"
+          },
+          {
+            "label": "Deferred Tax Assets",
+            "Notes": "27",
+            "2016 (Bank)": "146,355,559",
+            "2015 (Bank)": "145,702,993"
+          },
+          {
+            "label": "Total Assets",
+            "2016 (Bank)": "54,314,986,599",
+            "2015 (Bank)": "47,741,872,233"
+          },
+          {
+            "label": "Due to Banks",
+            "Notes": "28",
+            "2016 (Bank)": "751,963,513",
+            "2015 (Bank)": "2,955,277,882"
+          },
+          {
+            "label": "Derivative Financial Liabilities",
+            "Notes": "29",
+            "2016 (Bank)": "98,341,433",
+            "2015 (Bank)": "67,405,185"
+          },
+          {
+            "label": "Due to Other Customers",
+            "Notes": "30",
+            "2016 (Bank)": "46,915,289,690",
+            "2015 (Bank)": "38,467,460,755"
+          },
+          {
+            "label": "Other Financial Liabilities",
+            "Notes": "31",
+            "2016 (Bank)": "566,565,119",
+            "2015 (Bank)": "341,597,683"
+          },
+          {
+            "label": "Other Non Financial Liabilities",
+            "Notes": "32",
+            "2016 (Bank)": "112,175,024",
+            "2015 (Bank)": "113,063,448"
+          },
+          {
+            "label": "Retirement Benefit Liability",
+            "Notes": "33",
+            "2016 (Bank)": "82,606,302",
+            "2015 (Bank)": "74,070,679"
+          },
+          {
+            "label": "Total Liabilities",
+            "2016 (Bank)": "48,526,941,081",
+            "2015 (Bank)": "42,018,875,633"
+          },
+          {
+            "label": "Stated Capital",
+            "Notes": "34",
+            "2016 (Bank)": "5,866,808,141",
+            "2015 (Bank)": "5,866,808,141"
+          },
+          {
+            "label": "Statutory Reserve Fund",
+            "Notes": "35",
+            "2016 (Bank)": "17,263,212",
+            "2015 (Bank)": "15,231,195"
+          },
+          {
+            "label": "Other Reserves",
+            "Notes": "36",
+            "2016 (Bank)": "(243,794,538)",
+            "2015 (Bank)": "(261,525,053)"
+          },
+          {
+            "label": "Revaluation Reserve",
+            "Notes": "37",
+            "2016 (Bank)": "526,908,060",
+            "2015 (Bank)": "527,799,509"
+          },
+          {
+            "label": "Retained Earnings",
+            "2016 (Bank)": "(379,139,357)",
+            "2015 (Bank)": "(425,317,193)"
+          },
+          {
+            "label": "Total Equity",
+            "2016 (Bank)": "5,788,045,518",
+            "2015 (Bank)": "5,722,996,600"
+          },
+          {
+            "label": "Total Liabilities and Shareholders' Funds",
+            "2016 (Bank)": "54,314,986,599",
+            "2015 (Bank)": "47,741,872,233"
+          },
+          {
+            "label": "Commitments and Contingencies",
+            "Notes": "41",
+            "2016 (Bank)": "26,191,124,490",
+            "2015 (Bank)": "18,413,142,582"
+          }
+        ]
+      },
+      "cash_flow": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "financial_data": []
+      },
+      "equity": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF CHANGES IN EQUITY",
+        "page_number": "131",
+        "statement_date": "December 2016",
+        "currency": "Rs.",
+        "rows": [
+          {
+            "label": "As at 1 January 2015",
+            "2016 (Bank)": "5,866,808,141",
+            "Statutory Reserve Fund": "7,299,733",
+            "Revenue Reserve": "(216,926,328)",
+            "Available for Sale Reserve": "(54,780,969)",
+            "Retained Earnings": "(576,161,646)",
+            "Total": "5,026,238,931"
+          },
+          {
+            "label": "Profit for the Year",
+            "Retained Earnings": "158,629,246",
+            "Total": "158,629,246"
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "Notes": "36",
+            "Available for Sale Reserve": "10,182,244",
+            "Revaluation Reserve": "527,799,509",
+            "Retained Earnings": "146,670",
+            "Total": "538,128,423"
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "Notes": "35",
+            "Statutory Reserve Fund": "7,931,462",
+            "Retained Earnings": "(7,931,462)"
+          },
+          {
+            "label": "As at 1 January 2016",
+            "2016 (Bank)": "5,866,808,141",
+            "Statutory Reserve Fund": "15,231,195",
+            "Revenue Reserve": "(216,926,328)",
+            "Available for Sale Reserve": "(44,598,725)",
+            "Revaluation Reserve": "527,799,509",
+            "Retained Earnings": "(425,317,193)",
+            "Total": "5,722,996,600"
+          },
+          {
+            "label": "Profit for the Year",
+            "Retained Earnings": "40,640,351",
+            "Total": "40,640,351"
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "Notes": "36",
+            "Available for Sale Reserve": "(5,418,752)",
+            "Retained Earnings": "6,678,054",
+            "Total": "1,259,302"
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "Notes": "35",
+            "Statutory Reserve Fund": "2,032,018",
+            "Retained Earnings": "(2,032,018)"
+          },
+          {
+            "label": "Reclassifying to Profit or Loss as Impairment",
+            "Notes": "36"
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "Notes": "37",
+            "Available for Sale Reserve": "23,149,267",
+            "Total": "23,149,267"
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "Revaluation Reserve": "(891,449)",
+            "Retained Earnings": "891,449"
+          },
+          {
+            "label": "As at 31 December 2016",
+            "2016 (Bank)": "5,866,808,141",
+            "Statutory Reserve Fund": "17,263,212",
+            "Revenue Reserve": "(216,926,328)",
+            "Available for Sale Reserve": "(26,868,210)",
+            "Revaluation Reserve": "526,908,060",
+            "Retained Earnings": "(379,139,357)",
+            "Total": "5,788,045,518"
+          }
+        ]
+      },
+      "comprehensive_income": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "Statement of Comprehensive Income",
+        "period_ended": "31 December",
+        "currency": "Rs.",
+        "sections": [
+          {
+            "name": "Statement of Comprehensive Income",
+            "rows": [
+              {
+                "label": "Profit for the Year",
+                "2016 (Bank)": "40,640,351",
+                "2015 (Bank)": "158,629,246"
+              },
+              {
+                "label": "Other Comprehensive Income / Expense",
+                "2016 (Bank)": null,
+                "2015 (Bank)": null
+              },
+              {
+                "label": "Other Comprehensive Income to be reclassified to Profit or Loss in Subsequent Periods:\nFinancial Investments - Available for Sale:",
+                "2016 (Bank)": null,
+                "2015 (Bank)": null
+              },
+              {
+                "label": "Net Gain/(Loss) on Financial Investments - Available for Sale",
+                "2016 (Bank)": "(131,461,592)",
+                "2015 (Bank)": "10,182,244"
+              },
+              {
+                "label": "Reclassification to Profit or Loss as Impairment",
+                "2016 (Bank)": "126,042,840",
+                "2015 (Bank)": null
+              },
+              {
+                "label": "Net Other Comprehensive Income to be Reclassified to\nProfit or Loss in Subsequent Periods:",
+                "2016 (Bank)": "(5,418,752)",
+                "2015 (Bank)": "10,182,244"
+              },
+              {
+                "label": "Other Comprehensive Income not to be Reclassified to Profit or Loss in Subsequent Periods:",
+                "2016 (Bank)": null,
+                "2015 (Bank)": null
+              },
+              {
+                "label": "Revaluation Surplus on Property, Plant and Equipment",
+                "2016 (Bank)": "-",
+                "2015 (Bank)": "533,340,869"
+              },
+              {
+                "label": "Deferred tax Effect on Revaluation Surplus",
+                "2016 (Bank)": "-",
+                "2015 (Bank)": "(5,541,360)"
+              },
+              {
+                "label": "Re-measurement Gain on Defined Benefit Plans",
+                "2016 (Bank)": "9,275,075",
+                "2015 (Bank)": "203,709"
+              },
+              {
+                "label": "Deferred Tax Effect on Defined Benefit Plans",
+                "2016 (Bank)": "(2,597,021)",
+                "2015 (Bank)": "(57,039)"
+              },
+              {
+                "label": "Net Other Comprehensive Income not to be reclassified to\nProfit or Loss in Subsequent Periods:",
+                "2016 (Bank)": "6,678,054",
+                "2015 (Bank)": "527,946,180"
+              },
+              {
+                "label": "Other Comprehensive Income for the Year Net of Tax",
+                "2016 (Bank)": "1,259,302",
+                "2015 (Bank)": "538,128,423"
+              },
+              {
+                "label": "Total Comprehensive Income for the Year Net of Tax",
+                "2016 (Bank)": "41,899,653",
+                "2015 (Bank)": "696,757,669"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "pdf_name": "AMANA_Banking_2018.pdf",
+    "statement_pages": {
+      "income_statement": 150,
+      "balance_sheet": 152,
+      "cash_flow": 154,
+      "equity": 153,
+      "comprehensive_income": 151
+    },
+    "statements": {
+      "income_statement": {
+        "parse_meta": {
+          "version": "0.0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF PROFIT OR LOSS",
+        "period_ended": "31 December",
+        "currency": "Rs.",
+        "tables": [
+          {
+            "table_num": 1,
+            "year": "2018",
+            "columns": [
+              "2018 (Bank)",
+              "2017 (Bank)"
+            ],
+            "rows": [
+              {
+                "label": "Financing Income",
+                "2018 (Bank)": "6,883,221,870",
+                "2017 (Bank)": "5,544,237,256"
+              },
+              {
+                "label": "Financing Expenses",
+                "2018 (Bank)": "(3,522,889,356)",
+                "2017 (Bank)": "(2,790,618,052)"
+              },
+              {
+                "label": "Net Financing Income",
+                "2018 (Bank)": "3,360,332,514",
+                "2017 (Bank)": "2,753,619,204"
+              },
+              {
+                "label": "Net Fees and Commission Income",
+                "2018 (Bank)": "297,048,806",
+                "2017 (Bank)": "236,134,326"
+              },
+              {
+                "label": "Net Trading Income",
+                "2018 (Bank)": "461,155,830",
+                "2017 (Bank)": "388,699,264"
+              },
+              {
+                "label": "Net Gains / (Losses) from Financial Assets Measured at Fair Value through Profit or Loss",
+                "2018 (Bank)": "(22,436,152)",
+                "2017 (Bank)": null
+              },
+              {
+                "label": "Net Gains from Derecognition of Financial Assets",
+                "2018 (Bank)": "1,892,185",
+                "2017 (Bank)": null
+              },
+              {
+                "label": "Net Other Operating Income",
+                "2018 (Bank)": "6,662,241",
+                "2017 (Bank)": "9,467,520"
+              },
+              {
+                "label": "Total Operating Income",
+                "2018 (Bank)": "4,104,655,424",
+                "2017 (Bank)": "3,387,920,314"
+              },
+              {
+                "label": "Impairment on Financial Assets",
+                "2018 (Bank)": "(476,765,687)",
+                "2017 (Bank)": "(289,782,674)"
+              },
+              {
+                "label": "Net Operating Income",
+                "2018 (Bank)": "3,627,889,737",
+                "2017 (Bank)": "3,098,137,640"
+              },
+              {
+                "label": "Personnel Expenses",
+                "2018 (Bank)": "1,246,223,287",
+                "2017 (Bank)": "1,095,792,424"
+              },
+              {
+                "label": "Depreciation of Property, Plant and Equipment",
+                "2018 (Bank)": "126,685,717",
+                "2017 (Bank)": "148,879,193"
+              },
+              {
+                "label": "Amortisation of Intangible Assets",
+                "2018 (Bank)": "47,939,212",
+                "2017 (Bank)": "48,967,708"
+              },
+              {
+                "label": "Other Operating Expenses",
+                "2018 (Bank)": "884,804,269",
+                "2017 (Bank)": "745,933,727"
+              },
+              {
+                "label": "Total Operating Expenses",
+                "2018 (Bank)": "2,305,652,485",
+                "2017 (Bank)": "2,039,573,052"
+              },
+              {
+                "label": "Operating Profit Before Value Added Tax on Financial Services, Nation Building Tax and Debt Repayment Levy",
+                "2018 (Bank)": "1,322,237,252",
+                "2017 (Bank)": "1,058,564,588"
+              },
+              {
+                "label": "Value Added Tax on Financial Services, Nation Building Tax and Debt Repayment Levy",
+                "2018 (Bank)": "(420,038,265)",
+                "2017 (Bank)": "(319,245,989)"
+              },
+              {
+                "label": "Profit Before Tax",
+                "2018 (Bank)": "902,198,987",
+                "2017 (Bank)": "739,318,599"
+              },
+              {
+                "label": "Tax Expenses",
+                "2018 (Bank)": "(345,753,279)",
+                "2017 (Bank)": "(236,490,936)"
+              },
+              {
+                "label": "Profit for the Year",
+                "2018 (Bank)": "556,445,708",
+                "2017 (Bank)": "502,827,663"
+              },
+              {
+                "label": "Earnings Per Share - Basic / Diluted",
+                "2018 (Bank)": "0.22",
+                "2017 (Bank)": "0.29"
+              }
+            ]
+          }
+        ]
+      },
+      "balance_sheet": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF FINANCIAL POSITION",
+        "period_ending": "As at 31 December",
+        "currency": "Rs.",
+        "sections": [
+          {
+            "name": "Assets",
+            "lines": [
+              {
+                "label": "Cash and Cash Equivalents",
+                "note": "17",
+                "2018 (Bank)": "5,338,090,636",
+                "2017 (Bank)": "5,859,766,950"
+              },
+              {
+                "label": "Balance with Central Bank of Sri Lanka",
+                "note": "18",
+                "2018 (Bank)": "3,543,444,781",
+                "2017 (Bank)": "4,127,811,572"
+              },
+              {
+                "label": "Placements with Banks",
+                "note": "19",
+                "2018 (Bank)": "9,264,699,249",
+                "2017 (Bank)": "5,285,796,238"
+              },
+              {
+                "label": "Placements with Licensed Finance Companies",
+                "note": "20",
+                "2018 (Bank)": "2,427,970,097",
+                "2017 (Bank)": "2,112,166,496"
+              },
+              {
+                "label": "Derivative Financial Assets",
+                "note": "21",
+                "2018 (Bank)": "445,732,740",
+                "2017 (Bank)": "127,616,662"
+              },
+              {
+                "label": "Financial Assets Measured at Fair Value through Profit or Loss",
+                "note": "22",
+                "2018 (Bank)": "113,249,108"
+              },
+              {
+                "label": "Financial Assets - Held for Trading",
+                "note": "22",
+                "2017 (Bank)": "41,645,557"
+              },
+              {
+                "label": "Financial Assets at Amortised Cost - Financing and Receivables to Other Customers",
+                "note": "23",
+                "2018 (Bank)": "52,853,663,356",
+                "2017 (Bank)": "42,914,143,571"
+              },
+              {
+                "label": "Financial Assets Measured at Fair Value through Other Comprehensive Income",
+                "note": "24",
+                "2018 (Bank)": "186,655,424"
+              },
+              {
+                "label": "Financial Assets - Available for Sale",
+                "note": "24",
+                "2017 (Bank)": "323,264,501"
+              },
+              {
+                "label": "Other Assets - Financial",
+                "note": "25",
+                "2018 (Bank)": "585,704,833",
+                "2017 (Bank)": "388,890,295"
+              },
+              {
+                "label": "Property, Plant and Equipment",
+                "note": "26",
+                "2018 (Bank)": "1,890,194,155",
+                "2017 (Bank)": "1,795,135,517"
+              },
+              {
+                "label": "Intangible Assets",
+                "note": "27",
+                "2018 (Bank)": "238,311,383",
+                "2017 (Bank)": "230,675,871"
+              },
+              {
+                "label": "Other Assets - Non Financial",
+                "note": "28",
+                "2018 (Bank)": "382,051,706",
+                "2017 (Bank)": "333,169,325"
+              },
+              {
+                "label": "Total Assets",
+                "2018 (Bank)": "77,269,767,468",
+                "2017 (Bank)": "63,540,082,555"
+              }
+            ]
+          },
+          {
+            "name": "Liabilities",
+            "lines": [
+              {
+                "label": "Due to Banks",
+                "note": "29",
+                "2018 (Bank)": "1,210,204,847"
+              },
+              {
+                "label": "Derivative Financial Liabilities",
+                "note": "30",
+                "2018 (Bank)": "1,441,005,622",
+                "2017 (Bank)": "29,924,292"
+              },
+              {
+                "label": "Financial Liabilities at Amortised Cost - Due to Depositors",
+                "note": "31",
+                "2018 (Bank)": "61,722,682,595",
+                "2017 (Bank)": "50,922,561,081"
+              },
+              {
+                "label": "Other Liabilities - Financial",
+                "note": "32",
+                "2018 (Bank)": "480,628,881",
+                "2017 (Bank)": "680,470,646"
+              },
+              {
+                "label": "Current Tax Liabilities",
+                "2018 (Bank)": "330,606,614",
+                "2017 (Bank)": "187,075,365"
+              },
+              {
+                "label": "Dividend Payable",
+                "2018 (Bank)": "3,562,069"
+              },
+              {
+                "label": "Deferred Tax Liability",
+                "note": "33",
+                "2018 (Bank)": "221,536,935",
+                "2017 (Bank)": "216,241,918"
+              },
+              {
+                "label": "Retirement Benefit Liability",
+                "note": "34",
+                "2018 (Bank)": "127,517,726",
+                "2017 (Bank)": "119,241,024"
+              },
+              {
+                "label": "Other Liabilities - Non Financial",
+                "note": "35",
+                "2018 (Bank)": "97,921,864",
+                "2017 (Bank)": "70,765,834"
+              },
+              {
+                "label": "Total Liabilities",
+                "2018 (Bank)": "65,635,667,153",
+                "2017 (Bank)": "52,226,280,160"
+              }
+            ]
+          },
+          {
+            "name": "Shareholders' Funds",
+            "lines": [
+              {
+                "label": "Stated Capital",
+                "note": "36",
+                "2018 (Bank)": "10,619,450,156",
+                "2017 (Bank)": "10,619,450,156"
+              },
+              {
+                "label": "Statutory Reserve Fund",
+                "note": "38",
+                "2018 (Bank)": "70.226.882",
+                "2017 (Bank)": "42,404,597"
+              },
+              {
+                "label": "Other Reserves",
+                "note": "39",
+                "2018 (Bank)": "(60,456,037)",
+                "2017 (Bank)": "(28,031,817)"
+              },
+              {
+                "label": "Revaluation Reserve",
+                "note": "40",
+                "2018 (Bank)": "819,630,323",
+                "2017 (Bank)": "820,716,783"
+              },
+              {
+                "label": "Retained Earnings",
+                "note": "41",
+                "2018 (Bank)": "185,248,991",
+                "2017 (Bank)": "(140,737,324)"
+              },
+              {
+                "label": "Total Equity",
+                "2018 (Bank)": "11,634,100.315",
+                "2017 (Bank)": "11,313,802.395"
+              }
+            ]
+          },
+          {
+            "name": "Total Liabilities and Shareholders' Funds",
+            "lines": [
+              {
+                "label": "Total Liabilities and Shareholders' Funds",
+                "2018 (Bank)": "77,269,767,468",
+                "2017 (Bank)": "63,540,082,555"
+              }
+            ]
+          },
+          {
+            "name": "Net Asset Value Per Share",
+            "lines": [
+              {
+                "label": "Net Asset Value Per Share",
+                "note": "42",
+                "2018 (Bank)": "4.65",
+                "2017 (Bank)": "4.52"
+              }
+            ]
+          },
+          {
+            "name": "Commitments and Contingencies",
+            "lines": [
+              {
+                "label": "Commitments and Contingencies",
+                "note": "46",
+                "2018 (Bank)": "46,485,430.714",
+                "2017 (Bank)": "27,813,190,776"
+              }
+            ]
+          },
+          {
+            "name": "Memorandum Information",
+            "lines": [
+              {
+                "label": "Number of Employees",
+                "2018 (Bank)": "911",
+                "2017 (Bank)": "742"
+              },
+              {
+                "label": "Number of Branches",
+                "2018 (Bank)": "29",
+                "2017 (Bank)": "28"
+              }
+            ]
+          }
+        ]
+      },
+      "cash_flow": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF CASH FLOWS",
+        "period_ending": "31 December",
+        "financial_data": [
+          {
+            "label": "Financing Income Received",
+            "2018 (Bank)": "6,416,841,127",
+            "2017 (Bank)": "5,445,156,050"
+          },
+          {
+            "label": "Fees and Commission Received",
+            "2018 (Bank)": "339,789,092",
+            "2017 (Bank)": "239,617,456"
+          },
+          {
+            "label": "Financing Expenses Paid",
+            "2018 (Bank)": "(3,429,654,751)",
+            "2017 (Bank)": "(2,595,124,827)"
+          },
+          {
+            "label": "Foreign Exchange Income Received",
+            "2018 (Bank)": "418,175,710",
+            "2017 (Bank)": "394,172,149"
+          },
+          {
+            "label": "Gratuity Payments Made",
+            "Note": "34",
+            "2018 (Bank)": "(9,948,748)",
+            "2017 (Bank)": "(8,354,105)"
+          },
+          {
+            "label": "Payments to Employees and Suppliers",
+            "2018 (Bank)": "(2,470,080,200)",
+            "2017 (Bank)": "(2,095,442,059)"
+          },
+          {
+            "label": "Operating Profit before Changes in Operating Assets and Liabilities (Note A)",
+            "2018 (Bank)": "1,265,122,230",
+            "2017 (Bank)": "1,380,024,664"
+          },
+          {
+            "label": "(Increase) / Decrease in Operating Assets",
+            "2018 (Bank)": "(10,037,289,447)",
+            "2017 (Bank)": "(4,674,618,472)"
+          },
+          {
+            "label": "Financing and Receivables to Other Customers",
+            "2018 (Bank)": "(496,773,924)",
+            "2017 (Bank)": "(153,516,506)"
+          },
+          {
+            "label": "Other Assets - Financial",
+            "2018 (Bank)": "(171,564,085)",
+            "2017 (Bank)": "(1,497,563)"
+          },
+          {
+            "label": "Balance with Central Bank of Sri Lanka",
+            "2018 (Bank)": "584,366,791",
+            "2017 (Bank)": "(1,311,041,349)"
+          },
+          {
+            "label": "Increase / (Decrease) in Operating Liabilities",
+            "2018 (Bank)": "10,709,291,756",
+            "2017 (Bank)": "3,810,314,654"
+          },
+          {
+            "label": "Due to Other Customers",
+            "2018 (Bank)": "1,207,800,000",
+            "2017 (Bank)": "(750,500,000)"
+          },
+          {
+            "label": "Due to Banks",
+            "2018 (Bank)": "1,236,090,598",
+            "2017 (Bank)": "(18,900,040)"
+          },
+          {
+            "label": "Net Cash Flow from Operating Activities before Income Tax",
+            "2018 (Bank)": "4,297,043,919",
+            "2017 (Bank)": "(1,719,734,612)"
+          },
+          {
+            "label": "Income Tax Paid",
+            "2018 (Bank)": "(63,107,752)"
+          },
+          {
+            "label": "Net Cash Flow from Operating Activities",
+            "2018 (Bank)": "4,233,936,167",
+            "2017 (Bank)": "(1,719,734,612)"
+          },
+          {
+            "label": "Acquisition of Property, Plant and Equipment",
+            "2018 (Bank)": "(247,972,369)",
+            "2017 (Bank)": "(62,099,109)"
+          },
+          {
+            "label": "Proceeds from Sale of Property, Plant and Equipment",
+            "2018 (Bank)": "8,500",
+            "2017 (Bank)": "456,517"
+          },
+          {
+            "label": "Acquisition of Intangible Assets",
+            "2018 (Bank)": "(47,748,557)",
+            "2017 (Bank)": "(113,738,668)"
+          },
+          {
+            "label": "Investments in Placements with Licensed Finance Companies",
+            "2018 (Bank)": "(314,535,285)",
+            "2017 (Bank)": "(2,097,301,257)"
+          },
+          {
+            "label": "Investments in Placements with Banks",
+            "2018 (Bank)": "(3,991,415,246)",
+            "2017 (Bank)": "(612,069,817)"
+          },
+          {
+            "label": "Dividend Received from Financial Assets",
+            "2018 (Bank)": "6,654,850",
+            "2017 (Bank)": "8,420,541"
+          },
+          {
+            "label": "Financial Assets Measured at Fair Value through Profit or Loss",
+            "2018 (Bank)": "12,290,376"
+          },
+          {
+            "label": "Sale / (Acquisition) of Financial Investments - Available for Sale",
+            "2017 (Bank)": "27,409,639"
+          },
+          {
+            "label": "Sale / (Acquisition) of Financial Investments - Held for Trading",
+            "2017 (Bank)": "(1,605,671)"
+          },
+          {
+            "label": "Net Cash Flows Used in Investing Activities",
+            "2018 (Bank)": "(4,582,717,731)",
+            "2017 (Bank)": "(2,850,527,825)"
+          },
+          {
+            "label": "Rights Issue of Shares",
+            "2017 (Bank)": "4,752,642,015"
+          },
+          {
+            "label": "Share Issue Expenses",
+            "2017 (Bank)": "(9,536,684)"
+          },
+          {
+            "label": "Dividend Paid",
+            "2018 (Bank)": "(171,535,268)"
+          },
+          {
+            "label": "Net Cash Flows From Financing Activities",
+            "2018 (Bank)": "(171,535,268)",
+            "2017 (Bank)": "4,743,105,331"
+          },
+          {
+            "label": "Net Increase / (Decrease) in Cash and Cash Equivalents",
+            "2018 (Bank)": "(520,316,832)",
+            "2017 (Bank)": "172,842,894"
+          },
+          {
+            "label": "Cash and Cash Equivalents at the Beginning of the Year",
+            "2018 (Bank)": "5,859,766,950",
+            "2017 (Bank)": "5,686,924,056"
+          },
+          {
+            "label": "Cash and Cash Equivalents at the End of the Year - Gross of Allowance for Impairment Losses",
+            "Note": "17",
+            "2018 (Bank)": "5,339,450,118",
+            "2017 (Bank)": "5,859,766,950"
+          },
+          {
+            "label": "Profit before Taxation",
+            "2018 (Bank)": "902,198,987",
+            "2017 (Bank)": "739,318,599"
+          },
+          {
+            "label": "Depreciation of Property, Plant and Equipment",
+            "Note": "26",
+            "2018 (Bank)": "126,685,717",
+            "2017 (Bank)": "148,879,193"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "Note": "27",
+            "2018 (Bank)": "47,939,212",
+            "2017 (Bank)": "48,967,708"
+          },
+          {
+            "label": "(Profit) / Loss on Disposal of Property, Plant and Equipment",
+            "Note": "10",
+            "2018 (Bank)": "(7,391)",
+            "2017 (Bank)": "(212,466)"
+          },
+          {
+            "label": "Impairment for Financing and Receivables to Other Customers and Financial Assets",
+            "Note": "11",
+            "2018 (Bank)": "476,765,687",
+            "2017 (Bank)": "289,782,675"
+          },
+          {
+            "label": "Provision for Gratuity",
+            "Note": "34",
+            "2018 (Bank)": "33,542,300",
+            "2017 (Bank)": "26,427,071"
+          },
+          {
+            "label": "(Increase) / Decrease in Placement Income Receivable",
+            "2018 (Bank)": "9,598,766",
+            "2017 (Bank)": "(26,104,794)"
+          },
+          {
+            "label": "Increase / (Decrease) in Profit Payable",
+            "2018 (Bank)": "93,234,605",
+            "2017 (Bank)": "195,493,225"
+          },
+          {
+            "label": "Other Non Cash Items",
+            "2018 (Bank)": "(408,232,055)",
+            "2017 (Bank)": "(25,751,901)"
+          },
+          {
+            "label": "Dividend Income (Net)",
+            "2018 (Bank)": "(6,654,850)",
+            "2017 (Bank)": "(8,420,541)"
+          },
+          {
+            "label": "Gratuity Payments",
+            "Note": "34",
+            "2018 (Bank)": "(9,948,748)",
+            "2017 (Bank)": "(8,354,105)"
+          }
+        ]
+      },
+      "equity": {
+        "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "header": {
+          "title": "STATEMENT OF CHANGES IN EQUITY",
+          "period": "Year ended 31 December"
+        },
+        "columns": [
+          "Note",
+          "Stated Capital",
+          "Statutory Reserve",
+          "Revenue Reserve",
+          "Fair Value Reserve",
+          "Revaluation Reserve",
+          "Retained Earnings",
+          "Total"
+        ],
+        "rows": [
+          {
+            "label": "As at 1 January 2017",
+            "cells": {
+              "Stated Capital": "5,866,808,141",
+              "Statutory Reserve": "17,263,213",
+              "Revenue Reserve": "(216,926,328)",
+              "Fair Value Reserve": "(26,868,210)",
+              "Revaluation Reserve": "526,908,060",
+              "Retained Earnings": "(379,139,357)",
+              "Total": "5,788,045,519"
+            }
+          },
+          {
+            "label": "Rights Issue",
+            "cells": {
+              "Stated Capital": "4,752,642,015",
+              "Total": "4,752,642,015"
+            }
+          },
+          {
+            "label": "Share Issue Expenses",
+            "cells": {
+              "Revenue Reserve": "(9,536,684)",
+              "Total": "(9,536,684)"
+            }
+          },
+          {
+            "label": "Profit for the Year",
+            "cells": {
+              "Retained Earnings": "502,827,663",
+              "Total": "502,827,663"
+            }
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "(27,009,180)",
+              "Revaluation Reserve": "294,351,953",
+              "Retained Earnings": "(13,364,464)",
+              "Total": "253,978,309"
+            }
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "cells": {
+              "Note": "38",
+              "Statutory Reserve": "25,141,384",
+              "Retained Earnings": "(25,141,384)"
+            }
+          },
+          {
+            "label": "Reclassifying to Profit or Loss as Impairment",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "25,845,573",
+              "Total": "25,845,573"
+            }
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "cells": {
+              "Note": "40",
+              "Revenue Reserve": "226,463,012",
+              "Revaluation Reserve": "(543,230)",
+              "Retained Earnings": "(225,919,782)"
+            }
+          },
+          {
+            "label": "As at 1 January 2018",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "42,404,597",
+              "Fair Value Reserve": "(28,031,817)",
+              "Revaluation Reserve": "820,716,783",
+              "Retained Earnings": "(140,737,324)",
+              "Total": "11,313,802,395"
+            }
+          },
+          {
+            "label": "Impact of Adopting SLFRS 9",
+            "cells": {
+              "Note": "37",
+              "Fair Value Reserve": "(13,204)",
+              "Retained Earnings": "(39,654,363)",
+              "Total": "(39,667,567)"
+            }
+          },
+          {
+            "label": "Restated Opening Balance under SLFRS 9",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "42,404,597",
+              "Fair Value Reserve": "(28,045,021)",
+              "Revaluation Reserve": "820,716,783",
+              "Retained Earnings": "(180,391,687)",
+              "Total": "11,274,134,828"
+            }
+          },
+          {
+            "label": "Profit for the Year",
+            "cells": {
+              "Retained Earnings": "556,445,708",
+              "Total": "556,445,708"
+            }
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "(32,411,016)",
+              "Retained Earnings": "11,028,132",
+              "Total": "(21,382,884)"
+            }
+          },
+          {
+            "label": "Interim Dividend 2018 - (Dividend Per Share - Rs. 0.07)",
+            "cells": {
+              "Retained Earnings": "(175,097,337)",
+              "Total": "(175,097,337)"
+            }
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "cells": {
+              "Note": "38",
+              "Statutory Reserve": "27,822,285",
+              "Retained Earnings": "(27,822,285)"
+            }
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "cells": {
+              "Note": "40",
+              "Revaluation Reserve": "(1,086,460)",
+              "Retained Earnings": "1,086,460"
+            }
+          },
+          {
+            "label": "As at 31 December 2018",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "70,226,882",
+              "Fair Value Reserve": "(60,456,037)",
+              "Revaluation Reserve": "819,630,323",
+              "Retained Earnings": "185,248,991",
+              "Total": "11,634,100,315"
+            }
+          }
+        ]
+      },
+      "comprehensive_income": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF COMPREHENSIVE INCOME",
+        "period_ending": "Year ended 31 December",
+        "content": [
+          {
+            "label": "Profit for the Year",
+            "2018 (Bank)": "556,445,708",
+            "2017 (Bank)": "502,827,663"
+          },
+          {
+            "label": "Net Gain/(Loss) on Financial Investments - Available for Sale",
+            "2017 (Bank)": "(47,348,976)"
+          },
+          {
+            "label": "Reclassification to Profit or Loss as Impairment",
+            "2017 (Bank)": "20,339,796"
+          },
+          {
+            "label": "Net Other Comprehensive Income to be Reclassified to Profit or Loss in Subsequent Periods:",
+            "2017 (Bank)": "(27,009,180)"
+          },
+          {
+            "label": "Net Gain / (Loss) on Financial Investments - Fair Value through Other Comprehensive Income",
+            "2018 (Bank)": "(32,411,016)"
+          },
+          {
+            "label": "Revaluation Surplus on Property, Plant and Equipment",
+            "2017 (Bank)": "608,536,162",
+            "Note": "26"
+          },
+          {
+            "label": "Deferred Tax Effect on Revaluation Surplus",
+            "2017 (Bank)": "(314,184,209)",
+            "Note": "33"
+          },
+          {
+            "label": "Re-measurement Gain / (Loss) on Defined Benefit Plans",
+            "2018 (Bank)": "15,316,850",
+            "2017 (Bank)": "(18,561,756)",
+            "Note": "34"
+          },
+          {
+            "label": "Deferred Tax Effect on Defined Benefit Plans",
+            "2018 (Bank)": "(4,288,718)",
+            "2017 (Bank)": "5,197,292",
+            "Note": "33"
+          },
+          {
+            "label": "Net Comprehensive Income not to be Reclassified to Profit or Loss in Subsequent Periods:",
+            "2018 (Bank)": "(21,382,884)",
+            "2017 (Bank)": "280,987,489"
+          },
+          {
+            "label": "Other Comprehensive Income / (Loss) for the Year Net of Tax",
+            "2018 (Bank)": "(21,382,884)",
+            "2017 (Bank)": "253,978,309"
+          },
+          {
+            "label": "Total Comprehensive Income for the Year",
+            "2018 (Bank)": "535,062,824",
+            "2017 (Bank)": "756,805,972"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "pdf_name": "AMANA_Banking_2020.pdf",
+    "statement_pages": {
+      "income_statement": 198,
+      "balance_sheet": 259,
+      "cash_flow": 202,
+      "equity": 201,
       "comprehensive_income": null
     },
     "statements": {
-      "income_statement": null,
-      "balance_sheet": null,
-      "cash_flow": null,
-      "equity": null,
+      "income_statement": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "financial_data": [
+          {
+            "label": "Financing Income",
+            "2020 (Bank)": "7,211,643,435",
+            "2019 (Bank)": "7,709,286,294"
+          },
+          {
+            "label": "Financing Expenses",
+            "2020 (Bank)": "(3,757,313,167)",
+            "2019 (Bank)": "(4,544,370,605)"
+          },
+          {
+            "label": "Net Financing Income",
+            "2020 (Bank)": "3,454,330,268",
+            "2019 (Bank)": "3,164,915,689"
+          },
+          {
+            "label": "Net Fee and Commission Income",
+            "2020 (Bank)": "328,562,743",
+            "2019 (Bank)": "329,040,746"
+          },
+          {
+            "label": "Net Trading Income",
+            "2020 (Bank)": "444,376,037",
+            "2019 (Bank)": "738,397,355"
+          },
+          {
+            "label": "Net Gains / (Losses) from Financial Assets at Fair Value Through Profit or Loss",
+            "2020 (Bank)": "3,260,627",
+            "2019 (Bank)": "4,862,561"
+          },
+          {
+            "label": "Net Gains / (Losses) from Derecognition of Financial Assets",
+            "2020 (Bank)": "928,646",
+            "2019 (Bank)": "11,150,575"
+          },
+          {
+            "label": "Net Other Operating Income",
+            "2020 (Bank)": "2,302,448",
+            "2019 (Bank)": "8,251,376"
+          },
+          {
+            "label": "Total Operating Income",
+            "2020 (Bank)": "4,233,760,769",
+            "2019 (Bank)": "4,256,618,302"
+          },
+          {
+            "label": "Impairment on Financial Assets",
+            "2020 (Bank)": "(513,726,961)",
+            "2019 (Bank)": "(288,928,583)"
+          },
+          {
+            "label": "Net Operating Income",
+            "2020 (Bank)": "3,720,033,808",
+            "2019 (Bank)": "3,967,689,719"
+          },
+          {
+            "label": "Personnel Expenses",
+            "2020 (Bank)": "1,446,138,333",
+            "2019 (Bank)": "1,381,445,709"
+          },
+          {
+            "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+            "2020 (Bank)": "281,177,308",
+            "2019 (Bank)": "256,195,369"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "2020 (Bank)": "70,374,848",
+            "2019 (Bank)": "51,025,609"
+          },
+          {
+            "label": "Other Operating Expenses",
+            "2020 (Bank)": "767,727,520",
+            "2019 (Bank)": "902,349,033"
+          },
+          {
+            "label": "Total Operating Expenses",
+            "2020 (Bank)": "2,565,418,009",
+            "2019 (Bank)": "2,591,015,720"
+          },
+          {
+            "label": "Operating Profit Before Value Added Tax on Financial Services, Nation Building Tax & Debt Repayment Levy",
+            "2020 (Bank)": "1,154,615,799",
+            "2019 (Bank)": "1,376,673,999"
+          },
+          {
+            "label": "Value Added Tax on Financial Services, Nation Building Tax & Debt Repayment Levy",
+            "2020 (Bank)": "(393,167,272)",
+            "2019 (Bank)": "(531,825,986)"
+          },
+          {
+            "label": "Profit Before Tax",
+            "2020 (Bank)": "761,448,527",
+            "2019 (Bank)": "844,848,013"
+          },
+          {
+            "label": "Tax Expenses",
+            "2020 (Bank)": "(297,753,065)",
+            "2019 (Bank)": "(383,916,616)"
+          },
+          {
+            "label": "Profit for the Year",
+            "2020 (Bank)": "463,695,462",
+            "2019 (Bank)": "460,931,397"
+          },
+          {
+            "label": "Earnings Per Share - Basic / Diluted",
+            "2020 (Bank)": "0.18",
+            "2019 (Bank)": "0.18"
+          }
+        ]
+      },
+      "balance_sheet": {
+        "financial_statement": {
+          "statement_name": "Financial Position",
+          "parse_meta": {
+            "version": "0.1",
+            "confidence": "100"
+          },
+          "header": {
+            "column_names": [
+              "2020 (Bank)",
+              "2019 (Bank)"
+            ]
+          },
+          "sections": [
+            {
+              "name": "Statement of Financial Position",
+              "rows": [
+                {
+                  "label": "Due to Depositors",
+                  "2020 (Bank)": "104,331,986",
+                  "2019 (Bank)": "11,210,153"
+                }
+              ]
+            },
+            {
+              "name": "Statement of Profit or Loss",
+              "rows": [
+                {
+                  "label": "Financing Expenses",
+                  "2020 (Bank)": "5,942,018",
+                  "2019 (Bank)": "1,179,496"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "cash_flow": {
+        "parse_meta": {
+          "version": "0.9.2",
+          "confidence": 0.95,
+          "warnings": []
+        },
+        "document_name": "Statement of Cash Flows",
+        "period_ending": "31 December",
+        "currency": "Rs.",
+        "tables": [
+          {
+            "table_num": 1,
+            "headers": [
+              "Note",
+              "2020",
+              "2019"
+            ],
+            "rows": [
+              {
+                "label": "Financing Income Received",
+                "2020": "7,211,643,435",
+                "2019": "7,160,433,762"
+              },
+              {
+                "label": "Fee and Commission Received",
+                "2020": "50,075,573",
+                "2019": "329,040,746"
+              },
+              {
+                "label": "Financing Expenses Paid",
+                "2020": "(3,977,767,966)",
+                "2019": "(4,499,462,313)"
+              },
+              {
+                "label": "Foreign Exchange Income Received",
+                "2020": "497.356.054",
+                "2019": "737,305,876"
+              },
+              {
+                "label": "Gratuity Payments Made",
+                "Note": "34",
+                "2020": "(5,664,065)",
+                "2019": "(14,709,868)"
+              },
+              {
+                "label": "Payments to Employees and Suppliers",
+                "2020": "(2,590,103,305)",
+                "2019": "(2,732,597,013)"
+              },
+              {
+                "label": "Operating Profit before Changes in Operating Assets and Liabilities (Note A)",
+                "2020": "1,185,539,726",
+                "2019": "980,011,190"
+              },
+              {
+                "label": "(Increase) / Decrease in Operating Assets",
+                "2020": null,
+                "2019": null
+              },
+              {
+                "label": "Financing and Receivables to Other Customers",
+                "2020": "(5,363,730,242)",
+                "2019": "(4,813,177,353)"
+              },
+              {
+                "label": "Other Financial Assets",
+                "2020": "(63,080,010)",
+                "2019": "(83,035,024)"
+              },
+              {
+                "label": "Other Non Financial Assets",
+                "2020": "223,410,268",
+                "2019": "(251,141,545)"
+              },
+              {
+                "label": "Balance with Central Bank of Sri Lanka",
+                "2020": "(7,961,673,232)",
+                "2019": "94,647,450"
+              },
+              {
+                "label": "Increase / (Decrease) in Operating Liabilities",
+                "2020": null,
+                "2019": null
+              },
+              {
+                "label": "Due to Depositors",
+                "2020": "12,199,263,852",
+                "2019": "9,804,054,143"
+              },
+              {
+                "label": "Due to Banks",
+                "2020": "864,852,278",
+                "2019": "(107,800,000)"
+              },
+              {
+                "label": "Other Liabilities",
+                "2020": "(223,939,036)",
+                "2019": "(1,316,928,160)"
+              },
+              {
+                "label": "Net Cash Flow from Operating Activities before Income Tax",
+                "2020": "860,643,604",
+                "2019": "4,306,630,701"
+              },
+              {
+                "label": "Income Tax Paid",
+                "2020": "(198,638,012)",
+                "2019": "(345,688,902)"
+              },
+              {
+                "label": "Net Cash Flow from Operating Activities",
+                "2020": "662,005,592",
+                "2019": "3,960,941,799"
+              },
+              {
+                "label": "Acquisition of Property, Plant and Equipment",
+                "2020": "(29,130,963)",
+                "2019": "(277,670,943)"
+              },
+              {
+                "label": "Proceeds from Sale of Property, Plant and Equipment",
+                "2020": "-",
+                "2019": "964,652"
+              },
+              {
+                "label": "Acquisition of Intangible Assets",
+                "2020": "(90,540,449)",
+                "2019": "(49,788,947)"
+              },
+              {
+                "label": "Placements with Licensed Finance Companies",
+                "2020": "(2,960,869,081)",
+                "2019": "2,403,218,172"
+              },
+              {
+                "label": "Placements with Banks",
+                "2020": "(810,904,622)",
+                "2019": "(1,177,298,188)"
+              },
+              {
+                "label": "Dividend Received from Financial Assets",
+                "2020": "2,302,448",
+                "2019": "7,431,422"
+              },
+              {
+                "label": "Financial Assets Recognised through Profit or Loss - Measured at Fair Value",
+                "2020": "20,127,822",
+                "2019": "57,564,723"
+              },
+              {
+                "label": "Net Cash Flows Used in Investing Activities",
+                "2020": "(3,869,014,845)",
+                "2019": "964,420,891"
+              },
+              {
+                "label": "Rights Issue of Shares",
+                "2020": "-",
+                "2019": "-"
+              },
+              {
+                "label": "Share Issue Expenses",
+                "2020": "(200,000)",
+                "2019": "-"
+              },
+              {
+                "label": "Dividend Paid",
+                "2020": "(365,154)",
+                "2019": "(196,781,871)"
+              },
+              {
+                "label": "Net Cash Flows From Financing Activities",
+                "2020": "(565,154)",
+                "2019": "(196,781,871)"
+              },
+              {
+                "label": "Net Increase / (Decrease) in Cash and Cash Equivalents",
+                "2020": "(3,207,574,407)",
+                "2019": "4,728,580,819"
+              },
+              {
+                "label": "Cash and Cash Equivalents at the Beginning of the Year",
+                "2020": "10,068,030,937",
+                "2019": "5,339,450,118"
+              },
+              {
+                "label": "Cash and Cash Equivalents at the End of the Year",
+                "Note": "17",
+                "2020": "6,860,456,530",
+                "2019": "10,068,030,937"
+              },
+              {
+                "label": "Profit Before Tax",
+                "2020": "761,448,527",
+                "2019": "844,848,013"
+              },
+              {
+                "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+                "Note": "26",
+                "2020": "281,177,308",
+                "2019": "256,195,369"
+              },
+              {
+                "label": "Amortisation of Intangible Assets",
+                "Note": "27",
+                "2020": "70,374,848",
+                "2019": "51,025,609"
+              },
+              {
+                "label": "(Profit) / Loss on Disposal of Property, Plant and Equipment",
+                "Note": "10",
+                "2020": null,
+                "2019": "(819,954)"
+              },
+              {
+                "label": "Impairment for Financing and Receivables to Other Customers and Financial Assets",
+                "Note": "11",
+                "2020": "513,726,961",
+                "2019": "288,928,583"
+              },
+              {
+                "label": "Provision for Gratuity",
+                "Note": "34",
+                "2020": "37,403,708",
+                "2019": "43,707,162"
+              },
+              {
+                "label": "(Increase) / Decrease in Placement Income Receivable",
+                "2020": "(279,415,816)",
+                "2019": "(170,487,106)"
+              },
+              {
+                "label": "Increase / (Decrease) in Profit Payable",
+                "2020": "(259,776,339)",
+                "2019": "88,652,712"
+              },
+              {
+                "label": "Other Non Cash Items",
+                "2020": "71,827,669",
+                "2019": "(399,897,909)"
+              },
+              {
+                "label": "Dividend Income (Net)",
+                "2020": "(2,302,448)",
+                "2019": "(7,431,422)"
+              },
+              {
+                "label": "Gratuity Payments",
+                "Note": "34",
+                "2020": "(5,664,065)",
+                "2019": "(14,709,868)"
+              },
+              {
+                "label": "(Profit) / Loss on Mark to Market Valuation",
+                "2020": "(3,260,627)",
+                "2019": null
+              }
+            ]
+          }
+        ]
+      },
+      "equity": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "data": [
+          {
+            "label": "As at 1 January 2019",
+            "2019 (Bank)": "185,248,990",
+            "2019 (Group)": "11,634,100,314"
+          },
+          {
+            "label": "Impact of Adopting SLFRS 16",
+            "2019 (Bank)": "(9,138,391)",
+            "2019 (Group)": "(9,138,391)"
+          },
+          {
+            "label": "Restated Opening Balance",
+            "2019 (Bank)": "176,110,599",
+            "2019 (Group)": "11,624,961,923"
+          },
+          {
+            "label": "Profit for the Year",
+            "2019 (Bank)": "460,931,397",
+            "2019 (Group)": "460,931,397"
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "2019 (Group)": "(32,214,047)",
+            "2019 (Bank)": "8,299,723"
+          },
+          {
+            "label": "Interim Dividend 2019",
+            "2019 (Bank)": "(200,111,243)",
+            "2019 (Group)": "(200,111,243)"
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "2019 (Group)": "-",
+            "2019 (Bank)": "(23,046,570)"
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "2019 (Group)": "-",
+            "2019 (Bank)": "1,086,460"
+          },
+          {
+            "label": "As at 1 January 2020",
+            "2019 (Bank)": "423,270,366",
+            "2019 (Group)": "11,853,568,031"
+          },
+          {
+            "label": "Profit for the Year",
+            "2019 (Bank)": "463,695,462",
+            "2019 (Group)": "463,695,462"
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "2019 (Group)": "150,214,857",
+            "2019 (Bank)": "4,365,285"
+          },
+          {
+            "label": "Interim Scrip Dividend 2020",
+            "2019 (Bank)": "(200,111,242)"
+          },
+          {
+            "label": "Share Issue Expenses",
+            "2019 (Bank)": "(200,000)",
+            "2019 (Group)": "(200,000)"
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "2019 (Group)": "-",
+            "2019 (Bank)": "(23,184,773)"
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "2019 (Group)": "-",
+            "2019 (Bank)": "1,086,460"
+          },
+          {
+            "label": "As at 31 December 2020",
+            "2019 (Bank)": "668,921,558",
+            "2019 (Group)": "12,467,278,350"
+          }
+        ]
+      },
       "comprehensive_income": null
     }
   },
   {
-    "pdf_name": "hsenid_2024.pdf",
+    "pdf_name": "AMANA_Banking_2022.pdf",
     "statement_pages": {
-      "income_statement": 82,
-      "balance_sheet": 83,
-      "cash_flow": 86,
-      "equity": 84,
-      "comprehensive_income": null
+      "income_statement": 192,
+      "balance_sheet": 194,
+      "cash_flow": 197,
+      "equity": 196,
+      "comprehensive_income": 193
     },
     "statements": {
-      "income_statement": null,
-      "balance_sheet": null,
-      "cash_flow": null,
-      "equity": null,
-      "comprehensive_income": null
+      "income_statement": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "Statement of Profit or Loss",
+        "statement_date": "31 December",
+        "currency": "Rs.",
+        "financial_data": [
+          {
+            "label": "Financing Income",
+            "2022 (Bank)": "12,113,112,544",
+            "2021 (Bank)": "7,674,186,731"
+          },
+          {
+            "label": "Financing Expenses",
+            "2022 (Bank)": "(7,344,487,821)",
+            "2021 (Bank)": "(3,418,693,290)"
+          },
+          {
+            "label": "Net Financing Income",
+            "2022 (Bank)": "4,768,624,723",
+            "2021 (Bank)": "4,255,493,441"
+          },
+          {
+            "label": "Net Fee and Commission Income",
+            "2022 (Bank)": "750,312,668",
+            "2021 (Bank)": "401,922,403"
+          },
+          {
+            "label": "Net Trading Income",
+            "2022 (Bank)": "864,699,138",
+            "2021 (Bank)": "155,105,107"
+          },
+          {
+            "label": "Net Gains / (Losses) from Financial Assets at Fair Value Through Profit or Loss",
+            "2022 (Bank)": "(21,646,296)",
+            "2021 (Bank)": "(7,013,153)"
+          },
+          {
+            "label": "Net Gains / (Losses) from Derecognition of Financial Assets",
+            "2022 (Bank)": "(1,453,173)",
+            "2021 (Bank)": "(11,732,213)"
+          },
+          {
+            "label": "Net Other Operating Income",
+            "2022 (Bank)": "5,159,290",
+            "2021 (Bank)": "5,226,813"
+          },
+          {
+            "label": "Total Operating Income",
+            "2022 (Bank)": "6,365,696,350",
+            "2021 (Bank)": "4,799,002,398"
+          },
+          {
+            "label": "Impairment on Financial Assets",
+            "2022 (Bank)": "(1,638,483,485)",
+            "2021 (Bank)": "(784,952,089)"
+          },
+          {
+            "label": "Net Operating Income",
+            "2022 (Bank)": "4,727,212,865",
+            "2021 (Bank)": "4,014,050,309"
+          },
+          {
+            "label": "Personnel Expenses",
+            "2022 (Bank)": "1,488,370,644",
+            "2021 (Bank)": "1,399,260,032"
+          },
+          {
+            "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+            "2022 (Bank)": "274,607,079",
+            "2021 (Bank)": "279,632,013"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "2022 (Bank)": "51,327,168",
+            "2021 (Bank)": "58,685,409"
+          },
+          {
+            "label": "Other Operating Expenses",
+            "2022 (Bank)": "1,176,643,239",
+            "2021 (Bank)": "831,827,820"
+          },
+          {
+            "label": "Total Operating Expenses",
+            "2022 (Bank)": "2,990,948,130",
+            "2021 (Bank)": "2,569,405,274"
+          },
+          {
+            "label": "Operating Profit Before VAT on Financial Services & Social Security Contribution Levy",
+            "2022 (Bank)": "1,736,264,735",
+            "2021 (Bank)": "1,444,645,035"
+          },
+          {
+            "label": "VAT on Financial Services & Social Security Contribution Levy",
+            "2022 (Bank)": "(528,989,373)",
+            "2021 (Bank)": "(363,632,453)"
+          },
+          {
+            "label": "Profit Before Tax",
+            "2022 (Bank)": "1,207,275,362",
+            "2021 (Bank)": "1,081,012,582"
+          },
+          {
+            "label": "Tax Expenses",
+            "2022 (Bank)": "(419,098,458)",
+            "2021 (Bank)": "(256,314,684)"
+          },
+          {
+            "label": "Profit for the Year",
+            "2022 (Bank)": "788,176,904",
+            "2021 (Bank)": "824,697,898"
+          },
+          {
+            "label": "Earnings Per Share - Basic / Diluted",
+            "2022 (Bank)": "0.28",
+            "2021 (Bank)": "0.30"
+          }
+        ]
+      },
+      "balance_sheet": {
+        "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "Statement of Financial Position",
+        "period_ending": "As at 31 December",
+        "tables": [
+          {
+            "table_num": 1,
+            "asset": "Assets",
+            "liabilities": "Liabilities",
+            "table_data": [
+              {
+                "Note": "17",
+                "label": "Cash and Cash Equivalents",
+                "2022 (Bank)": "22,603,294,374",
+                "2021 (Bank)": "8,673,811,858"
+              },
+              {
+                "Note": "18",
+                "label": "Balance with Central Bank of Sri Lanka",
+                "2022 (Bank)": "5,085,679,063",
+                "2021 (Bank)": "4,800,026,593"
+              },
+              {
+                "Note": "19",
+                "label": "Placements with Banks",
+                "2022 (Bank)": "24,570,292,448",
+                "2021 (Bank)": "27,302,269,408"
+              },
+              {
+                "Note": "20",
+                "label": "Placements with Licensed Finance Companies",
+                "2022 (Bank)": "77,154",
+                "2021 (Bank)": "73,341"
+              },
+              {
+                "Note": "21",
+                "label": "Derivative Financial Assets",
+                "2022 (Bank)": "70,733,336",
+                "2021 (Bank)": "510,066,210"
+              },
+              {
+                "Note": "22",
+                "label": "Financial Assets Recognised through Profit or Loss - Measured at Fair Value",
+                "2022 (Bank)": "59,561,097",
+                "2021 (Bank)": "64,634,084"
+              },
+              {
+                "Note": "23",
+                "label": "Financial Assets at Amortised Cost - Financing and Receivables to Other Customers",
+                "2022 (Bank)": "83,185,916,541",
+                "2021 (Bank)": "75,816,397,323"
+              },
+              {
+                "Note": "24",
+                "label": "Financial Assets Measured at Fair Value through Other Comprehensive Income",
+                "2022 (Bank)": "332,504,996",
+                "2021 (Bank)": "346,009,586"
+              },
+              {
+                "Note": "25",
+                "label": "Other Assets - Financial",
+                "2022 (Bank)": "2,323,565,713",
+                "2021 (Bank)": "1,213,996,086"
+              },
+              {
+                "Note": "26",
+                "label": "Property, Plant, Equipment and Right-of-Use Assets",
+                "2022 (Bank)": "2,466,761,457",
+                "2021 (Bank)": "2,447,149,785"
+              },
+              {
+                "Note": "27",
+                "label": "Intangible Assets",
+                "2022 (Bank)": "319,253,349",
+                "2021 (Bank)": "232,834,506"
+              },
+              {
+                "Note": "28",
+                "label": "Other Assets - Non Financial",
+                "2022 (Bank)": "262,467,487",
+                "2021 (Bank)": "449,563,025"
+              },
+              {
+                "Note": "29",
+                "label": "Deferred Tax Asset",
+                "2022 (Bank)": "407,785,544",
+                "2021 (Bank)": "52,071,523"
+              },
+              {
+                "label": "Total Assets",
+                "2022 (Bank)": "141,687,892,559",
+                "2021 (Bank)": "121,908,903,328"
+              },
+              {
+                "Note": "30",
+                "label": "Due to Banks",
+                "2022 (Bank)": "11,856,722,935",
+                "2021 (Bank)": "9,009,986,183"
+              },
+              {
+                "Note": "31",
+                "label": "Derivative Financial Liabilities",
+                "2022 (Bank)": "20,880,000",
+                "2021 (Bank)": "783,199,782"
+              },
+              {
+                "Note": "32",
+                "label": "Financial Liabilities at Amortised Cost - Due to Depositors",
+                "2022 (Bank)": "112,546,017,229",
+                "2021 (Bank)": "96,157,776,116"
+              },
+              {
+                "Note": "33",
+                "label": "Other Liabilities - Financial",
+                "2022 (Bank)": "2,041,967,432",
+                "2021 (Bank)": "1,696,126,980"
+              },
+              {
+                "label": "Current Tax Liabilities",
+                "2022 (Bank)": "645,606,465",
+                "2021 (Bank)": "419,795,391"
+              },
+              {
+                "label": "Dividend Payable",
+                "2022 (Bank)": "6,351,708",
+                "2021 (Bank)": "6,459,073"
+              },
+              {
+                "Note": "34",
+                "label": "Retirement Benefit Liability",
+                "2022 (Bank)": "109,411,635",
+                "2021 (Bank)": "131,081,167"
+              },
+              {
+                "Note": "35",
+                "label": "Other Liabilities - Non Financial",
+                "2022 (Bank)": "99,580,091",
+                "2021 (Bank)": "65,944,501"
+              },
+              {
+                "label": "Total Liabilities",
+                "2022 (Bank)": "127,326,537,495",
+                "2021 (Bank)": "108,270,369,193"
+              }
+            ]
+          }
+        ]
+      },
+      "cash_flow": {
+        "parse_meta": {
+          "version": "0.9.0",
+          "confidence": "high",
+          "warnings": []
+        },
+        "financial_statement": {
+          "header": "Statement of Cash Flows",
+          "columns": [
+            "2022 (Bank)",
+            "2021 (Bank)"
+          ],
+          "rows": [
+            {
+              "label": "Financing Income Received",
+              "2022 (Bank)": "11,693,445,345",
+              "2021 (Bank)": "7,246,032,366"
+            },
+            {
+              "label": "Fee and Commission Received",
+              "2022 (Bank)": "748,859,495",
+              "2021 (Bank)": "390,190,190"
+            },
+            {
+              "label": "Financing Expenses Paid",
+              "2022 (Bank)": "(6,463,893,804)",
+              "2021 (Bank)": "(3,353,863,652)"
+            },
+            {
+              "label": "Foreign Exchange Income Received",
+              "2022 (Bank)": "862,745,140",
+              "2021 (Bank)": "155,105,107"
+            },
+            {
+              "label": "Gratuity Payments Made",
+              "Note": "34",
+              "2022 (Bank)": "(28,185,205)",
+              "2021 (Bank)": "(13,465,655)"
+            },
+            {
+              "label": "Payments to Employees and Suppliers",
+              "2022 (Bank)": "(3,165,088,968)",
+              "2021 (Bank)": "(2,578,176,631)"
+            },
+            {
+              "label": "Operating Profit before Changes in Operating Assets and Liabilities (Note A)",
+              "2022 (Bank)": "3,647,882,003",
+              "2021 (Bank)": "1,845,821,725"
+            },
+            {
+              "label": "Financing and Receivables to Other Customers",
+              "2022 (Bank)": "(8,923,852,269)",
+              "2021 (Bank)": "(14,022,678,701)"
+            },
+            {
+              "label": "Other Financial Assets",
+              "2022 (Bank)": "(1,109,611,149)",
+              "2021 (Bank)": "229,652,779"
+            },
+            {
+              "label": "Other Non Financial Assets",
+              "2022 (Bank)": "(135,891,370)",
+              "2021 (Bank)": "(39,780,042)"
+            },
+            {
+              "label": "Balance with Central Bank of Sri Lanka",
+              "2022 (Bank)": "(285,652,470)",
+              "2021 (Bank)": "6,610,443,970"
+            },
+            {
+              "label": "Due to Depositors",
+              "2022 (Bank)": "15,547,636,262",
+              "2021 (Bank)": "12,577,708,993"
+            },
+            {
+              "label": "Due to Banks",
+              "2022 (Bank)": "2,846,736,752",
+              "2021 (Bank)": "7,042,093,083"
+            },
+            {
+              "label": "Other Liabilities",
+              "2022 (Bank)": "(143,859,705)",
+              "2021 (Bank)": "347,551,326"
+            },
+            {
+              "label": "Net Cash Flow from Operating Activities before Income Tax",
+              "2022 (Bank)": "11,443,388,054",
+              "2021 (Bank)": "14,590,813,133"
+            },
+            {
+              "label": "Income Tax Paid",
+              "2022 (Bank)": "(444,759,164)",
+              "2021 (Bank)": "(462,065,809)"
+            },
+            {
+              "label": "Net Cash Flow from Operating Activities",
+              "2022 (Bank)": "10,998,628,890",
+              "2021 (Bank)": "14,128,747,324"
+            },
+            {
+              "label": "Acquisition of Property, Plant and Equipment",
+              "2022 (Bank)": "(65,867,597)",
+              "2021 (Bank)": "(83,813,857)"
+            },
+            {
+              "label": "Proceeds from Sale of Property, Plant and Equipment",
+              "2022 (Bank)": "315,625",
+              "2021 (Bank)": "130,000"
+            },
+            {
+              "label": "Acquisition of Intangible Assets",
+              "2022 (Bank)": "(137,746,011)",
+              "2021 (Bank)": "(34,279,592)"
+            },
+            {
+              "label": "Placements with Licensed Finance Companies",
+              "2022 (Bank)": "(3,828)",
+              "2021 (Bank)": "2,969,402,445"
+            },
+            {
+              "label": "Placements with Banks",
+              "2022 (Bank)": "3,149,994,271",
+              "2021 (Bank)": "(15,155,102,537)"
+            },
+            {
+              "label": "Dividend Received from Financial Assets",
+              "2022 (Bank)": "4,843,665",
+              "2021 (Bank)": "5,096,813"
+            },
+            {
+              "label": "Financial Assets Recognised through Profit or Loss - Measured at Fair Value",
+              "2022 (Bank)": "(16,573,309)",
+              "2021 (Bank)": "(15,725,432)"
+            },
+            {
+              "label": "Net Cash Flows Used in Investing Activities",
+              "2022 (Bank)": "2,934,962,816",
+              "2021 (Bank)": "(12,314,292,160)"
+            },
+            {
+              "label": "Share Issue Expenses",
+              "2022 (Bank)": "(205,228)",
+              "2021 (Bank)": "(200,000)"
+            },
+            {
+              "label": "Dividend Paid",
+              "2022 (Bank)": "(107,365)",
+              "2021 (Bank)": "(67,212)"
+            },
+            {
+              "label": "Net Cash Flows From Financing Activities",
+              "2022 (Bank)": "(312,593)",
+              "2021 (Bank)": "(267,212)"
+            },
+            {
+              "label": "Net Increase / (Decrease) in Cash and Cash Equivalents",
+              "2022 (Bank)": "13,933,279,113",
+              "2021 (Bank)": "1,814,187,952"
+            },
+            {
+              "label": "Cash and Cash Equivalents at the Beginning of the Year",
+              "2022 (Bank)": "8,674,644,482",
+              "2021 (Bank)": "6,860,456,530"
+            },
+            {
+              "label": "Cash and Cash Equivalents at the End of the Year",
+              "Note": "17.1",
+              "2022 (Bank)": "22,607,923,595",
+              "2021 (Bank)": "8,674,644,482"
+            },
+            {
+              "label": "Profit Before Tax",
+              "2022 (Bank)": "1,207,275,362",
+              "2021 (Bank)": "1,081,012,582"
+            },
+            {
+              "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+              "Note": "26",
+              "2022 (Bank)": "274,607,079",
+              "2021 (Bank)": "279,632,013"
+            },
+            {
+              "label": "Amortisation of Intangible Assets",
+              "Note": "27",
+              "2022 (Bank)": "51,327,168",
+              "2021 (Bank)": "58,685,409"
+            },
+            {
+              "label": "(Profit) / Loss on Disposal of Property, Plant and Equipment",
+              "Note": "10",
+              "2022 (Bank)": "(315,625)",
+              "2021 (Bank)": "(130,000)"
+            },
+            {
+              "label": "Impairment on Financial Assets",
+              "Note": "11",
+              "2022 (Bank)": "1,638,483,485",
+              "2021 (Bank)": "784,952,089"
+            },
+            {
+              "label": "Provision for Gratuity",
+              "Note": "34",
+              "2022 (Bank)": "28,914,288",
+              "2021 (Bank)": "16,543,674"
+            },
+            {
+              "label": "(Increase) / Decrease in Placement Income Receivable",
+              "2022 (Bank)": "(419,667,199)",
+              "2021 (Bank)": "(428,154,365)"
+            },
+            {
+              "label": "Increase / (Decrease) in Profit Payable",
+              "2022 (Bank)": "840,604,851",
+              "2021 (Bank)": "25,826,135"
+            },
+            {
+              "label": "Other Non Cash Items",
+              "2022 (Bank)": "38,035,168",
+              "2021 (Bank)": "39,003,503"
+            },
+            {
+              "label": "Dividend Income (Net)",
+              "2022 (Bank)": "(4,843,665)",
+              "2021 (Bank)": "(5,096,813)"
+            },
+            {
+              "label": "Gratuity Payments",
+              "Note": "34",
+              "2022 (Bank)": "(28,185,205)",
+              "2021 (Bank)": "(13,465,655)"
+            },
+            {
+              "label": "(Profit)/Loss on Mark to Market Valuation",
+              "2022 (Bank)": "21,646,296",
+              "2021 (Bank)": "7,013,153"
+            }
+          ]
+        }
+      },
+      "equity": {
+        "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "Statement of Changes in Equity",
+        "currency": "Rs.",
+        "units": null,
+        "sections": [
+          {
+            "name": "Statement of Changes in Equity",
+            "years": [],
+            "rows": [
+              {
+                "label": "As at 1 January 2021",
+                "Notes": null,
+                "Stated Capital": "10,819,561,398",
+                "Statutory Reserve Fund": "116,458,225",
+                "Fair Value Reserve": "44,879,766",
+                "Revaluation Reserve": "817,457,403",
+                "Retained Earnings": "668,921,558",
+                "Total": "12,467,278,350"
+              },
+              {
+                "label": "Profit for the Year",
+                "Notes": null,
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "824,697,898",
+                "Total": "824,697,898"
+              },
+              {
+                "label": "Other Comprehensive Income",
+                "Notes": "38",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": "54,018,360",
+                "Revaluation Reserve": "260,316,995",
+                "Retained Earnings": "32,422,532",
+                "Total": "346,757,887"
+              },
+              {
+                "label": "Interim Scrip Dividend 2021",
+                "Notes": null,
+                "Stated Capital": "260,144,613",
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(260,144,613)",
+                "Total": null
+              },
+              {
+                "label": "Share Issue Expenses",
+                "Notes": null,
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(200,000)",
+                "Total": "(200,000)"
+              },
+              {
+                "label": "Transfers to Statutory Reserve Fund",
+                "Notes": "37",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": "41,234,895",
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(41,234,895)",
+                "Total": null
+              },
+              {
+                "label": "Transferred to Retained Earnings",
+                "Notes": "40",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": "(1,086,460)",
+                "Retained Earnings": "1,086,460",
+                "Total": null
+              },
+              {
+                "label": "As at 1 January 2022",
+                "Notes": null,
+                "Stated Capital": "11,079,706,011",
+                "Statutory Reserve Fund": "157,693,120",
+                "Fair Value Reserve": "98,898,126",
+                "Revaluation Reserve": "1,076,687,938",
+                "Retained Earnings": "1,225,548,940",
+                "Total": "13,638,534,135"
+              },
+              {
+                "label": "Profit for the Year",
+                "Notes": null,
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "788,176,904",
+                "Total": "788,176,904"
+              },
+              {
+                "label": "Other Comprehensive Income",
+                "Notes": "38",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": "(13,504,590)",
+                "Revaluation Reserve": "(67,325,187)",
+                "Retained Earnings": "15,679,030",
+                "Total": "(65,150,747)"
+              },
+              {
+                "label": "Interim Scrip Dividend 2022",
+                "Notes": null,
+                "Stated Capital": "269,115,119",
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(269,115,119)",
+                "Total": null
+              },
+              {
+                "label": "Share Issue Expenses",
+                "Notes": null,
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(205,228)",
+                "Total": "(205,228)"
+              },
+              {
+                "label": "Transfers to Statutory Reserve Fund",
+                "Notes": "37",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": "39,408,845",
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": null,
+                "Retained Earnings": "(39,408,845)",
+                "Total": null
+              },
+              {
+                "label": "Transferred to Retained Earnings",
+                "Notes": "40",
+                "Stated Capital": null,
+                "Statutory Reserve Fund": null,
+                "Fair Value Reserve": null,
+                "Revaluation Reserve": "(1,086,460)",
+                "Retained Earnings": "1,086,460",
+                "Total": null
+              },
+              {
+                "label": "As at 31 December 2022",
+                "Notes": null,
+                "Stated Capital": "11,348,821,130",
+                "Statutory Reserve Fund": "197,101,965",
+                "Fair Value Reserve": "85,393,536",
+                "Revaluation Reserve": "1,008,276,291",
+                "Retained Earnings": "1,721,762,142",
+                "Total": "14,361,355,064"
+              }
+            ]
+          }
+        ]
+      },
+      "comprehensive_income": {
+        "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "Statement of Comprehensive Income",
+        "period_ending": "31 December",
+        "tables": [
+          {
+            "table_name": "Statement of Comprehensive Income",
+            "header": [
+              "Note",
+              "2022 (Bank)",
+              "2021 (Bank)"
+            ],
+            "rows": [
+              {
+                "Profit for the Year": [
+                  null,
+                  "788,176,904",
+                  "824,697,898"
+                ]
+              },
+              {
+                "Other Comprehensive Income not to be Reclassified to Profit or Loss in Subsequent Periods:": [
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "Financial Assets - Fair Value through Other Comprehensive Income:": [
+                  null,
+                  null,
+                  null
+                ]
+              },
+              {
+                "Net Profit/ (Loss) on Financial Assets - Fair Value through Other Comprehensive Income": [
+                  null,
+                  "(13,504,590)",
+                  "54,018,360"
+                ]
+              },
+              {
+                "Revaluation Surplus on Property, Plant and Equipment": [
+                  "26",
+                  null,
+                  "274,905,537"
+                ]
+              },
+              {
+                "Deferred Tax Effect on Revaluation Surplus": [
+                  null,
+                  "(67,325,187)",
+                  "(14,588,542)"
+                ]
+              },
+              {
+                "Re-measurement Gain / (Loss) on Defined Benefit Plans": [
+                  "34",
+                  "22,398,615",
+                  "42,661,226"
+                ]
+              },
+              {
+                "Deferred Tax Effect on Defined Benefit Plans": [
+                  null,
+                  "(6,719,585)",
+                  "(10,238,694)"
+                ]
+              },
+              {
+                "Net Other Comprehensive Income not to be reclassified to Profit or Loss in Subsequent Periods:": [
+                  null,
+                  "15,679,030",
+                  "32,422,532"
+                ]
+              },
+              {
+                "Other Comprehensive Income not to be reclassified to Profit or Loss in Subsequent Periods:": [
+                  null,
+                  "(65,150,747)",
+                  "346,757,887"
+                ]
+              },
+              {
+                "Other Comprehensive Income / (Loss) for the Year Net of Tax": [
+                  null,
+                  "(65,150,747)",
+                  "346,757,887"
+                ]
+              },
+              {
+                "Total Comprehensive Income for the Year": [
+                  null,
+                  "723,026,157",
+                  "1,171,455,785"
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   },
   {
-    "pdf_name": "hsenid_2025.pdf",
+    "pdf_name": "AMANA_Banking_2024.pdf",
     "statement_pages": {
-      "income_statement": 90,
-      "balance_sheet": 91,
-      "cash_flow": 94,
-      "equity": 92,
-      "comprehensive_income": null
+      "income_statement": 311,
+      "balance_sheet": 242,
+      "cash_flow": 245,
+      "equity": 244,
+      "comprehensive_income": 241
     },
     "statements": {
-      "income_statement": null,
-      "balance_sheet": null,
-      "cash_flow": null,
-      "equity": null,
-      "comprehensive_income": null
+      "income_statement": {
+        "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "financial_data": [
+          {
+            "label": "Due to Depositors",
+            "2024 (Bank)": "39,652",
+            "2023 (Bank)": "485,495"
+          },
+          {
+            "label": "Financing Expenses",
+            "2024 (Bank)": "46,489",
+            "2023 (Bank)": "10,535,606"
+          }
+        ]
+      },
+      "balance_sheet": {
+        "statement": "STATEMENT OF FINANCIAL POSITION",
+        "parse_meta": {
+          "version": "0.9.0",
+          "confidence": "0.95"
+        },
+        "financial_data": [
+          {
+            "label": "Cash and Cash Equivalents",
+            "Note": "17",
+            "2024 (Bank)": "17,070,764,566",
+            "2023 (Bank)": "11,100,863,400"
+          },
+          {
+            "label": "Balance with Central Bank of Sri Lanka",
+            "Note": "18",
+            "2024 (Bank)": "7,078,039,326",
+            "2023 (Bank)": "9,446,862,668"
+          },
+          {
+            "label": "Placements with Banks",
+            "Note": "19",
+            "2024 (Bank)": "38,311,689,750",
+            "2023 (Bank)": "42,474,569,846"
+          },
+          {
+            "label": "Placements with Licensed Finance Companies",
+            "Note": "20",
+            "2024 (Bank)": "507,640,396",
+            "2023 (Bank)": "80,783"
+          },
+          {
+            "label": "Derivative Financial Assets",
+            "Note": "21",
+            "2024 (Bank)": "177,460,850",
+            "2023 (Bank)": "194,267,095"
+          },
+          {
+            "label": "Financial Assets Recognised through Profit or Loss - Measured at Fair Value",
+            "Note": "22",
+            "2024 (Bank)": "70,216,929",
+            "2023 (Bank)": "8,994,233"
+          },
+          {
+            "label": "Financial Assets at Amortised Cost - Financing and Receivables to Other Customers",
+            "Note": "23",
+            "2024 (Bank)": "111,301,849,020",
+            "2023 (Bank)": "89,658,059,768"
+          },
+          {
+            "label": "Financial Assets Measured at Fair Value through Other Comprehensive Income",
+            "Note": "24",
+            "2024 (Bank)": "348,710,504",
+            "2023 (Bank)": "319,000,406"
+          },
+          {
+            "label": "Other Assets - Financial",
+            "Note": "25",
+            "2024 (Bank)": "2,829,580,181",
+            "2023 (Bank)": "2,006,908,679"
+          },
+          {
+            "label": "Property, Plant, Equipment and Right-of-Use Assets",
+            "Note": "26",
+            "2024 (Bank)": "2,968,026,601",
+            "2023 (Bank)": "2,775,396,192"
+          },
+          {
+            "label": "Intangible Assets",
+            "Note": "27",
+            "2024 (Bank)": "337,562,608",
+            "2023 (Bank)": "379,309,190"
+          },
+          {
+            "label": "Other Assets - Non Financial",
+            "Note": "28",
+            "2024 (Bank)": "510,950,335",
+            "2023 (Bank)": "303,033,651"
+          },
+          {
+            "label": "Deferred Tax Assets",
+            "Note": "29",
+            "2024 (Bank)": "824,316,848",
+            "2023 (Bank)": "784,429,734"
+          },
+          {
+            "label": "Total Assets",
+            "2024 (Bank)": "182,336,807,914",
+            "2023 (Bank)": "159,451,775,645"
+          },
+          {
+            "label": "Due to Banks",
+            "Note": "30",
+            "2024 (Bank)": "18,949,309",
+            "2023 (Bank)": "321,166,526"
+          },
+          {
+            "label": "Derivative Financial Liabilities",
+            "Note": "31",
+            "2024 (Bank)": "22,856,743",
+            "2023 (Bank)": "947,739"
+          },
+          {
+            "label": "Financial Liabilities at Amortised Cost - Due to Depositors",
+            "Note": "32",
+            "2024 (Bank)": "154,405,710,056",
+            "2023 (Bank)": "132,937,607,047"
+          },
+          {
+            "label": "Other Liabilities - Financial",
+            "Note": "33",
+            "2024 (Bank)": "4,099,974,790",
+            "2023 (Bank)": "3,391,138,093"
+          },
+          {
+            "label": "Current Tax Liabilities",
+            "2024 (Bank)": "473,465,041",
+            "2023 (Bank)": "722,144,473"
+          },
+          {
+            "label": "Dividend Payable",
+            "2024 (Bank)": "99,470,636",
+            "2023 (Bank)": "6,325,683"
+          },
+          {
+            "label": "Retirement Benefit Liability",
+            "Note": "34",
+            "2024 (Bank)": "186,730,809",
+            "2023 (Bank)": "130,416,033"
+          },
+          {
+            "label": "Other Liabilities - Non Financial",
+            "Note": "35",
+            "2024 (Bank)": "187,790,136",
+            "2023 (Bank)": "245,445,827"
+          },
+          {
+            "label": "Total Liabilities",
+            "2024 (Bank)": "159,494,947,520",
+            "2023 (Bank)": "137,755,191,421"
+          }
+        ]
+      },
+      "cash_flow": {
+        "parse_meta": {
+          "version": "0.0.1",
+          "timestamp": "2024-01-20T03:23:49Z",
+          "confidence": 0.95,
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF CASH FLOWS",
+        "table": [
+          {
+            "label": "Financing Income Received",
+            "2024 (Bank)": "15,707,102,349",
+            "2023 (Bank)": "17,935,909,395"
+          },
+          {
+            "label": "Fee and Commission Received",
+            "2024 (Bank)": "1,074,221,675",
+            "2023 (Bank)": "932,293,539"
+          },
+          {
+            "label": "Financing Expenses Paid",
+            "2024 (Bank)": "(9,296,579,758)",
+            "2023 (Bank)": "(9,910,639,207)"
+          },
+          {
+            "label": "Foreign Exchange Income Received",
+            "2024 (Bank)": "693,112,850",
+            "2023 (Bank)": "1,765,213,774"
+          },
+          {
+            "label": "Gratuity Payments Made",
+            "2024 (Bank)": "(13,472,750)",
+            "2023 (Bank)": "(18,784,553)"
+          },
+          {
+            "label": "Payments to Employees and Suppliers",
+            "2024 (Bank)": "(5,230,147,153)",
+            "2023 (Bank)": "(4,384,224,212)"
+          },
+          {
+            "label": "Operating Profit before Changes in Operating Assets and Liabilities (Note A)",
+            "2024 (Bank)": "2,934,237,213",
+            "2023 (Bank)": "6,319,768,736"
+          },
+          {
+            "label": "(Increase) / Decrease in Operating Assets",
+            "2024 (Bank)": "(21,933,497,525)",
+            "2023 (Bank)": "(8,583,665,332)"
+          },
+          {
+            "label": "Financing and Receivables to Other Customers",
+            "2024 (Bank)": "(921,644,258)",
+            "2023 (Bank)": "(351,643,742)"
+          },
+          {
+            "label": "Other Financial Assets",
+            "2024 (Bank)": "(207,916,684)",
+            "2023 (Bank)": "(128,321,076)"
+          },
+          {
+            "label": "Balance with Central Bank of Sri Lanka",
+            "2024 (Bank)": "2,368,823,342",
+            "2023 (Bank)": "(4,361,183,605)"
+          },
+          {
+            "label": "Increase / (Decrease) in Operating Liabilities",
+            "2024 (Bank)": null,
+            "2023 (Bank)": null
+          },
+          {
+            "label": "Due to Depositors",
+            "2024 (Bank)": "22,251,557,030",
+            "2023 (Bank)": "19,621,914,385"
+          },
+          {
+            "label": "Due to Banks",
+            "2024 (Bank)": "(302,217,217)",
+            "2023 (Bank)": "(11,535,556,409)"
+          },
+          {
+            "label": "Other Liabilities",
+            "2024 (Bank)": "689,896,255",
+            "2023 (Bank)": "1,501,531,152"
+          },
+          {
+            "label": "Net Cash Generated from Operating Activities before Income Tax",
+            "2024 (Bank)": "4,879,238,156",
+            "2023 (Bank)": "2,482,844,109"
+          },
+          {
+            "label": "Income Tax Paid",
+            "2024 (Bank)": "(1,289,906,511)",
+            "2023 (Bank)": "(1,136,264,701)"
+          },
+          {
+            "label": "Net Cash (Used in)/From Operating Activities",
+            "2024 (Bank)": "3,589,331,645",
+            "2023 (Bank)": "1,346,579,408"
+          },
+          {
+            "label": "Acquisition of Property, Plant and Equipment",
+            "2024 (Bank)": "(257,710,731)",
+            "2023 (Bank)": "(101,650,537)"
+          },
+          {
+            "label": "Proceeds from Sale of Property, Plant and Equipment",
+            "2024 (Bank)": "72,034",
+            "2023 (Bank)": "47,826"
+          },
+          {
+            "label": "Acquisition of Intangible Assets",
+            "2024 (Bank)": "(130,399,413)",
+            "2023 (Bank)": "(118,193,401)"
+          },
+          {
+            "label": "Placements with Licensed Finance Companies",
+            "2024 (Bank)": "(500,002,951)",
+            "2023 (Bank)": "(3,671)"
+          },
+          {
+            "label": "Placements with Banks",
+            "2024 (Bank)": "3,849,994,807",
+            "2023 (Bank)": "(18,610,005,525)"
+          },
+          {
+            "label": "Dividend Received from Financial Assets",
+            "2024 (Bank)": "5,917,689",
+            "2023 (Bank)": "2,934,708"
+          },
+          {
+            "label": "Financial Assets Recognised through Profit or Loss - Measured at Fair Value",
+            "2024 (Bank)": "(19,191,316)",
+            "2023 (Bank)": "65,679,670"
+          },
+          {
+            "label": "Net Cash (Used)/From Investing Activities",
+            "2024 (Bank)": "2,948,680,119",
+            "2023 (Bank)": "(18,761,190,930)"
+          },
+          {
+            "label": "Rights Issue of Shares",
+            "2024 (Bank)": null,
+            "2023 (Bank)": "6,000,677,221"
+          },
+          {
+            "label": "Share Issue Expenses",
+            "2024 (Bank)": null,
+            "2023 (Bank)": "(86,195,867)"
+          },
+          {
+            "label": "Dividend Paid",
+            "2024 (Bank)": "(568,205,943)",
+            "2023 (Bank)": "(26,025)"
+          },
+          {
+            "label": "Net Cash (Used in)/From Financing Activities",
+            "2024 (Bank)": "(568,205,943)",
+            "2023 (Bank)": "5,914,455,329"
+          },
+          {
+            "label": "Net Increase / (Decrease) in Cash and Cash Equivalents",
+            "2024 (Bank)": "5,969,805,821",
+            "2023 (Bank)": "(11,500,156,193)"
+          },
+          {
+            "label": "Cash and Cash Equivalents at the Beginning of the Year",
+            "2024 (Bank)": "11,107,767,402",
+            "2023 (Bank)": "22,607,923,595"
+          },
+          {
+            "label": "Cash and Cash Equivalents at the End of the Year",
+            "2024 (Bank)": "17,077,573,223",
+            "2023 (Bank)": "11,107,767,402"
+          },
+          {
+            "label": "Profit Before Tax",
+            "2024 (Bank)": "2,786,843,324",
+            "2023 (Bank)": "2,312,190,600"
+          },
+          {
+            "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+            "2024 (Bank)": "256,903,664",
+            "2023 (Bank)": "249,465,480"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "2024 (Bank)": "64,936,795",
+            "2023 (Bank)": "58,137,560"
+          },
+          {
+            "label": "(Profit)/Loss on Disposal of Equity",
+            "2024 (Bank)": "(3,046,269)",
+            "2023 (Bank)": null
+          },
+          {
+            "label": "(Profit) / Loss on Disposal of Property, Plant and Equipment",
+            "2024 (Bank)": "(72,034)",
+            "2023 (Bank)": "(47,826)"
+          },
+          {
+            "label": "Impairment on Financial Assets",
+            "2024 (Bank)": "289,612,927",
+            "2023 (Bank)": "2,120,743,289"
+          },
+          {
+            "label": "Provision for Gratuity",
+            "2024 (Bank)": "33,662,105",
+            "2023 (Bank)": "34,785,369"
+          },
+          {
+            "label": "(Increase) / Decrease in Placement Income Receivable",
+            "2024 (Bank)": "307,540,088",
+            "2023 (Bank)": "697,536,789"
+          },
+          {
+            "label": "Increase / (Decrease) in Profit Payable",
+            "2024 (Bank)": "(783,454,021)",
+            "2023 (Bank)": "769,675,433"
+          },
+          {
+            "label": "Other Non Cash Items",
+            "2024 (Bank)": "39,686,184",
+            "2023 (Bank)": "114,114,109"
+          },
+          {
+            "label": "Dividend Income (Net)",
+            "2024 (Bank)": "(5,917,689)",
+            "2023 (Bank)": "(2,934,708)"
+          },
+          {
+            "label": "Gratuity Payments",
+            "2024 (Bank)": "(13,472,750)",
+            "2023 (Bank)": "(18,784,553)"
+          },
+          {
+            "label": "(Profit) / Loss on Mark to Market Valuation",
+            "2024 (Bank)": "(38,985,111)",
+            "2023 (Bank)": "(15,112,806)"
+          }
+        ]
+      },
+      "equity": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "data": [
+          {
+            "Note": "Note",
+            "Stated Capital Rs.": "Stated Capital Rs.",
+            "ESOP Reserve Rs.": "ESOP Reserve Rs.",
+            "Statutory Reserve Fund Rs.": "Statutory Reserve Fund Rs.",
+            "Fair Value Reserve Rs.": "Fair Value Reserve Rs.",
+            "Revaluation Reserve Rs.": "Revaluation Reserve Rs.",
+            "Retained Earnings Rs.": "Retained Earnings Rs.",
+            "Total Rs.": "Total Rs."
+          },
+          {
+            "Note": "36",
+            "Stated Capital Rs.": "11,348,821,130",
+            "Statutory Reserve Fund Rs.": "197,101,965",
+            "Fair Value Reserve Rs.": "85,393,536",
+            "Revaluation Reserve Rs.": "1,008,276,291",
+            "Retained Earnings Rs.": "1,721,762,142",
+            "Total Rs.": "14,361,355,064",
+            "label": "As at 1 January 2023"
+          },
+          {
+            "Retained Earnings Rs.": "1,386,776,095",
+            "Total Rs.": "1,386,776,095",
+            "label": "Profit for the Year"
+          },
+          {
+            "Note": "38",
+            "Fair Value Reserve Rs.": "(13,504,590)",
+            "Retained Earnings Rs.": "(3,502,507)",
+            "Total Rs.": "(17,007,097)",
+            "label": "Other Comprehensive Income"
+          },
+          {
+            "Stated Capital Rs.": "283,962,845",
+            "Retained Earnings Rs.": "(283,962,845)",
+            "label": "Interim Scrip Dividend 2023"
+          },
+          {
+            "Retained Earnings Rs.": "(50,111,096)",
+            "Total Rs.": "(50,111,096)",
+            "label": "WHT on Scrip Dividend"
+          },
+          {
+            "Note": "36",
+            "Stated Capital Rs.": "6,000,677,221",
+            "Total Rs.": "6,000,677,221",
+            "label": "Rights Issue"
+          },
+          {
+            "Retained Earnings Rs.": "(36,084,771)",
+            "Total Rs.": "(36,084,771)",
+            "label": "Share Issue Expenses"
+          },
+          {
+            "Note": "51",
+            "ESOP Reserve Rs.": "50,978,808",
+            "label": "Share-Based Payment Expense",
+            "ESOP Reserve": "50,978,808"
+          },
+          {
+            "Note": "37",
+            "Statutory Reserve Fund Rs.": "69,338,805",
+            "Retained Earnings Rs.": "(69,338,805)",
+            "label": "Transfers to Statutory Reserve Fund"
+          },
+          {
+            "Note": "40",
+            "Revaluation Reserve Rs.": "(1,086,460)",
+            "Retained Earnings Rs.": "1,086,460",
+            "label": "Transferred to Retained Earnings"
+          },
+          {
+            "Stated Capital Rs.": "17,633,461,196",
+            "ESOP Reserve Rs.": "50,978,808",
+            "Statutory Reserve Fund Rs.": "266,440,770",
+            "Fair Value Reserve Rs.": "71,888,946",
+            "Revaluation Reserve Rs.": "1,007,189,831",
+            "Retained Earnings Rs.": "2,666,624,673",
+            "Total Rs.": "21,696,584,224",
+            "label": "As at 31 December 2023"
+          },
+          {
+            "Retained Earnings Rs.": "1,774,665,732",
+            "Total Rs.": "1,774,665,732",
+            "label": "Profit for the Year"
+          },
+          {
+            "Note": "38",
+            "Fair Value Reserve Rs.": "29,710,098",
+            "Retained Earnings Rs.": "(25,287,795)",
+            "Total Rs.": "4,422,303",
+            "label": "Other Comprehensive Income"
+          },
+          {
+            "Retained Earnings Rs.": "(661,350,895)",
+            "Total Rs.": "(661,350,895)",
+            "label": "Interim Dividend 2024"
+          },
+          {
+            "Note": "51",
+            "ESOP Reserve Rs.": "27,539,030",
+            "label": "Share-Based Payment Expense",
+            "ESOP Reserve": "27,539,030"
+          },
+          {
+            "Note": "37",
+            "Statutory Reserve Fund Rs.": "88,733,287",
+            "Retained Earnings Rs.": "(88,733,287)",
+            "label": "Transfers to Statutory Reserve Fund"
+          },
+          {
+            "Note": "40",
+            "Revaluation Reserve Rs.": "(1,124,945)",
+            "Retained Earnings Rs.": "1,124,945",
+            "label": "Transferred to Retained Earnings"
+          },
+          {
+            "Stated Capital Rs.": "17,633,461,196",
+            "ESOP Reserve Rs.": "78,517,838",
+            "Statutory Reserve Fund Rs.": "355,174,057",
+            "Fair Value Reserve Rs.": "101,599,044",
+            "Revaluation Reserve Rs.": "1,006,064,886",
+            "Retained Earnings Rs.": "3,667,043,373",
+            "Total Rs.": "22,841,860,394",
+            "label": "As at 31 December 2024"
+          }
+        ]
+      },
+      "comprehensive_income": {
+        "parse_meta": {
+          "confidence": 0.95,
+          "warnings": []
+        },
+        "financial_data": [
+          {
+            "label": "Profit for the Year",
+            "2024 (Bank)": "1,774,665,732",
+            "2023 (Bank)": "1,386,776,095"
+          },
+          {
+            "label": "Other Comprehensive Income not to be Reclassified to Profit or Loss in Subsequent Periods:",
+            "2024 (Bank)": null,
+            "2023 (Bank)": null
+          },
+          {
+            "label": "Financial Assets - Fair Value through Other Comprehensive Income:",
+            "2024 (Bank)": null,
+            "2023 (Bank)": null
+          },
+          {
+            "label": "Change in Fair Value of Financial Assets - Fair Value through Other Comprehensive Income",
+            "2024 (Bank)": "29,710,098",
+            "2023 (Bank)": "(13,504,590)"
+          },
+          {
+            "label": "Re-measurement Gain / (Loss) on Defined Benefit Plans",
+            "2024 (Bank)": "(36,125,421)",
+            "2023 (Bank)": "(5,003,581)"
+          },
+          {
+            "label": "Deferred Tax Effect on Defined Benefit Plans",
+            "2024 (Bank)": "10,837,626",
+            "2023 (Bank)": "1,501,074"
+          },
+          {
+            "label": "Net Other Comprehensive Income not to be reclassified to Profit or Loss in Subsequent Periods:",
+            "2024 (Bank)": "(25,287,795)",
+            "2023 (Bank)": "(3,502,507)"
+          },
+          {
+            "label": "Other Comprehensive Income/ (Loss) for the Year Net of Tax",
+            "2024 (Bank)": "4,422,303",
+            "2023 (Bank)": "(17,007,097)"
+          },
+          {
+            "label": "Total Comprehensive Income for the Year",
+            "2024 (Bank)": "1,779,088,035",
+            "2023 (Bank)": "1,369,768,998"
+          }
+        ]
+      }
     }
   }
 ]

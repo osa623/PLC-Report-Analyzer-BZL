@@ -1,0 +1,112 @@
+export type ThemeMode = 'dark' | 'light';
+
+export const brand = {
+  royal: '#2B6FFF',
+  royalLight: '#5B8FFF',
+  gold: '#D4AF37',
+  goldSoft: '#F5D76E',
+  white: '#FFFFFF',
+  success: '#16D38A',
+  successSoft: '#0EAD6E',
+  danger: '#FF4A55',
+  dangerSoft: '#FF6B73',
+  warning: '#FFB020',
+  warningSoft: '#FFD080',
+  cyan: '#00D4FF',
+  purple: '#8B5CF6',
+};
+
+export const themes = {
+  dark: {
+    mode: 'dark' as const,
+    background: '#020711',
+    background2: '#06162B',
+    surface: '#081B34',
+    surfaceElevated: '#0E2547',
+    surfaceSoft: '#0B2140',
+    surfaceCard: 'rgba(8,27,52,0.92)',
+    surfaceInset: 'rgba(6,22,43,0.7)',
+    text: '#F7FAFF',
+    textSecondary: '#B8C9E0',
+    textTertiary: '#7A8FA8',
+    muted: '#9FB0CA',
+    border: '#1A2F4E',
+    borderLight: '#152640',
+    glow: 'rgba(43,111,255,0.36)',
+    glowGold: 'rgba(212,175,55,0.2)',
+    nav: 'rgba(4,16,33,0.92)',
+    chartGrid: '#1A2F4E',
+    inverse: '#071426',
+    separator: 'rgba(255,255,255,0.06)',
+    overlay: 'rgba(0,0,0,0.4)',
+    ...brand,
+  },
+  light: {
+    mode: 'light' as const,
+    background: '#F7FAFF',
+    background2: '#FFFFFF',
+    surface: '#FFFFFF',
+    surfaceElevated: '#FFFFFF',
+    surfaceSoft: '#EEF5FF',
+    surfaceCard: 'rgba(255,255,255,0.96)',
+    surfaceInset: 'rgba(238,245,255,0.8)',
+    text: '#071426',
+    textSecondary: '#4A5568',
+    textTertiary: '#8896A8',
+    muted: '#52627B',
+    border: '#DDE7F6',
+    borderLight: '#E8F0FE',
+    glow: 'rgba(43,111,255,0.16)',
+    glowGold: 'rgba(212,175,55,0.12)',
+    nav: 'rgba(255,255,255,0.94)',
+    chartGrid: '#D9E3F3',
+    inverse: '#FFFFFF',
+    separator: 'rgba(0,0,0,0.06)',
+    overlay: 'rgba(0,0,0,0.12)',
+    ...brand,
+  },
+};
+
+export type AppTheme = typeof themes.dark;
+
+export const spacing = {
+  xxs: 2,
+  xs: 4,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 20,
+  xxl: 28,
+  xxxl: 36,
+};
+
+export const radii = {
+  xs: 6,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 28,
+  pill: 999,
+};
+
+/** Typography scale — weights bumped up one step for bolder presence */
+export const typography = {
+  caption: { fontSize: 9, fontWeight: '500' as const, letterSpacing: 0.4 },
+  captionMedium: { fontSize: 9, fontWeight: '600' as const, letterSpacing: 0.8 },
+  label: { fontSize: 10, fontWeight: '400' as const, letterSpacing: 0.3 },
+  labelMedium: { fontSize: 10, fontWeight: '600' as const, letterSpacing: 0.5 },
+  labelBold: { fontSize: 10, fontWeight: '700' as const, letterSpacing: 0.8 },
+  body: { fontSize: 12, fontWeight: '400' as const, letterSpacing: 0.15 },
+  bodyMedium: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.15 },
+  bodySemibold: { fontSize: 12, fontWeight: '700' as const, letterSpacing: 0.1 },
+  subtitle: { fontSize: 13, fontWeight: '500' as const, letterSpacing: 0.1 },
+  subtitleSemibold: { fontSize: 13, fontWeight: '700' as const, letterSpacing: 0.1 },
+  title: { fontSize: 15, fontWeight: '700' as const, letterSpacing: 0 },
+  titleBold: { fontSize: 15, fontWeight: '800' as const, letterSpacing: 0 },
+  heading: { fontSize: 18, fontWeight: '800' as const, letterSpacing: -0.2 },
+  headingLarge: { fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.4 },
+  display: { fontSize: 28, fontWeight: '900' as const, letterSpacing: -0.6 },
+  metric: { fontSize: 20, fontWeight: '800' as const, letterSpacing: -0.3 },
+  metricLarge: { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.5 },
+};
