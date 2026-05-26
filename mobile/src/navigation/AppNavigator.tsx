@@ -1,13 +1,15 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, DefaultTheme, useRoute, RouteProp } from '@react-navigation/native';
 import { BlurView } from 'expo-blur';
 import { Platform, View } from 'react-native';
 import { IconGlyph } from '@/components/IconGlyph';
 import type { IconName } from '@/components/IconGlyph';
+import { CompanyProvider } from '@/context/CompanyContext';
 
 // Screens — Main tabs (Extraction module home)
 import { HomeScreen } from '@/screens/HomeScreen';
+import { ReportsListScreen } from '@/screens/ReportsListScreen';
 // Screens — Analyzer tabs (original financial analysis)
 import { DashboardScreen } from '@/screens/DashboardScreen';
 import { FinancialsScreen } from '@/screens/FinancialsScreen';
@@ -89,8 +91,8 @@ function MainTabNavigator() {
       })}
     >
       <MainTab.Screen name="Home" component={HomeScreen} />
-      <MainTab.Screen name="Reports" component={HomeScreen} />
-      <MainTab.Screen name="Analytics" component={HomeScreen} />
+      <MainTab.Screen name="Reports" component={ReportsListScreen} />
+      <MainTab.Screen name="Analytics" component={ReportsListScreen} />
       <MainTab.Screen name="Alerts" component={HomeScreen} />
       <MainTab.Screen name="More" component={HomeScreen} />
     </MainTab.Navigator>
@@ -101,29 +103,33 @@ function MainTabNavigator() {
 function AnalyzerTabNavigator() {
   const theme = useAppTheme();
   const config = useTabBarConfig();
+  const route = useRoute<RouteProp<RootStackParamList, 'AnalyzerTabs'>>();
+  const companyId = route.params?.companyId || 'demo-report';
 
   return (
-    <AnalyzerTab.Navigator
-      screenOptions={({ route }) => ({
-        ...config,
-        tabBarIcon: ({ color }) => {
-          const iconSize = 20;
-          const icon: IconName =
-            route.name === 'Dashboard' ? 'dashboard' :
-            route.name === 'Financials' ? 'financials' :
-            route.name === 'Ratios' ? 'ratios' :
-            route.name === 'Patterns' ? 'patterns' :
-            'insights';
-          return <IconGlyph name={icon} color={color} size={iconSize} />;
-        },
-      })}
-    >
-      <AnalyzerTab.Screen name="Dashboard" component={DashboardScreen} />
-      <AnalyzerTab.Screen name="Financials" component={FinancialsScreen} />
-      <AnalyzerTab.Screen name="Ratios" component={RatiosScreen} />
-      <AnalyzerTab.Screen name="Patterns" component={PatternsScreen} />
-      <AnalyzerTab.Screen name="Insights" component={InsightsScreen} />
-    </AnalyzerTab.Navigator>
+    <CompanyProvider value={{ companyId }}>
+      <AnalyzerTab.Navigator
+        screenOptions={({ route }) => ({
+          ...config,
+          tabBarIcon: ({ color }) => {
+            const iconSize = 20;
+            const icon: IconName =
+              route.name === 'Dashboard' ? 'dashboard' :
+              route.name === 'Financials' ? 'financials' :
+              route.name === 'Ratios' ? 'ratios' :
+              route.name === 'Patterns' ? 'patterns' :
+              'insights';
+            return <IconGlyph name={icon} color={color} size={iconSize} />;
+          },
+        })}
+      >
+        <AnalyzerTab.Screen name="Dashboard" component={DashboardScreen} />
+        <AnalyzerTab.Screen name="Financials" component={FinancialsScreen} />
+        <AnalyzerTab.Screen name="Ratios" component={RatiosScreen} />
+        <AnalyzerTab.Screen name="Patterns" component={PatternsScreen} />
+        <AnalyzerTab.Screen name="Insights" component={InsightsScreen} />
+      </AnalyzerTab.Navigator>
+    </CompanyProvider>
   );
 }
 

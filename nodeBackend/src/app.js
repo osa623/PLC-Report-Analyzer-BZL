@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const pipelineRoutes = require('./routes/pipelineRoutes');
+const companyRoutes = require('./routes/companyRoutes');
 
 function createApp() {
   const app = express();
@@ -9,6 +10,7 @@ function createApp() {
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'node-backend' }));
   app.use('/', pipelineRoutes);
+  app.use('/', companyRoutes);
 
   app.use((err, _req, res, _next) => {
     const message = err.response?.data || err.message || 'Internal server error';

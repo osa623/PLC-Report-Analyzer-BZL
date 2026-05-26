@@ -1094,6 +1094,26 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+class AnalyzeDatasetRequest(BaseModel):
+    company_name: str
+    company: str
+    currency: str
+    years: dict[str, Any]
+    financial_graph: dict[str, Any]
+    metadata: dict[str, Any] | None = None
+
+
+@app.post('/analyze-dataset')
+def analyze_dataset(request: AnalyzeDatasetRequest) -> dict[str, Any]:
+    try:
+        from strict_pipeline import build_strict_analysis_result
+    except ImportError:
+        from services.analysis_service.strict_pipeline import build_strict_analysis_result
+    
+    dataset = request.model_dump()
+    return build_strict_analysis_result(dataset)
+
+
 @app.get('/health')
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "analysis-service"}

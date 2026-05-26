@@ -5,6 +5,9 @@ import { useCredits } from '../utils/CreditContext';
 import InsufficientCreditsModal from '../components/InsufficientCreditsModal';
 import InteractiveDataTable from '../components/InteractiveDataTable';
 import ReportBuilderPanel from '../components/ReportBuilderPanel';
+import ReviewPanel from '../components/ReviewPanel';
+import AnalysisHistory from '../components/AnalysisHistory';
+import ExportSection from '../components/ExportSection';
 import {
     ArrowUpTrayIcon,
     DocumentTextIcon,
@@ -320,7 +323,52 @@ const Home = () => {
     const [reportGenerating, setReportGenerating] = useState(false);
     const [analysisBundle, setAnalysisBundle] = useState(null);
 
-    // ── Pipeline state (removed — now navigates to /pipeline) ──
+    const [reviewData, setReviewData] = useState(null);
+    const [analysisHistory, setAnalysisHistory] = useState(null);
+    const [activeCompanyId, setActiveCompanyId] = useState(null);
+    const [showReview, setShowReview] = useState(false);
+
+    const slugifyCompany = (name) => {
+        if (!name) return 'unknown';
+        return name.trim().toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '') || 'unknown';
+    };
+
+    useEffect(() => {
+        const hasRes = EXTRACTION_SECTIONS.some(s => sectionStates[s.key]?.data);
+        if (hasRes) {
+            const firstSec = Object.values(sectionStates).find(s => s?.data);
+            const companyName = firstSec?.data?.company_name || file?.name?.replace(/\.pdf$/i, '') || 'Unknown';
+            const companyId = slugifyCompany(companyName);
+            
+            const loadMongoData = async () => {
+                try {
+                    const data = await pdfService.getCompanyExtracted(companyId);
+                    setReviewData(data);
+                    setActiveCompanyId(companyId);
+                    setShowReview(true);
+                    
+                    try {
+                        const history = await pdfService.getCompanyHistory(companyId);
+                        setAnalysisHistory(history);
+                    } catch (hErr) {
+                        console.warn('Failed to load history:', hErr);
+                    }
+                } catch (err) {
+                    console.warn('Failed to load extracted data from MongoDB:', err);
+                }
+            };
+            
+            loadMongoData();
+        } else {
+            setShowReview(false);
+            setReviewData(null);
+            setAnalysisHistory(null);
+            setActiveCompanyId(null);
+        }
+    }, [sectionStates, file]);
 
     const persistSession = useCallback((patch = {}) => {
         try {
@@ -656,6 +704,40 @@ const Home = () => {
         catch (err) { setError(err.response?.data?.error || err.message || `Export (${fmt}) failed`); }
         finally { setExporting(null); }
     };
+
+    const handleSaveReview = useCallback(async (companyId, financials) => {
+        try {
+            await pdfService.updateCompanyExtracted(companyId, financials);
+            setReviewData(prev => ({ ...prev, financials }));
+        } catch (err) {
+            console.error('Failed to save:', err);
+            setError('Failed to save edited financials.');
+        }
+    }, []);
+
+    const handleReanalyse = useCallback(async (companyId) => {
+        try {
+            const result = await pdfService.reanalyseCompany(companyId);
+            const history = await pdfService.getCompanyHistory(companyId);
+            setAnalysisHistory(history);
+            
+            // Reload latest analysis result to refresh the dashboard metrics
+            const analysis = await pdfService.getCompanyAnalysis(companyId);
+            if (analysis && analysis.latest_run) {
+                setAnalysisBundle({
+                    scores: analysis.latest_run.scores,
+                    yearly_ratios: analysis.latest_run.ratios,
+                    growth_metrics: analysis.latest_run.patterns,
+                    validation_gates: analysis.latest_run.risk,
+                    evaluated_equations_by_year: analysis.latest_run.evaluated_equations_by_year
+                });
+            }
+            return result;
+        } catch (err) {
+            console.error('Re-analysis failed:', err);
+            setError('Re-analysis execution failed.');
+        }
+    }, []);
 
     // -- Run Full Pipeline ---------------------------------------------------
     const handleRunFullPipeline = async () => {
@@ -1031,6 +1113,22 @@ const Home = () => {
                             onGenerate={handleGenerateReport}
                             loading={reportGenerating}
                         />
+                    )}
+
+                    {showReview && reviewData && (
+                        <div className="mt-8 space-y-6 animate-scale-in">
+                            <ReviewPanel
+                                companyId={activeCompanyId}
+                                financials={reviewData.financials}
+                                companyName={reviewData.name}
+                                onSave={handleSaveReview}
+                                onReanalyse={handleReanalyse}
+                            />
+                            {analysisHistory && (
+                                <AnalysisHistory companyId={activeCompanyId} history={analysisHistory} />
+                            )}
+                            <ExportSection companyId={activeCompanyId} />
+                        </div>
                     )}
                 </div>
             )}

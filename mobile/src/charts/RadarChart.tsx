@@ -2,7 +2,7 @@ import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Stop, Text as SvgText
 import { useAppTheme } from '@/store/useThemeStore';
 import { polarToCartesian } from '@/utils/chart';
 
-const labels = [
+const defaultLabels: [string, string][] = [
   ['ROE', '21.3%'],
   ['ROA', '13.8%'],
   ['Operating', '18.9%'],
@@ -11,19 +11,33 @@ const labels = [
   ['EBITDA', '24.7%'],
 ];
 
-export function RadarChart({ size = 240 }: { size?: number }) {
+const defaultValues = [0.78, 0.68, 0.58, 0.72, 0.62, 0.75];
+const defaultGoldValues = [0.95, 0.86, 0.82, 0.88, 0.88, 0.9];
+
+type Props = {
+  size?: number;
+  labels?: [string, string][];
+  values?: number[];
+  benchmarkValues?: number[];
+};
+
+export function RadarChart({
+  size = 240,
+  labels = defaultLabels,
+  values = defaultValues,
+  benchmarkValues = defaultGoldValues,
+}: Props) {
   const theme = useAppTheme();
   const cx = size / 2;
   const cy = size / 2;
   const radius = size * 0.28;
-  const values = [0.78, 0.68, 0.58, 0.72, 0.62, 0.75];
-  const goldValues = [0.95, 0.86, 0.82, 0.88, 0.88, 0.9];
 
+  // Re-scale values so they fit cleanly in the circular grid [0, 1]
   const polygon = (scaleValues: number[]) =>
     scaleValues
       .map((value, index) => {
         const angle = (360 / labels.length) * index;
-        const point = polarToCartesian(cx, cy, radius * value, angle);
+        const point = polarToCartesian(cx, cy, radius * Math.min(value, 1.2), angle);
         return `${point.x},${point.y}`;
       })
       .join(' ');
@@ -67,39 +81,44 @@ export function RadarChart({ size = 240 }: { size?: number }) {
         );
       })}
 
-      {/* Gold reference polygon */}
-      <Polygon
-        points={polygon(goldValues)}
-        fill={theme.gold}
-        fillOpacity={0.06}
-        stroke={theme.gold}
-        strokeWidth={1}
-        opacity={0.6}
-      />
+      {/* Benchmark reference polygon */}
+      {benchmarkValues.length === labels.length && (
+        <Polygon
+          points={polygon(benchmarkValues)}
+          fill={theme.gold}
+          fillOpacity={0.06}
+          stroke={theme.gold}
+          strokeWidth={1}
+          opacity={0.6}
+        />
+      )}
 
       {/* Blue data polygon */}
-      <Polygon
-        points={polygon(values)}
-        fill="url(#radarFill)"
-        stroke={theme.royal}
-        strokeWidth={1.8}
-      />
+      {values.length === labels.length && (
+        <Polygon
+          points={polygon(values)}
+          fill="url(#radarFill)"
+          stroke={theme.royal}
+          strokeWidth={1.8}
+        />
+      )}
 
       {/* Data points */}
-      {values.map((value, index) => {
-        const point = polarToCartesian(cx, cy, radius * value, (360 / labels.length) * index);
-        return (
-          <Circle
-            key={index}
-            cx={point.x}
-            cy={point.y}
-            r={3}
-            fill={theme.white}
-            stroke={theme.royal}
-            strokeWidth={1.2}
-          />
-        );
-      })}
+      {values.length === labels.length &&
+        values.map((value, index) => {
+          const point = polarToCartesian(cx, cy, radius * Math.min(value, 1.2), (360 / labels.length) * index);
+          return (
+            <Circle
+              key={index}
+              cx={point.x}
+              cy={point.y}
+              r={3}
+              fill={theme.white}
+              stroke={theme.royal}
+              strokeWidth={1.2}
+            />
+          );
+        })}
 
       {/* Labels */}
       {labels.map((label, index) => {

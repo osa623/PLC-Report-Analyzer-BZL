@@ -8,4 +8,10 @@ export const endpoints = {
   documents: (reportId: string) => `/pipeline/${reportId}/documents`,
   fxLatest: '/fx/latest',
   currencyConvert: '/currency/convert',
+  companies: '/companies',
+  companyAnalysis: (companyId: string) => `/company/${companyId}/analysis`,
+  companyExtracted: (companyId: string) => `/company/${companyId}/extracted`,
+  companyHistory: (companyId: string) => `/company/${companyId}/history`,
+  reanalyse: (companyId: string) => `/company/${companyId}/reanalyse`,
+  uploadReports: '/reports',
 };
