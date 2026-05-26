@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ConfidenceRing } from '@/charts/ConfidenceRing';
@@ -11,21 +12,79 @@ import { TimelineRail } from '@/components/TimelineRail';
 import { useFinancialSnapshot } from '@/hooks/useFinancialSnapshot';
 import { useAppTheme } from '@/store/useThemeStore';
 
+function buildRadarFromRatios(ratios: any[]) {
+  const radarKeys = ['roe', 'roa', 'operating_margin', 'net_margin', 'ebitda_margin', 'gross_margin'];
+  const radarLabels: Record<string, string> = {
+    roe: 'ROE',
+    roa: 'ROA',
+    operating_margin: 'Operating',
+    net_margin: 'Net Margin',
+    ebitda_margin: 'EBITDA',
+    gross_margin: 'Gross',
+  };
+
+  const filtered = radarKeys
+    .map((k) => ratios.find((r) => r.key === k))
+    .filter(Boolean);
+
+  if (filtered.length < 3) return { labels: undefined, values: undefined };
+
+  const labels: [string, string][] = filtered.map((r: any) => [
+    radarLabels[r.key] || r.label,
+    r.value,
+  ]);
+
+  // Normalize to 0-1 range: percentages / 100, ratios capped at 1
+  const values = filtered.map((r: any) => {
+    const num = parseFloat(r.value);
+    if (isNaN(num)) return 0.5;
+    if (r.value.includes('%')) return Math.min(num / 100, 1.2);
+    return Math.min(num, 1.2);
+  });
+
+  return { labels, values };
+}
+
 export function DashboardScreen() {
   const theme = useAppTheme();
-  const { data, isLoading } = useFinancialSnapshot();
+  const { data, isLoading, isError } = useFinancialSnapshot();
 
   if (isLoading || !data) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.background, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={theme.royal} />
-      </SafeAreaView>
+      <PremiumBackground>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color={theme.royal} />
+          <TText className="mt-3 text-xs font-light opacity-50">Loading financial intelligence…</TText>
+        </SafeAreaView>
+      </PremiumBackground>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PremiumBackground>
+        <SafeAreaView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <TText className="text-sm font-medium" style={{ color: theme.danger }}>Failed to load data</TText>
+          <TText className="mt-1 text-xs font-light opacity-50">Check your connection and try again</TText>
+        </SafeAreaView>
+      </PremiumBackground>
     );
   }
 
   const [revenue, profit] = data.financials;
+  const radar = buildRadarFromRatios(data.ratios);
   const now = new Date();
-  const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')} AM`;
+  const h = now.getHours();
+  const greeting = h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : 'Good Evening';
+  const timeStr = `${h.toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+  const riskLevel =
+    data.riskScore <= 30 ? 'Low Risk' :
+    data.riskScore <= 60 ? 'Medium Risk' : 'High Risk';
+
+  const riskAccent: 'green' | 'gold' | 'red' =
+    data.riskScore <= 30 ? 'green' :
+    data.riskScore <= 60 ? 'gold' : 'red';
 
   return (
     <PremiumBackground>
@@ -37,7 +96,7 @@ export function DashboardScreen() {
         >
           {/* Greeting & Company */}
           <View style={{ marginBottom: 10 }}>
-            <TText className="text-[10px] font-light tracking-wide opacity-50">Good Morning</TText>
+            <TText className="text-[10px] font-light tracking-wide opacity-50">{greeting}</TText>
             <View style={{ marginTop: 4, flexDirection: 'row', alignItems: 'center' }}>
               <TText className="flex-1 text-xl font-bold tracking-tight" numberOfLines={1}>
                 {data.company.name}
@@ -56,7 +115,7 @@ export function DashboardScreen() {
               />
             </View>
             <TText className="mt-0.5 text-[10px] font-light opacity-40">
-              Annual Report {data.company.reportYear}
+              Annual Report {data.company.reportYear} · {data.company.sector}
             </TText>
           </View>
 
@@ -114,20 +173,25 @@ export function DashboardScreen() {
           {/* KPI Row: Revenue + Net Profit */}
           <View style={{ marginTop: 8, flexDirection: 'row' }}>
             <View style={{ flex: 1, marginRight: 4 }}>
-              <KpiCapsule
-                label="Revenue"
-                value={revenue.value}
-                change={revenue.change}
-                trend={revenue.trend}
-              />
+              {revenue && (
+                <KpiCapsule
+                  label="Revenue"
+                  value={revenue.value}
+                  change={revenue.change}
+                  trend={revenue.trend}
+                />
+              )}
             </View>
             <View style={{ flex: 1, marginLeft: 4 }}>
-              <KpiCapsule
-                label="Net Profit"
-                value={profit.value}
-                change={profit.change}
-                trend={profit.trend}
-              />
+              {profit && (
+                <KpiCapsule
+                  label="Net Profit"
+                  value={profit.value}
+                  change={profit.change}
+                  trend={profit.trend}
+                  accent="gold"
+                />
+              )}
             </View>
           </View>
 
@@ -136,9 +200,9 @@ export function DashboardScreen() {
             <KpiCapsule
               label="Risk Score"
               value={`${data.riskScore}/100`}
-              change="Low Risk"
-              trend={[12, 30, 36, 24, 22, 34]}
-              accent="gold"
+              change={riskLevel}
+              trend={[data.riskScore * 0.8, data.riskScore * 0.9, data.riskScore, data.riskScore * 1.05, data.riskScore * 0.95, data.riskScore]}
+              accent={riskAccent}
             />
           </View>
 
@@ -151,7 +215,11 @@ export function DashboardScreen() {
               <TText className="text-[9px] font-light opacity-30">vs Industry</TText>
             </View>
             <View style={{ alignItems: 'center', marginTop: 2 }}>
-              <RadarChart size={210} />
+              <RadarChart
+                size={210}
+                labels={radar.labels}
+                values={radar.values}
+              />
             </View>
           </GlassCard>
 
@@ -176,7 +244,7 @@ export function DashboardScreen() {
               </TText>
             </View>
             <TText className="text-[10px] font-light leading-4 opacity-70">
-              Maintain long-term outlook. Focus on improving cash flow efficiency.
+              {data.aiInsights[0] || 'Maintain long-term outlook. Focus on improving cash flow efficiency.'}
             </TText>
           </GlassCard>
 

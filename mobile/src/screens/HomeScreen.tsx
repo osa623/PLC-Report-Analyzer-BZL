@@ -1,28 +1,86 @@
 import { useCallback } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Alert, ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CompositeNavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as DocumentPicker from 'expo-document-picker';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { GlassCard } from '@/components/GlassCard';
 import { IconGlyph } from '@/components/IconGlyph';
 import { PremiumBackground } from '@/components/PremiumBackground';
 import { TText } from '@/components/Themed';
 import { sampleActivities, sampleThreads } from '@/constants/extractionData';
 import { useAppTheme, useThemeStore } from '@/store/useThemeStore';
-import type { RootStackParamList } from '@/navigation/types';
+import type { RootStackParamList, RootTabParamList } from '@/navigation/types';
+import { reportService } from '@/services/reportService';
 
-type NavProp = NativeStackNavigationProp<RootStackParamList>;
+type NavProp = CompositeNavigationProp<
+  BottomTabNavigationProp<RootTabParamList>,
+  NativeStackNavigationProp<RootStackParamList>
+>;
 
 export function HomeScreen() {
   const theme = useAppTheme();
   const toggleMode = useThemeStore((s) => s.toggleMode);
   const navigation = useNavigation<NavProp>();
+  const queryClient = useQueryClient();
 
-  const totalReports = sampleThreads.length;
-  const processing = sampleThreads.filter((t) => t.status === 'running').length;
-  const completed = sampleThreads.filter((t) => t.status === 'completed').length;
-  const issues = sampleThreads.filter((t) => t.status === 'failed').length + sampleThreads.reduce((s, t) => s + t.issues, 0);
+  // Query the analyzed companies list for stats
+  const { data: companies, isLoading: isCompaniesLoading } = useQuery({
+    queryKey: ['companies-list'],
+    queryFn: () => reportService.listCompanies(),
+  });
+
+  // Mutator for uploading a new report PDF
+  const uploadMutation = useMutation({
+    mutationFn: (args: { uri: string; name: string; type: string; meta: any }) =>
+      reportService.uploadReport(args.uri, args.name, args.type, args.meta),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['companies-list'] });
+      // Go to pipeline status monitoring screen
+      navigation.navigate('ProcessingPipeline', { reportId: data.report_id });
+    },
+    onError: (err: any) => {
+      Alert.alert('Upload Failed', err.message || 'An error occurred during file upload.');
+    },
+  });
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        return;
+      }
+
+      const file = result.assets[0];
+      
+      const meta = {
+        name: file.name.replace(/\.pdf$/i, '') || 'Uploaded Report',
+        symbol: 'DETECT',
+        sector: 'General',
+      };
+
+      uploadMutation.mutate({
+        uri: file.uri,
+        name: file.name,
+        type: file.mimeType || 'application/pdf',
+        meta,
+      });
+    } catch (err) {
+      Alert.alert('Error', 'Failed to select PDF document.');
+    }
+  };
+
+  const totalReports = (companies || []).length;
+  const processing = uploadMutation.isPending ? 1 : 0;
+  const completed = totalReports;
+  const issues = 0;
 
   const statusColor = useCallback(
     (status: string) =>
@@ -96,7 +154,6 @@ export function HomeScreen() {
               }}
             >
               <IconGlyph name="bell" color={theme.danger} size={15} />
-              {/* notification dot */}
               <View
                 style={{
                   position: 'absolute',
@@ -162,9 +219,10 @@ export function HomeScreen() {
 
           {/* ─── Primary Action Cards ─── */}
           <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-            {/* Extraction Card */}
+            {/* Extraction / PDF Upload Card */}
             <Pressable
-              onPress={() => navigation.navigate('ProcessingPipeline')}
+              onPress={handlePickDocument}
+              disabled={uploadMutation.isPending}
               style={{ flex: 1 }}
             >
               <LinearGradient
@@ -186,6 +244,7 @@ export function HomeScreen() {
                   shadowRadius: 16,
                   shadowOffset: { width: 0, height: 6 },
                   elevation: 6,
+                  opacity: uploadMutation.isPending ? 0.6 : 1,
                 }}
               >
                 <View
@@ -201,11 +260,17 @@ export function HomeScreen() {
                     marginBottom: 10,
                   }}
                 >
-                  <IconGlyph name="upload" color={theme.royal} size={20} />
+                  {uploadMutation.isPending ? (
+                    <ActivityIndicator size="small" color={theme.royal} />
+                  ) : (
+                    <IconGlyph name="upload" color={theme.royal} size={20} />
+                  )}
                 </View>
-                <TText className="text-base font-bold tracking-tight">Extraction</TText>
+                <TText className="text-base font-bold tracking-tight">
+                  {uploadMutation.isPending ? 'Uploading...' : 'Upload PDF'}
+                </TText>
                 <TText className="text-[9px] font-medium opacity-50 mt-0.5 leading-4">
-                  Upload annual reports{'\n'}and extract data
+                  Select annual reports{'\n'}and extract data
                 </TText>
                 <View
                   style={{
@@ -225,7 +290,7 @@ export function HomeScreen() {
 
             {/* Analyzer Card */}
             <Pressable
-              onPress={() => navigation.navigate('AnalyzerTabs')}
+              onPress={() => navigation.navigate('Reports')}
               style={{ flex: 1 }}
             >
               <LinearGradient
@@ -297,9 +362,11 @@ export function HomeScreen() {
             }}
           >
             <TText className="text-sm font-bold tracking-wide">Analytics Overview</TText>
-            <TText className="text-[9px] font-medium opacity-40" style={{ color: theme.royal }}>
-              View All
-            </TText>
+            <Pressable onPress={() => navigation.navigate('Reports')}>
+              <TText className="text-[9px] font-medium opacity-40" style={{ color: theme.royal }}>
+                View All
+              </TText>
+            </Pressable>
           </View>
 
           {/* KPI Row 1 */}
@@ -308,12 +375,16 @@ export function HomeScreen() {
               <TText className="text-[9px] font-semibold tracking-wider opacity-50 uppercase">
                 Total Reports
               </TText>
-              <TText className="text-2xl font-extrabold tracking-tight mt-0.5">
-                {totalReports}
-              </TText>
+              {isCompaniesLoading ? (
+                <ActivityIndicator size="small" color={theme.royal} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+              ) : (
+                <TText className="text-2xl font-extrabold tracking-tight mt-0.5">
+                  {totalReports}
+                </TText>
+              )}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                 <TText className="text-[9px] font-semibold" style={{ color: theme.success }}>
-                  +12% vs last month
+                  Analyzed Companies
                 </TText>
               </View>
             </GlassCard>
@@ -327,7 +398,7 @@ export function HomeScreen() {
                   {processing}
                 </TText>
               </View>
-              <TText className="text-[9px] font-medium opacity-40 mt-0.5">In Progress</TText>
+              <TText className="text-[9px] font-medium opacity-40 mt-0.5">Active Uploads</TText>
             </GlassCard>
           </View>
 
@@ -342,7 +413,7 @@ export function HomeScreen() {
               </TText>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
                 <TText className="text-[9px] font-semibold" style={{ color: theme.success }}>
-                  +8% vs last month
+                  Healthy Database
                 </TText>
               </View>
             </GlassCard>
@@ -354,8 +425,8 @@ export function HomeScreen() {
               <TText className="text-2xl font-extrabold tracking-tight mt-0.5" style={{ color: theme.danger }}>
                 {issues}
               </TText>
-              <TText className="text-[9px] font-semibold mt-0.5" style={{ color: theme.danger }}>
-                Requires Attention
+              <TText className="text-[9px] font-semibold mt-0.5" style={{ color: theme.success }}>
+                All clear
               </TText>
             </GlassCard>
           </View>
@@ -371,7 +442,7 @@ export function HomeScreen() {
           >
             <TText className="text-sm font-bold tracking-wide">Recent Activity</TText>
             <TText className="text-[9px] font-medium opacity-40" style={{ color: theme.royal }}>
-              View All
+              System Logs
             </TText>
           </View>
 
