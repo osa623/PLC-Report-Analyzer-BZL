@@ -1,167 +1,93 @@
 # PLC Report Analyzer BZL
 
-Last updated: 2026-04-18
+Last updated: 2026-05-26
 
 Enterprise annual report analysis platform with a Node API gateway, Python pipeline services, Redis-backed transient artifacts, and generated analytical outputs (JSON plus styled PDF).
 
-## Current System (As of 2026-04-18)
+## Current System Architecture
 
-This repository currently runs as a six-port service stack plus one background worker:
+The system operates under a strict "Data First" architecture, where algorithmic validation rules enforce data correctness and AI is treated as an extraction assistant governed by strict structural boundaries. 
 
-1. Node API gateway for upload, orchestration, and consolidated retrieval
-2. Extraction service for PDF-to-financial statement extraction
-3. Analysis service for validation gates, ratios, risk, patterns, and confidence
-4. Reporting service for narrative assembly and PDF generation
-5. Pipeline orchestrator API for queued job submission and retrieval
-6. Annual-report backend for auxiliary annual-report processing
-7. Pipeline worker (no HTTP port) that consumes queued orchestrator jobs
+The pipeline ensures high accuracy through multi-extactor reconciliation, cross-statement validation, and absolute gateway checks before progressing to analytics.
 
-## Active Services and Ports
+### Active Services and Ports
 
 | System | Running Port | Purpose |
 |---|---:|---|
-| nodeBackend | 3000 | Primary API entry, upload orchestration, and consolidated pipeline data retrieval |
-| extraction_service | 8001 | PDF extraction into canonical financial and narrative structures |
-| analysis_service | 8002 | Validation gates, scale harmonization, ratios, patterns, confidence, and risk scoring |
+| nodeBackend | 3000 | Primary API entry, upload orchestration, pipeline monitoring, and state governance |
+| extraction_service | 8001 | PDF extraction executing multi-extractor voting and cross-statement reconciliation |
+| analysis_service | 8002 | Coverage scoring gates, accounting validation, advanced reporting & analytical logic |
 | reporting_service | 8003 | Final narrative composition and professional PDF report generation |
 | pipeline_orchestrator | 8100 | Queue-oriented job submission, status tracking, and result handling |
 | annual-report-backend | 5000 | Auxiliary annual-report processing backend |
-| pipeline_worker | no port | Background worker that consumes orchestrator queue jobs |
+| pipeline_worker | no port | Background worker consuming orchestrator queue jobs |
 
-## End-to-End System Procedure
+## End-to-End Execution Flow
 
-### 1. Environment and dependencies
+### 1. Environment and Dependencies
 
 1. Create and activate virtual environment:
-
-```powershell
+`powershell
 python -m venv .venv
 . .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-```
+`
 
 2. Create central environment file:
-
-```powershell
+`powershell
 Copy-Item .env.sample .env
-```
+`
+Ensure all port and provider keys (e.g., GEMINI_API_KEY) are assigned correctly.
 
-3. Ensure these variables are set in .env:
-- REDIS_URL
-- DATABASE_URL (or Mongo settings when applicable)
-- GEMINI_API_KEY and any required provider keys
-- NODE_BACKEND_PORT
-- EXTRACTION_SERVICE_PORT
-- ANALYSIS_SERVICE_PORT
-- REPORTING_SERVICE_PORT
-- PIPELINE_ORCHESTRATOR_PORT
-- ANNUAL_REPORT_BACKEND_PORT
+### 2. Services Initialization
 
-### 2. Start infrastructure and services
-
-Use the central launcher to start all services from one .env source:
-
-```powershell
+Use the central launcher script to bootstrap the full backend stack:
+`powershell
 .\scripts\start_services.ps1
-```
+`
+*(Optionally include -NoReload in production/staging environments)*
 
-Optional (no auto-reload for FastAPI services):
+### 3. Pipeline Processing Stages
 
-```powershell
-.\scripts\start_services.ps1 -NoReload
-```
+To ensure deterministic reliability, the backend orchestrates operations across granular, globally reported stages:
 
-### 3. Verify services and ports
+1. **DOCUMENT_INGESTION**: Uploaded pipeline ingestion.
+2. **PAGE_CLASSIFICATION**: Classifying document segments and structure.
+3. **STATEMENT_DETECTION**: Identifying financial structures and bounds.
+4. **MULTI_EXTRACTOR_EXECUTION**: Executing specialized extractors (Balance Sheet, Cash Flow, Income, ESG, etc.) backed by \platform_core\.
+5. **CROSS_EXTRACTOR_RECONCILIATION**: Normalizing cross-linked entries and ensuring values align.
+6. **ACCOUNTING_VALIDATION**: Mathematical integrity verification (e.g., balance sheet identity).
+7. **COVERAGE_SCORING_GATE**: Strict hard-gate preventing unvalidated metrics from entering the reporting layer.
+8. **FINANCIAL_ANALYSIS**: Engine derivations for ratios, risk signals, and patterns.
+9. **REPORT_GENERATION**: PDF structuring, final data aggregation, and finalization.
 
-Run the built-in workspace task named check-service-ports.
+### 4. System Output State Contract
 
-### 4. Ingestion paths
+The nodeBackend governs the frontend's visual state through a mutually-exclusive global output phase:
+- **PROCESSING**: Dashboard renders live Pipeline Monitor (stages, statuses, progress logs) without prematurely showing metrics.
+- **EXTRACTION_INCOMPLETE**: Triggered when extraction fails the coverage or accounting gate. Interface delegates to an Extraction Audit Report detailing missing/failed equations without generating falsified analytics.
+- **VALIDATED_READY**: Pipeline succeeded, unlocking full analytics rendering, charting, and report PDF retrieval.
 
-Two supported operational paths are available:
+### Analytical and Domain Controls
+1. Balance sheet & identity assertions
+2. Standardized LKR normalization limits
+3. Cross-statement net income verification
+4. Chronological aggregation validation
+5. Fallback heuristics for non-machine-readable documents
 
-1. Node API path (standard app flow)
-- Upload one or multiple files through the Node gateway service on port 3000.
-- Monitor pipeline stage progress, validated outputs, analytics outputs, and report artifacts through the same gateway service.
+## Frontend Ecosystem
 
-2. Orchestrator queue path (job-style flow)
-- Submit files to the orchestrator service on port 8100.
-- Poll job status and retrieve final job outputs via the orchestrator flow.
+The platform exposes pipeline interactions through multiple clients:
+1. **mobile** (React Native / Expo app): Full flow interface optimized for mobile presentation. Start via \cd mobile; npm install; npm start\.
+2. **frontend** (Vite React app): Standard web application for extensive auditing.
+3. **frontend_I** (Legacy Vite React app): Alternate dashboard view interface.
 
-### 5. Analysis and report generation procedure
+## Repository Focus Areas & Design
 
-1. Extraction writes canonical raw data and temporary per-document financial artifacts.
-2. Analysis merges per-document temporary data, harmonizes scale, runs hard gates, computes ratios/patterns/risk/confidence, and stores analytics artifacts.
-3. Reporting composes sections, generates compact styled PDF, stores final report payload, and deletes temporary financial storage records.
+- \platform_core/\: Shared backend architecture, interfaces, utilities, and infrastructure ensuring DRY principles across all python extractors.
+- \alance_sheet_extractor, cashflow_statement_extractor, esg_extractor, risk_extractor\, etc.: Micro-domain extraction endpoints.
+- \
+odeBackend/\: Express API gateway, deterministic state reporting (\pipelineContract\), and web routing.
+- \pipeline_orchestrator/\: Redised Async job execution workflows.
 
-### 6. Output artifacts
-
-Primary artifacts are saved under data/eval, including:
-- {report_id}.report.pdf
-- report payload JSON artifacts
-- benchmark/evaluation outputs
-
-## Current Workflow States
-
-The active workflow states returned by the Node pipeline tracker are:
-- UPLOADED
-- EXTRACTING
-- ANALYZING
-- GENERATING_REPORT
-- COMPLETED
-- LOW_CONFIDENCE
-- FAILED
-
-## Overall System Detail
-
-### Core runtime flow
-1. Ingestion and queueing: files are accepted by the gateway or orchestrator and registered for processing.
-2. Extraction stage: statement and narrative candidates are extracted and stored as temporary artifacts.
-3. Analysis stage: temporary artifacts are merged, normalized, validated with hard gates, and transformed into analytics.
-4. Reporting stage: final sections and styled PDF are generated from validated analytics context.
-5. Lifecycle completion: temporary financial storage records are deleted after final report generation.
-
-### Analytical controls currently enforced
-1. Balance sheet identity checks
-2. Cash reconciliation checks
-3. Cross-statement net income linkage checks
-4. Multi-year continuity checks
-5. Unit consistency checks
-
-### Main produced outputs
-1. Canonical validated financial dataset
-2. Ratio engine outputs and trend diagnostics
-3. Pattern and risk model outputs
-4. Confidence and coverage summaries
-5. Final report payload and generated PDF
-
-## Frontend and Client Systems
-
-1. frontend (Vite React app)
-2. frontend_I (alternate/legacy Vite React app)
-3. nodeBackend acts as the primary backend for frontend API calls
-
-## Data and Storage Systems
-
-1. Redis: transient pipeline artifacts and status
-2. PostgreSQL: metadata and relational persistence where enabled
-3. MongoDB: optional paths for selected components
-4. Local filesystem: uploads and generated evaluation/report files
-
-## Operational Notes
-
-1. Always load one central .env before launching services.
-2. Prefer scripts/start_services.ps1 for port consistency and env propagation.
-3. If code changed but behavior did not, restart all services instead of relying on stale processes.
-4. Keep financial statement values in LKR and avoid permanent storage of temporary extracted statement artifacts.
-
-## Repository Focus Areas
-
-- nodeBackend: API gateway and pipeline data endpoints
-- services/extraction_service: extraction and temporary financial storage writes
-- services/analysis_service: gates, normalization, analytics engines
-- services/reporting_service: narrative composition and PDF generation
-- pipeline_orchestrator: queue API and job lifecycle
-- platform_core: shared contracts/infrastructure/utilities
-- scripts: setup/start/diagnostic helpers
-- docs: operations, observability, launch, rollback, privacy
-- tests: step-based validation and regression suites
+*All services utilize Redis for transient artifact storage and orchestration progression. Output analytical documents are collected permanently and temporarily stored financial segments are deleted post-run.*
