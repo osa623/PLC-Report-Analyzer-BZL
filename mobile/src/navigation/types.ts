@@ -14,8 +14,8 @@ export type RootTabParamList = {
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  AnalyzerTabs: undefined;
-  ProcessingPipeline: undefined;
+  AnalyzerTabs: { companyId: string };
+  ProcessingPipeline: { reportId: string };
   DocumentThreads: undefined;
   DocumentProcessing: { reportId: string };
 };

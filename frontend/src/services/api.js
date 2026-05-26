@@ -272,6 +272,53 @@ export const pdfService = {
     return `${base}/reports/${reportId}/download`;
   },
 
+  // ── Company Data APIs ──
+  getCompanyExtracted: async (companyId) => {
+    const response = await gatewayApi.get(`/company/${companyId}/extracted`, { timeout: 30000 });
+    return response.data;
+  },
+
+  updateCompanyExtracted: async (companyId, financials) => {
+    const response = await gatewayApi.put(`/company/${companyId}/extracted`, { financials }, { timeout: 30000 });
+    return response.data;
+  },
+
+  reanalyseCompany: async (companyId) => {
+    const response = await gatewayApi.post(`/company/${companyId}/reanalyse`, {}, { timeout: 180000 });
+    return response.data;
+  },
+
+  getCompanyAnalysis: async (companyId) => {
+    const response = await gatewayApi.get(`/company/${companyId}/analysis`, { timeout: 30000 });
+    return response.data;
+  },
+
+  getCompanyHistory: async (companyId) => {
+    const response = await gatewayApi.get(`/company/${companyId}/history`, { timeout: 30000 });
+    return response.data;
+  },
+
+  exportCompanyReport: async (companyId, format = 'pdf') => {
+    const response = await gatewayApi.get(`/company/${companyId}/export?format=${format}`, {
+      responseType: 'blob',
+      timeout: 120000,
+    });
+    const blob = new Blob([response.data]);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${companyId}_report.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  listCompanies: async () => {
+    const response = await gatewayApi.get('/companies', { timeout: 30000 });
+    return response.data;
+  },
+
   /**
    * Health check
    */
