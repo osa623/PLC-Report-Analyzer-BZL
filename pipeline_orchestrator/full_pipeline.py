@@ -108,6 +108,16 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     # ── Save extraction artifacts to Redis ──
     save_extraction_artifacts(redis_client, report_id, strict_extraction, PIPELINE_TTL_SECONDS)
 
+    # ── Persist to MongoDB for long-term storage ──
+    try:
+        from platform_core.company_repository import upsert_company_financials
+        years_data = strict_extraction.get("years") or strict_extraction.get("financial_graph") or {}
+        if years_data:
+            upsert_company_financials(company_name, "General", years_data)
+    except Exception as mongo_err:
+        import logging
+        logging.getLogger(__name__).warning("MongoDB persistence failed (non-fatal): %s", mongo_err)
+
     extraction_status = "completed" if strict_extraction.get("years") else "failed"
     update_pipeline_stage(
         redis_client, report_id, "EXTRACTION", extraction_status, PIPELINE_TTL_SECONDS,
@@ -147,6 +157,17 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
 
     # ── Save analysis artifacts to Redis ──
     save_analysis_artifacts(redis_client, report_id, strict_extraction, analysis_result, PIPELINE_TTL_SECONDS)
+
+    # ── Persist analysis to MongoDB ──
+    try:
+        from platform_core.company_repository import save_analysis_result, save_analysis_history_entry, _slugify
+        company_slug = _slugify(company_name)
+        save_analysis_result(company_slug, report_id, analysis_result)
+        scores = analysis_result.get("scores", {})
+        save_analysis_history_entry(company_slug, report_id, scores)
+    except Exception as mongo_err:
+        import logging
+        logging.getLogger(__name__).warning("MongoDB analysis persistence failed (non-fatal): %s", mongo_err)
 
     analysis_status = "completed" if analysis_result.get("status") == "COMPLETED" else "failed"
     update_pipeline_stage(
