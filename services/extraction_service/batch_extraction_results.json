@@ -1225,7 +1225,7 @@
       },
       "comprehensive_income": {
         "parse_meta": {
-          "version": "0.2",
+          "version": "0.1",
           "confidence": "0.95",
           "warnings": []
         },
@@ -1584,10 +1584,377 @@
       },
       "balance_sheet": {
         "parse_meta": {
+          "version": "0.2",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "header": {
+          "title": "STATEMENT OF CHANGES IN EQUITY",
+          "period": "Year ended 31 December"
+        },
+        "columns": [
+          "Note",
+          "Stated Capital",
+          "Statutory Reserve",
+          "Revenue Reserve",
+          "Fair Value Reserve",
+          "Revaluation Reserve",
+          "Retained Earnings",
+          "Total"
+        ],
+        "rows": [
+          {
+            "label": "As at 1 January 2017",
+            "cells": {
+              "Stated Capital": "5,866,808,141",
+              "Statutory Reserve": "17,263,213",
+              "Revenue Reserve": "(216,926,328)",
+              "Fair Value Reserve": "(26,868,210)",
+              "Revaluation Reserve": "526,908,060",
+              "Retained Earnings": "(379,139,357)",
+              "Total": "5,788,045,519"
+            }
+          },
+          {
+            "label": "Rights Issue",
+            "cells": {
+              "Stated Capital": "4,752,642,015",
+              "Total": "4,752,642,015"
+            }
+          },
+          {
+            "label": "Share Issue Expenses",
+            "cells": {
+              "Revenue Reserve": "(9,536,684)",
+              "Total": "(9,536,684)"
+            }
+          },
+          {
+            "label": "Profit for the Year",
+            "cells": {
+              "Retained Earnings": "502,827,663",
+              "Total": "502,827,663"
+            }
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "(27,009,180)",
+              "Revaluation Reserve": "294,351,953",
+              "Retained Earnings": "(13,364,464)",
+              "Total": "253,978,309"
+            }
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "cells": {
+              "Note": "38",
+              "Statutory Reserve": "25,141,384",
+              "Retained Earnings": "(25,141,384)"
+            }
+          },
+          {
+            "label": "Reclassifying to Profit or Loss as Impairment",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "25,845,573",
+              "Total": "25,845,573"
+            }
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "cells": {
+              "Note": "40",
+              "Revenue Reserve": "226,463,012",
+              "Revaluation Reserve": "(543,230)",
+              "Retained Earnings": "(225,919,782)"
+            }
+          },
+          {
+            "label": "As at 1 January 2018",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "42,404,597",
+              "Fair Value Reserve": "(28,031,817)",
+              "Revaluation Reserve": "820,716,783",
+              "Retained Earnings": "(140,737,324)",
+              "Total": "11,313,802,395"
+            }
+          },
+          {
+            "label": "Impact of Adopting SLFRS 9",
+            "cells": {
+              "Note": "37",
+              "Fair Value Reserve": "(13,204)",
+              "Retained Earnings": "(39,654,363)",
+              "Total": "(39,667,567)"
+            }
+          },
+          {
+            "label": "Restated Opening Balance under SLFRS 9",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "42,404,597",
+              "Fair Value Reserve": "(28,045,021)",
+              "Revaluation Reserve": "820,716,783",
+              "Retained Earnings": "(180,391,687)",
+              "Total": "11,274,134,828"
+            }
+          },
+          {
+            "label": "Profit for the Year",
+            "cells": {
+              "Retained Earnings": "556,445,708",
+              "Total": "556,445,708"
+            }
+          },
+          {
+            "label": "Other Comprehensive Income",
+            "cells": {
+              "Note": "39",
+              "Fair Value Reserve": "(32,411,016)",
+              "Retained Earnings": "11,028,132",
+              "Total": "(21,382,884)"
+            }
+          },
+          {
+            "label": "Interim Dividend 2018 - (Dividend Per Share - Rs. 0.07)",
+            "cells": {
+              "Retained Earnings": "(175,097,337)",
+              "Total": "(175,097,337)"
+            }
+          },
+          {
+            "label": "Transfers to Statutory Reserve Fund",
+            "cells": {
+              "Note": "38",
+              "Statutory Reserve": "27,822,285",
+              "Retained Earnings": "(27,822,285)"
+            }
+          },
+          {
+            "label": "Transferred to Retained Earnings",
+            "cells": {
+              "Note": "40",
+              "Revaluation Reserve": "(1,086,460)",
+              "Retained Earnings": "1,086,460"
+            }
+          },
+          {
+            "label": "As at 31 December 2018",
+            "cells": {
+              "Stated Capital": "10,619,450,156",
+              "Statutory Reserve": "70,226,882",
+              "Fair Value Reserve": "(60,456,037)",
+              "Revaluation Reserve": "819,630,323",
+              "Retained Earnings": "185,248,991",
+              "Total": "11,634,100,315"
+            }
+          }
+        ]
+      },
+      "comprehensive_income": {
+        "parse_meta": {
+          "version": "0.1",
+          "confidence": "0.95",
+          "warnings": []
+        },
+        "document_name": "STATEMENT OF COMPREHENSIVE INCOME",
+        "period_ending": "Year ended 31 December",
+        "content": [
+          {
+            "label": "Profit for the Year",
+            "2018 (Bank)": "556,445,708",
+            "2017 (Bank)": "502,827,663"
+          },
+          {
+            "label": "Net Gain/(Loss) on Financial Investments - Available for Sale",
+            "2017 (Bank)": "(47,348,976)"
+          },
+          {
+            "label": "Reclassification to Profit or Loss as Impairment",
+            "2017 (Bank)": "20,339,796"
+          },
+          {
+            "label": "Net Other Comprehensive Income to be Reclassified to Profit or Loss in Subsequent Periods:",
+            "2017 (Bank)": "(27,009,180)"
+          },
+          {
+            "label": "Net Gain / (Loss) on Financial Investments - Fair Value through Other Comprehensive Income",
+            "2018 (Bank)": "(32,411,016)"
+          },
+          {
+            "label": "Revaluation Surplus on Property, Plant and Equipment",
+            "2017 (Bank)": "608,536,162",
+            "Note": "26"
+          },
+          {
+            "label": "Deferred Tax Effect on Revaluation Surplus",
+            "2017 (Bank)": "(314,184,209)",
+            "Note": "33"
+          },
+          {
+            "label": "Re-measurement Gain / (Loss) on Defined Benefit Plans",
+            "2018 (Bank)": "15,316,850",
+            "2017 (Bank)": "(18,561,756)",
+            "Note": "34"
+          },
+          {
+            "label": "Deferred Tax Effect on Defined Benefit Plans",
+            "2018 (Bank)": "(4,288,718)",
+            "2017 (Bank)": "5,197,292",
+            "Note": "33"
+          },
+          {
+            "label": "Net Comprehensive Income not to be Reclassified to Profit or Loss in Subsequent Periods:",
+            "2018 (Bank)": "(21,382,884)",
+            "2017 (Bank)": "280,987,489"
+          },
+          {
+            "label": "Other Comprehensive Income / (Loss) for the Year Net of Tax",
+            "2018 (Bank)": "(21,382,884)",
+            "2017 (Bank)": "253,978,309"
+          },
+          {
+            "label": "Total Comprehensive Income for the Year",
+            "2018 (Bank)": "535,062,824",
+            "2017 (Bank)": "756,805,972"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "pdf_name": "AMANA_Banking_2020.pdf",
+    "statement_pages": {
+      "income_statement": 198,
+      "balance_sheet": 259,
+      "cash_flow": 202,
+      "equity": 201,
+      "comprehensive_income": null
+    },
+    "statements": {
+      "income_statement": {
+        "parse_meta": {
           "version": "0.1",
           "confidence": "1.0",
           "warnings": []
         },
+        "financial_data": [
+          {
+            "label": "Financing Income",
+            "2020 (Bank)": "7,211,643,435",
+            "2019 (Bank)": "7,709,286,294"
+          },
+          {
+            "label": "Financing Expenses",
+            "2020 (Bank)": "(3,757,313,167)",
+            "2019 (Bank)": "(4,544,370,605)"
+          },
+          {
+            "label": "Net Financing Income",
+            "2020 (Bank)": "3,454,330,268",
+            "2019 (Bank)": "3,164,915,689"
+          },
+          {
+            "label": "Net Fee and Commission Income",
+            "2020 (Bank)": "328,562,743",
+            "2019 (Bank)": "329,040,746"
+          },
+          {
+            "label": "Net Trading Income",
+            "2020 (Bank)": "444,376,037",
+            "2019 (Bank)": "738,397,355"
+          },
+          {
+            "label": "Net Gains / (Losses) from Financial Assets at Fair Value Through Profit or Loss",
+            "2020 (Bank)": "3,260,627",
+            "2019 (Bank)": "4,862,561"
+          },
+          {
+            "label": "Net Gains / (Losses) from Derecognition of Financial Assets",
+            "2020 (Bank)": "928,646",
+            "2019 (Bank)": "11,150,575"
+          },
+          {
+            "label": "Net Other Operating Income",
+            "2020 (Bank)": "2,302,448",
+            "2019 (Bank)": "8,251,376"
+          },
+          {
+            "label": "Total Operating Income",
+            "2020 (Bank)": "4,233,760,769",
+            "2019 (Bank)": "4,256,618,302"
+          },
+          {
+            "label": "Impairment on Financial Assets",
+            "2020 (Bank)": "(513,726,961)",
+            "2019 (Bank)": "(288,928,583)"
+          },
+          {
+            "label": "Net Operating Income",
+            "2020 (Bank)": "3,720,033,808",
+            "2019 (Bank)": "3,967,689,719"
+          },
+          {
+            "label": "Personnel Expenses",
+            "2020 (Bank)": "1,446,138,333",
+            "2019 (Bank)": "1,381,445,709"
+          },
+          {
+            "label": "Depreciation of Property, Plant, Equipment and Right-of-Use Assets",
+            "2020 (Bank)": "281,177,308",
+            "2019 (Bank)": "256,195,369"
+          },
+          {
+            "label": "Amortisation of Intangible Assets",
+            "2020 (Bank)": "70,374,848",
+            "2019 (Bank)": "51,025,609"
+          },
+          {
+            "label": "Other Operating Expenses",
+            "2020 (Bank)": "767,727,520",
+            "2019 (Bank)": "902,349,033"
+          },
+          {
+            "label": "Total Operating Expenses",
+            "2020 (Bank)": "2,565,418,009",
+            "2019 (Bank)": "2,591,015,720"
+          },
+          {
+            "label": "Operating Profit Before Value Added Tax on Financial Services, Nation Building Tax & Debt Repayment Levy",
+            "2020 (Bank)": "1,154,615,799",
+            "2019 (Bank)": "1,376,673,999"
+          },
+          {
+            "label": "Value Added Tax on Financial Services, Nation Building Tax & Debt Repayment Levy",
+            "2020 (Bank)": "(393,167,272)",
+            "2019 (Bank)": "(531,825,986)"
+          },
+          {
+            "label": "Profit Before Tax",
+            "2020 (Bank)": "761,448,527",
+            "2019 (Bank)": "844,848,013"
+          },
+          {
+            "label": "Tax Expenses",
+            "2020 (Bank)": "(297,753,065)",
+            "2019 (Bank)": "(383,916,616)"
+          },
+          {
+            "label": "Profit for the Year",
+            "2020 (Bank)": "463,695,462",
+            "2019 (Bank)": "460,931,397"
+          },
+          {
+            "label": "Earnings Per Share - Basic / Diluted",
+            "2020 (Bank)": "0.18",
+            "2019 (Bank)": "0.18"
+          }
+        ]
+      },
+      "balance_sheet": {
         "financial_statement": {
           "statement_title": "Statement of Financial Position",
           "statement_date": "As at 31 December",
@@ -1894,8 +2261,8 @@
       },
       "cash_flow": {
         "parse_meta": {
-          "version": "0.2",
-          "confidence": "0.95",
+          "version": "0.9.2",
+          "confidence": 0.95,
           "warnings": []
         },
         "document_name": "Statement of Cash Flows",
@@ -3100,8 +3467,20 @@
             ]
           }
         ]
-      },
-      "balance_sheet": {
+      }
+    }
+  },
+  {
+    "pdf_name": "AMANA_Banking_2024.pdf",
+    "statement_pages": {
+      "income_statement": 311,
+      "balance_sheet": 242,
+      "cash_flow": 245,
+      "equity": 244,
+      "comprehensive_income": 241
+    },
+    "statements": {
+      "income_statement": {
         "parse_meta": {
           "version": "0.1",
           "confidence": "0.95",

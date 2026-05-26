@@ -1238,6 +1238,52 @@
             "equity_holders_of_the_parent": -23935
           }
         },
+        "cash_flow": {
+          "financing_income_received": "7,160,433,762",
+          "fee_and_commission_received": "329,040,746",
+          "financing_expenses_paid": "(4,499,462,313)",
+          "foreign_exchange_income_received": "737,305,876",
+          "gratuity_payments_made": "(14,709,868)",
+          "payments_to_employees_and_suppliers": "(2,732,597,013)",
+          "operating_profit_before_changes_in_operating_assets_and_liabilities_note_a": "980,011,190",
+          "financing_and_receivables_to_other_customers": "(4,813,177,353)",
+          "other_financial_assets": "(83,035,024)",
+          "other_non_financial_assets": "(251,141,545)",
+          "balance_with_central_bank_of_sri_lanka": "94,647,450",
+          "due_to_depositors": "9,804,054,143",
+          "due_to_banks": "(107,800,000)",
+          "other_liabilities": "(1,316,928,160)",
+          "net_cash_flow_from_operating_activities_before_income_tax": "4,306,630,701",
+          "income_tax_paid": "(345,688,902)",
+          "net_cash_flow_from_operating_activities": "3,960,941,799",
+          "acquisition_of_property_plant_and_equipment": "(277,670,943)",
+          "proceeds_from_sale_of_property_plant_and_equipment": "964,652",
+          "acquisition_of_intangible_assets": "(49,788,947)",
+          "placements_with_licensed_finance_companies": "2,403,218,172",
+          "placements_with_banks": "(1,177,298,188)",
+          "dividend_received_from_financial_assets": "7,431,422",
+          "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": "57,564,723",
+          "net_cash_flows_used_in_investing_activities": "964,420,891",
+          "rights_issue_of_shares": null,
+          "share_issue_expenses": null,
+          "dividend_paid": "(196,781,871)",
+          "net_cash_flows_from_financing_activities": "(196,781,871)",
+          "net_increase_decrease_in_cash_and_cash_equivalents": "4,728,580,819",
+          "cash_and_cash_equivalents_at_the_beginning_of_the_year": "5,339,450,118",
+          "cash_and_cash_equivalents_at_the_end_of_the_year": "10,068,030,937",
+          "profit_before_tax": "844,848,013",
+          "depreciation_of_property_plant_equipment_and_right_of_use_assets": "256,195,369",
+          "amortisation_of_intangible_assets": "51,025,609",
+          "profit_loss_on_disposal_of_property_plant_and_equipment": "(819,954)",
+          "impairment_for_financing_and_receivables_to_other_customers_and_financial_assets": "288,928,583",
+          "provision_for_gratuity": "43,707,162",
+          "increase_decrease_in_placement_income_receivable": "(170,487,106)",
+          "increase_decrease_in_profit_payable": "88,652,712",
+          "other_non_cash_items": "(399,897,909)",
+          "dividend_income_net": "(7,431,422)",
+          "gratuity_payments": "(14,709,868)",
+          "profit_loss_on_mark_to_market_valuation": null
+        },
         "group": {
           "income_statement": {
             "gross_income": 12723121,
@@ -1637,7 +1683,83 @@
             "equity_holders_of_the_parent": 574560
           }
         },
-        "group": {
+        "equity": {
+          "as_at_1_january_2022": {
+            "notes": null,
+            "stated_capital": 11079706011,
+            "statutory_reserve_fund": 157693120,
+            "fair_value_reserve": 98898126,
+            "revaluation_reserve": 1076687938,
+            "retained_earnings": 1225548940,
+            "total": 13638534135
+          },
+          "profit_for_the_year": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": 788176904,
+            "total": 788176904
+          },
+          "other_comprehensive_income": {
+            "notes": "38",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": -13504590,
+            "revaluation_reserve": -67325187,
+            "retained_earnings": 15679030,
+            "total": -65150747
+          },
+          "interim_scrip_dividend_2022": {
+            "notes": null,
+            "stated_capital": 269115119,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -269115119,
+            "total": null
+          },
+          "share_issue_expenses": {
+            "notes": null,
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -205228,
+            "total": -205228
+          },
+          "transfers_to_statutory_reserve_fund": {
+            "notes": "37",
+            "stated_capital": null,
+            "statutory_reserve_fund": 39408845,
+            "fair_value_reserve": null,
+            "revaluation_reserve": null,
+            "retained_earnings": -39408845,
+            "total": null
+          },
+          "transferred_to_retained_earnings": {
+            "notes": "40",
+            "stated_capital": null,
+            "statutory_reserve_fund": null,
+            "fair_value_reserve": null,
+            "revaluation_reserve": -1086460,
+            "retained_earnings": 1086460,
+            "total": null
+          },
+          "as_at_31_december_2022": {
+            "notes": null,
+            "stated_capital": 11348821130,
+            "statutory_reserve_fund": 197101965,
+            "fair_value_reserve": 85393536,
+            "revaluation_reserve": 1008276291,
+            "retained_earnings": 1721762142,
+            "total": 14361355064
+          }
+        }
+      },
+      "2021": {
+        "bank": {
           "income_statement": {
             "gross_income": 18677455,
             "interest_income": 15974939,
@@ -1888,7 +2010,50 @@
             "equity_holders_of_the_parent": 447409
           }
         },
-        "group": {
+        "company": {
+          "equity": {
+            "profit_for_the_year": {
+              "retained_earnings_rs": 1774665732,
+              "total_rs": 1774665732
+            },
+            "other_comprehensive_income": {
+              "note": "38",
+              "fair_value_reserve_rs": 29710098,
+              "retained_earnings_rs": -25287795,
+              "total_rs": 4422303
+            },
+            "interim_dividend_2024": {
+              "retained_earnings_rs": -661350895,
+              "total_rs": -661350895
+            },
+            "share_based_payment_expense": {
+              "note": "51",
+              "esop_reserve_rs": 27539030
+            },
+            "transfers_to_statutory_reserve_fund": {
+              "note": "37",
+              "statutory_reserve_fund_rs": 88733287,
+              "retained_earnings_rs": -88733287
+            },
+            "transferred_to_retained_earnings": {
+              "note": "40",
+              "revaluation_reserve_rs": -1124945,
+              "retained_earnings_rs": 1124945
+            },
+            "as_at_31_december_2024": {
+              "stated_capital_rs": 17633461196,
+              "esop_reserve_rs": 78517838,
+              "statutory_reserve_fund_rs": 355174057,
+              "fair_value_reserve_rs": 101599044,
+              "revaluation_reserve_rs": 1006064886,
+              "retained_earnings_rs": 3667043373,
+              "total_rs": 22841860394
+            }
+          }
+        }
+      },
+      "2023": {
+        "bank": {
           "income_statement": {
             "gross_income": 24893435,
             "interest_income": 22493007,
