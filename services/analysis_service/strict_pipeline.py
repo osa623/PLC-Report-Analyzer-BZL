@@ -481,6 +481,19 @@ def build_strict_analysis_result(extraction_dataset: dict[str, Any]) -> dict[str
     company_name = extraction_dataset.get("company_name", "Unknown")
     ordered = sorted((y for y in years if str(y).isdigit()), key=int)
 
+
+    print("\n========== YEAR DEBUG ==========")
+    print("All year keys:", list(years.keys()))
+    print("Ordered years:", ordered)
+
+    for year in ordered:
+        payload = years[year]
+
+        print("\nYEAR:", year)
+        print("TOP LEVEL KEYS:", payload.keys())
+
+    print("========== END DEBUG ==========\n")
+
     yearly_ratios = {}
     growth_metrics = {}
     validation_gates = {}
@@ -496,6 +509,20 @@ def build_strict_analysis_result(extraction_dataset: dict[str, Any]) -> dict[str
 
         v = _normalize_year(payload, prev_vars)
         src = v.pop("_src", {})
+
+        print(f"\n===== NORMALIZED {year} =====")
+
+        for k in [
+            "revenue",
+            "net_profit",
+            "total_assets",
+            "equity",
+            "total_liabilities",
+            "operating_cash_flow"
+        ]:
+            print(k, "=", v.get(k))
+
+        print("========================")
 
         ratios = _compute_ratios(v, src)
         growth = _growth(v, prev_vars)

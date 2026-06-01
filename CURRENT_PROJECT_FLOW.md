@@ -1,790 +1,1113 @@
 # Current Project Flow and Intelligence Contract
 
-Last updated: 2026-04-16
+Last updated: 2026-06-01
 
-This document defines the required behavior of the financial document intelligence engine and maps that behavior to the current repository architecture.
+This document is the implementation-aligned workflow, data contract, and project plan for the current annual-report intelligence platform. It explains how the system moves from upload to extraction, analysis, reporting, and retrieval, including the current formulas, thresholds, artifacts, and limiting rules.
 
-## 1) Core Execution Principle
+## 1) Purpose
 
-The platform must always execute end-to-end regardless of upload count.
+The platform turns one or more annual-report PDFs into a structured financial intelligence package that includes:
 
-1. Never block execution due to low document count.
-2. Never require additional files in order to proceed.
-3. Always extract, normalize, analyze, and report maximum possible value from available data.
-4. When data depth is limited, continue pipeline execution and report limitations transparently.
+- extracted raw statement data
+- normalized multi-year financials
+- validation results
+- ratio calculations
+- pattern detection
+- risk scoring
+- sector benchmarking
+- investor-style reporting
+- PDF and JSON outputs for downstream consumers
 
-## 2) Supported Input Variants
+The system is designed to keep moving even when the document set is small, incomplete, or partially malformed.
 
-Users may upload:
+## 2) Core Execution Rules
 
-1. One PDF.
-2. Multiple PDFs from the same company.
-3. Multiple PDFs across different years.
-4. Inconsistently formatted files.
-5. Scanned or text-native PDFs.
+The system must always execute end-to-end if there is any usable data.
 
-For every file, the system attempts to detect:
-
-1. Company identity.
-2. Reporting year.
-3. Currency and scaling.
-4. Statement sections and tables.
-5. Narrative sections and audit text.
+- Never block the pipeline just because the upload count is low.
+- Never require additional files before continuing.
+- Always extract, normalize, validate, analyze, and report what can be supported by the available data.
+- When a metric is unavailable, the pipeline records the limitation instead of failing the whole run.
+- When advanced analytics are gated, the system falls back to structural snapshots and transparency text.
 
 ## 3) Runtime Components
 
-1. nodeBackend (Express): public orchestration API and consolidated report retrieval.
-2. extraction_service (FastAPI): PDF parsing, chunking, structure detection, extraction, canonical raw output.
-3. analysis_service (FastAPI): canonical normalization, validation, ratio computation, pattern logic, risk signals, confidence scoring.
-4. reporting_service (FastAPI): investor-style narrative assembly and final report payload creation.
-5. pipeline_orchestrator plus worker (FastAPI plus Redis queue): async queue-based extraction lane.
-6. Redis: runtime artifact store and pipeline stage state store.
-7. Postgres: infrastructure dependency for broader platform features.
+### 3.1 Node backend
 
-## 4) Processing Pipeline Contract
+`nodeBackend` is the public orchestration layer.
 
-### 4.1 Document Intake
+- Accepts uploads
+- Creates and tracks `report_id`
+- Calls the extraction, analysis, and reporting services
+- Serves status and artifact retrieval endpoints
+- Converts Redis-backed pipeline state into frontend-ready responses
 
-For each uploaded PDF, extraction must attempt:
+### 3.2 Extraction service
 
-1. Text extraction.
-2. Table extraction and reconstruction.
-3. Financial statement capture.
-4. Notes to accounts capture.
-5. Auditor and management narrative capture.
+`services/extraction_service` parses the uploaded PDFs and produces canonical raw financial data.
 
-Pipeline resilience requirements:
+- Handles text-native and scanned PDFs
+- Detects tables, statements, notes, and narrative sections
+- Performs OCR fallback when necessary
+- Reconstructs tables and statement structure
+- Writes extracted artifacts for later stages
 
-1. OCR fallback for scanned content.
-2. Multi-column handling.
-3. Broken or merged row repair heuristics.
-4. Best-effort extraction even when structure quality varies.
+### 3.3 Analysis service
 
-Output per file:
+`services/analysis_service` takes extracted financial data and produces validated analytics.
 
-1. Structured JSON payload with extracted raw financial and narrative data.
+- Merges yearly data
+- Normalizes units and scale drift
+- Runs hard accounting gates
+- Computes ratios and growth metrics
+- Produces confidence, risk, sector comparison, and pattern outputs
+- Writes the canonical validated dataset and analytics artifacts
 
-### 4.2 Financial Normalization
+### 3.4 Reporting service
 
-Normalize into canonical financial schema:
+`services/reporting_service` turns the validated analysis into a final investor-style report.
 
-1. Currency symbols and units.
-2. Thousand/million/billion scaling.
-3. Fiscal year labels.
-4. Statement naming variations.
+- Builds a strict report structure
+- Generates narrative sections
+- Builds charts and tables
+- Writes a PDF report when the PDF toolchain is available
+- Stores the final report in Redis and on disk
 
-Canonical fields targeted:
+### 3.5 Auxiliary queue lane
 
-1. Income statement core metrics.
-2. Balance sheet core metrics.
-3. Cash flow core metrics.
+The repository also includes a queue-based pipeline lane for asynchronous processing.
 
-### 4.3 Multi-Year Aggregation
+- `POST /submit`
+- `GET /status/{job_id}`
+- `GET /result/{job_id}`
 
-Aggregate all extracted documents into a chronologically aligned dataset.
+This lane runs in parallel to the primary Node-orchestrated flow and uses queue state plus worker output.
 
-If only one year exists:
+## 4) Supported Input Variants
 
-1. Build single-year dataset.
-2. Skip multi-year trend math only.
-3. Mark trend outputs as limited by single-year scope.
-4. Continue all other analytics and reporting stages.
+The platform accepts:
 
-If multiple years exist:
+- one PDF
+- multiple PDFs from the same company
+- multiple PDFs across different years
+- inconsistent formatting across files
+- scanned PDFs
+- text-based PDFs
 
-1. Order chronologically.
-2. Align fiscal labels.
-3. Detect missing-year gaps.
+For each file, the system attempts to infer:
 
-### 4.4 Ratio Engine
+- company identity
+- reporting year
+- currency
+- unit scaling
+- statement sections
+- notes and narrative sections
+- auditor and governance text
 
-Always compute any ratio that can be computed from available data.
+## 5) End-to-End Workflow
 
-1. Profitability ratios.
-2. Liquidity ratios.
-3. Solvency ratios.
-4. Efficiency ratios.
-5. Growth ratios only when sufficient multi-year data exists.
+### 5.1 Upload and job creation
 
-If multi-year inputs are unavailable:
+Primary upload endpoint:
 
-1. Return per-year available ratios.
-2. Mark growth metrics as not available for current data scope.
+- `POST /reports`
 
-### 4.5 Pattern and Trend Logic
+The request uses multipart uploads with field name `report` and accepts multiple files.
 
-If three or more years are available:
+What happens next:
 
-1. Detect directional and volatility trends.
-2. Detect structural changes.
-3. Detect acceleration or slowdown signals.
+1. Node backend accepts the upload and creates a `report_id`.
+2. Metadata about the upload is persisted.
+3. The uploaded file paths are stored for later service calls.
+4. The pipeline status is initialized in Redis.
+5. The extraction service is triggered first.
 
-If fewer than three years are available:
+### 5.2 Extraction stage
 
-1. Skip long-horizon trend detection.
-2. Produce structural financial snapshot.
-3. Produce ratio interpretation and single-period risk context.
+The extraction stage is responsible for converting PDF content into raw structured financial data.
 
-### 4.6 Risk Analysis
+Typical extraction flow:
 
-Risk analysis is mandatory for every run, including single-document runs.
+1. Read the PDF bytes or file reference.
+2. Detect document structure and relevant pages.
+3. Extract text and tables.
+4. Repair split or merged rows when needed.
+5. Apply OCR fallback for scanned content.
+6. Detect statements and notes.
+7. Map extracted values into canonical raw fields.
+8. Persist the raw extracted artifact.
+
+Outputs at this stage:
+
+- raw document-level extraction payloads
+- canonical raw statement data
+- extracted narrative and note sections
+- extraction coverage and confidence artifacts
+
+### 5.3 Analysis stage
+
+The analysis service is triggered after extraction.
+
+Typical analysis flow:
+
+1. Load extracted documents from Redis, MongoDB, or local fallback data.
+2. Merge yearly documents into a chronological financial dataset.
+3. Normalize obvious scale drift.
+4. Stabilize cross-statement inconsistencies.
+5. Run hard validation gates.
+6. Create a canonical raw report object.
+7. Run schema, accounting, cross-statement, and anomaly checks.
+8. Run self-correction where applicable.
+9. Save the canonical validated report.
+10. Compute ratios, patterns, confidence, risk, and sector comparison.
+11. Save analytics artifacts and analysis coverage metadata.
+12. Return a completed analysis status with transparency data.
 
-Evaluate at minimum:
+### 5.4 Reporting stage
 
-1. Liquidity risk.
-2. Leverage risk.
-3. Profitability risk.
-4. Cash flow risk.
-5. Concentration risk.
-6. Growth sustainability risk.
+The reporting service is triggered once analysis data exists.
 
-### 4.7 Transparency Layer
+Typical reporting flow:
 
-All outputs must state:
+1. Load strict extraction and strict analysis payloads.
+2. Build a strict report object.
+3. Load validated data, ratios, patterns, confidence, sector comparison, risk, and analysis coverage.
+4. Generate narrative content.
+5. Build chart data.
+6. Compose the final report sections.
+7. Write a PDF report if supported by the environment.
+8. Store the final report payload in Redis.
+9. Delete temporary financial statement storage after the report is generated.
+10. Mark the job completed.
 
-1. Number of uploaded PDFs.
-2. Detected reporting years.
-3. Which analyses were executed.
-4. Which analyses were limited by data depth.
+### 5.5 Retrieval stage
+
+The node backend exposes consolidated retrieval endpoints:
+
+- `GET /status/:reportId`
+- `GET /reports/:reportId`
+- `GET /reports/:reportId/download`
+- `GET /results/:reportId`
+- `GET /pipeline/:reportId/stages`
+- `GET /pipeline/:reportId/raw`
+- `GET /pipeline/:reportId/canonical`
+- `GET /pipeline/:reportId/validated`
+- `GET /pipeline/:reportId/analytics`
+- `GET /pipeline/:reportId/errors`
+- `GET /pipeline/:reportId/documents`
 
-Required language style:
+These endpoints are backed by Redis artifacts written by the pipeline stages.
+
+## 6) Canonical Data Structures
 
-1. Never blame users for low volume.
-2. Never require additional uploads to continue.
-3. Use neutral limitation text such as trend analysis limited due to single reporting year.
+### 6.1 Upload and pipeline metadata
 
-## 5) Required Output Layers
-
-### 5.1 Machine Output
+Typical report metadata stored in Redis includes:
 
-Structured data including:
+- `report_id`
+- `document_count`
+- `uploaded_file`
+- `meta`
+- pipeline stage state
+- upload timestamps
 
-1. Extracted raw data.
-2. Normalized dataset.
-3. Ratios.
-4. Risk scores or risk flags.
-5. Trend flags where applicable.
+### 6.2 Per-document extraction payload
 
-### 5.2 Analytical Output
+Each extracted document typically carries:
 
-Human-readable interpretation including:
+- `year`
+- `balance_sheet`
+- `income_statement`
+- `cashflow_statement`
+- `equity_statement`
+- `currency`
+- `unit_multiplier`
+- `unit_detected`
+- `source_file`
+- `extraction_confidence`
+- `metrics_extracted_count`
 
-1. Financial health summary.
-2. Ratio interpretation.
-3. Risk interpretation.
-4. Year-over-year comparison when available.
+### 6.3 Merged yearly analysis model
 
-### 5.3 Report Output
+The analysis service merges documents into a normalized multi-year structure with fields such as:
 
-Investor-ready narrative including:
+- `years`
+- `financials`
+- `restatement_events`
+- `duplicate_year_merges`
+- `comparative_availability`
+- `data_gaps`
+- `post_extraction_flags`
+- `required_metrics_count`
 
-1. Executive summary.
-2. Company performance overview.
-3. Financial analysis.
-4. Risk analysis.
-5. Data scope and limitation disclosure.
+### 6.4 Canonical raw report
 
-## 6) Current Node-Orchestrated Flow
+The canonical raw report is stored under `report:{report_id}:canonical_raw`.
 
-Primary entry:
+It is the structured object used as the input to validation and correction.
 
-1. POST /reports (multipart field: report).
+### 6.5 Canonical validated report
 
-Execution sequence:
+The validated report is stored under `report:{report_id}:canonical_validated`.
 
-1. nodeBackend stores report metadata and uploaded file location.
-2. nodeBackend triggers extraction_service POST /extract.
-3. extraction_service writes report:{report_id}:canonical_raw.
-4. nodeBackend triggers analysis_service POST /analyze.
-5. analysis_service writes report:{report_id}:canonical_validated and analytics artifacts.
-6. nodeBackend triggers reporting_service POST /generate-report.
-7. reporting_service writes report:{report_id}:final_report.
-8. nodeBackend returns consolidated payload through GET /reports/:reportId.
+It represents the corrected and validated version of the canonical raw report plus:
 
-Retrieval endpoints:
+- deterministic checks
+- validation issues
+- corrected financial statements
+- downstream-ready financial rows
 
-1. GET /reports/:reportId
-2. GET /reports/:reportId/download
-3. GET /results/:reportId
-4. GET /pipeline/:reportId/stages
-5. GET /pipeline/:reportId/raw
-6. GET /pipeline/:reportId/canonical
-7. GET /pipeline/:reportId/validated
-8. GET /pipeline/:reportId/analytics
-9. GET /pipeline/:reportId/errors
+### 6.6 Analysis artifacts
 
-## 7) Workflow State Model
+The main analytics payloads are:
 
-workflow_state values derived from stage and artifact evidence:
+- `ratios`
+- `patterns`
+- `confidence`
+- `risk`
+- `sector_comparison`
+- `analysis_coverage`
+- `data_reliability_report`
 
-1. FAILED
-2. COMPLETED
-3. LOW_CONFIDENCE
-4. GENERATING_REPORT
-5. ANALYZING
-6. EXTRACTING
-7. UPLOADED
-8. PENDING
+### 6.7 Final report payload
 
-Frontend stage tracker:
+The report service writes a final report payload that contains:
 
-1. UPLOAD
-2. PARSING
-3. STRUCTURE
-4. EXTRACTION
-5. AGGREGATION
-6. VALIDATION
-7. ANALYTICS
-8. REPORT
+- `report_id`
+- `status`
+- `strict_report`
+- `validated`
+- `ratios`
+- `patterns`
+- `risk`
+- `confidence`
+- `sector_comparison`
+- `analysis_coverage`
+- `sections`
+- `transparency`
+- `chart_data`
+- optional `pdf_report_path`
 
-## 8) Redis Artifact Keys
+## 7) Analysis Service Deep Dive
 
-Single report keys:
+### 7.1 Data source resolution
 
-1. report:{report_id}:document_chunks
-2. report:{report_id}:structure
-3. report:{report_id}
-4. report:{report_id}:governance
-5. report:{report_id}:risk
-6. report:{report_id}:esg
-7. report:{report_id}:strategy
-8. report:{report_id}:canonical_raw
-9. report:{report_id}:canonical_validated
-10. report:{report_id}:ratios
-11. report:{report_id}:sector_kpis
-12. report:{report_id}:patterns
-13. report:{report_id}:final_report
+When `POST /analyze` runs, the service resolves data in this order:
 
-Batch keys:
+1. MongoDB `companies` collection
+2. `fetch_temporary_financial_statements(report_id)`
+3. local `normalize.json` fallback
 
-1. report:batch:{batch_id}:comparative
-2. report:batch:{batch_id}:eligibility
+This means the analysis service can still execute even if one storage path is unavailable.
 
-Support keys:
+### 7.2 Year merge and normalization
 
-1. report:{report_id}:uploaded_file
-2. report:{report_id}:meta
-3. report:{report_id}:pipeline_stages
-4. report:{report_id}:confidence
-5. report:{report_id}:sector_comparison
+The service merges the yearly documents into a common view before analytics.
 
-## 9) Parallel Queue Lane
+Key normalization behavior:
 
-Queue-based API:
+- years are sorted numerically when possible
+- statement sections are merged by year
+- `revenue_or_interest_income` is treated as the revenue anchor
+- `net_profit` is aligned across statement sources
+- duplicate year collisions are tracked as restatement events
 
-1. POST /submit
-2. GET /status/{job_id}
-3. GET /result/{job_id}
+#### Scale drift normalization
 
-Queue sequence:
+The system attempts to correct obvious unit drift across years.
 
-1. Store uploaded PDF in PIPELINE_TMP.
-2. Push job to pipeline:jobs.
-3. Persist QUEUED status.
-4. Worker processes extraction and writes JSON output.
-5. Persist COMPLETED with output path, or FAILED.
+For each metric path:
 
-## 10) Non-Blocking Behavior Rules
+- `balance_sheet.total_assets`
+- `balance_sheet.total_liabilities`
+- `balance_sheet.total_equity`
+- `income_statement.revenue_or_interest_income`
+- `income_statement.net_profit`
+- `cashflow_statement.operating_cash_flow`
+- `cashflow_statement.opening_cash`
+- `cashflow_statement.net_cash_change`
+- `cashflow_statement.closing_cash`
 
-Prohibited response patterns:
+It compares observed magnitudes and tests multipliers:
 
-1. Upload more PDFs.
-2. Insufficient data to proceed.
-3. Analysis cannot be done.
+- `1`
+- `1e2`
+- `1e3`
+- `1e4`
+- `1e6`
+- `1e-2`
+- `1e-3`
+- `1e-4`
+- `1e-6`
 
-Required response patterns:
+The multiplier is applied only when:
 
-1. Trend analysis limited due to single reporting year.
-2. Multi-year pattern detection not available for current dataset.
-3. Ratios and risk signals generated from available data.
+- the original mismatch is large enough, and
+- the corrected value materially improves the fit
 
-## 11) Environment Variables
+### 7.3 Cross-statement stabilization
 
-Core:
+The analysis service also attempts to stabilize consistency across statements.
 
-1. REDIS_URL
-2. EXTRACTION_SERVICE_URL
-3. ANALYSIS_SERVICE_URL
-4. REPORTING_SERVICE_URL
-5. NODE_BACKEND_PORT
-6. EXTRACTION_SERVICE_PORT
-7. ANALYSIS_SERVICE_PORT
-8. REPORTING_SERVICE_PORT
+Rules:
 
-Queue lane:
+- if assets and liabilities exist, equity can be imputed as `assets - liabilities`
+- if net profit is known, cashflow net income is aligned to income statement net profit when the difference is too large
+- equity net income and retained earnings change are also aligned to income statement net profit when needed
 
-1. PIPELINE_ORCHESTRATOR_PORT
-2. PIPELINE_TMP
+### 7.4 Hard validation gates
 
-## 13) System Calculations and Derived Metrics
+The analysis service uses five hard gates.
 
-This document lists the calculations currently implemented in the codebase and the key thresholds/gating rules used by the running system.
+#### Gate 1: Balance sheet identity
 
-## Scope
+Checks whether:
 
-Included calculation layers:
-- Extraction metrics and extraction quality gating.
-- Analysis-service normalization, hard-validation gates, ratio math, confidence scoring, risk scoring, sector deltas.
-- Node backend derived quality score.
-- Frontend derived display buckets and summary counts.
+- `assets ≈ liabilities + equity`
 
-Primary source files:
-- `services/extraction_service/pipeline/gemini_statement_extractor.py`
-- `services/extraction_service/app.py`
-- `services/analysis_service/app.py`
-- `services/analysis_service/analytics/ratio_engine.py`
-- `services/analysis_service/analytics/risk_engine.py`
-- `services/analysis_service/confidence/confidence_score.py`
-- `services/analysis_service/validation/*.py`
-- `nodeBackend/src/routes/pipelineRoutes.js`
-- `frontend/src/components/*.jsx`
+Failure threshold:
 
-### 11.1 Extraction-Service Calculations
+- relative difference > `0.03`
 
-## 1.1 Mandatory Coverage and Confidence
+#### Gate 2: Cash reconciliation
 
-From `extract_financial_statements_from_text(...)`:
+Checks whether:
 
-- Mandatory metrics set size = 5:
-  - `balance_sheet.total_assets`
-  - `balance_sheet.total_liabilities`
-  - `balance_sheet.total_equity`
-  - `income_statement.revenue_or_interest_income`
-  - `income_statement.net_profit`
-- `metrics_extracted_count` = number of mandatory fields with numeric values.
-- `extraction_confidence = metrics_extracted_count / 5` (capped at 1.0).
-- Extraction status rule:
-  - `completed` only if `metrics_extracted_count >= 5` and `quality_issues` is empty.
-  - otherwise `failed`.
+- `opening_cash + net_cash_change ≈ closing_cash`
 
-## 1.2 Quality Issue Checks
+Failure threshold:
 
-Quality flags include:
-- Document year missing.
-- Non-positive assets or revenue, negative liabilities.
-- Unrealistic magnitude (absolute value > `1e14`) for key fields.
-- Balance sheet identity mismatch when:
-  - `abs(assets - (liabilities + equity)) / max(abs(assets), abs(liabilities + equity), 1) > 0.35`.
+- relative difference > `0.03`
 
-## 1.3 Dual-Pass Agreement
+If one of the three cash legs is missing, the service may infer it from the other two.
 
-`_reconcile_dual_pass(...)`:
-- For each tracked field, table-pass vs vision-pass values are compared.
-- Agreement for numeric pair if relative gap <= `0.02`.
-- `agreement_score = agrees / total_fields`.
+#### Gate 3: Net income linkage
 
-## 1.4 Cashflow and Net-Income Repairs
+Checks consistency across:
 
-`_repair_cashflow_consistency(...)` and `_normalize_net_income_linkage(...)` apply deterministic reconciliation:
-- Enforces cash equation (opening + net change = closing) by inferring missing leg.
-- Searches candidate combinations and picks best minimum relative-gap solution.
-- Aligns net-income-linked fields across income, cashflow, equity sections.
+- income statement net profit
+- cashflow net income
+- equity-statement net income or retained earnings change
 
-## 1.5 Coverage Aggregate Stored Per Report
+Failure threshold:
 
-`services/extraction_service/app.py` stores extraction aggregate values:
-- `metrics_extracted_count = sum(per-document metrics_extracted_count)`
-- `avg_extraction_confidence = average(per-document extraction_confidence)`
-- `avg_extraction_agreement = average(per-document dual_pass.agreement_score)`
-- `avg_re_extraction_attempts = average(per-document re_extraction_attempts)`
+- relative difference > `0.03`
 
-### 11.2 Analysis-Service Pre-Analytics Calculations
+#### Gate 4: Multi-year continuity
 
-## 2.1 Required Metric Count for Ratio Eligibility
+Tracks year-over-year jumps for:
 
-`_required_ratio_metric_count(...)` counts present values among:
-- total_assets, total_liabilities, total_equity, net_profit, revenue_or_interest_income.
+- total assets
+- revenue or interest income
+- total equity
 
-Year is ratio-eligible only if this count is >= 5.
+Rule:
 
-## 2.2 Scale Drift Normalization
+- if `abs(yoy) > 3.0 * year_gap`, the gate fails
 
-`_normalize_year_scale(...)`:
-- Computes median log10 magnitude per metric across years.
-- Tests multipliers: `1, 1e2, 1e3, 1e4, 1e6, 1e-2, 1e-3, 1e-4, 1e-6`.
-- Applies multiplier if original mismatch is large and correction materially improves fit:
-  - original distance >= 2.0 log units, and
-  - improvement >= 1.0 log unit.
+#### Gate 5: Unit consistency
 
-## 2.3 Cross-Statement Stabilization
+Fails when the merged dataset contains:
 
-`_stabilize_cross_statement_consistency(...)`:
-- If assets and liabilities exist: impute/reconcile equity as `assets - liabilities`.
-- Align net income across income, cashflow, equity where mismatch > 20% relative difference.
+- more than one currency
+- more than one unit multiplier across years
 
-## 2.4 Restatement Event Detection
+### 7.5 Ratio eligibility gate
 
-During multi-document merge, an event is logged when same year/metric has:
-- both old and new numeric values, and
-- relative difference > `0.03`.
+The ratio engine runs only when a year has at least five required metrics.
 
-### 11.3 Hard Validation Gates (Analysis)
+Required metrics:
 
-`_hard_validation_gates(...)` has 5 gates:
+- `total_assets`
+- `total_liabilities`
+- `total_equity`
+- `net_profit`
+- `revenue_or_interest_income`
 
-1. Gate 1: Balance sheet identity
-- Fails if relative gap between assets and liabilities+equity > `0.03`.
+If no year reaches the threshold, ratio analytics are blocked.
 
-2. Gate 2: Cash reconciliation
-- Fails if relative gap between opening+net_change and closing > `0.03`.
-- Missing leg may be inferred if other two legs exist.
+### 7.6 Ratio engine formulas
 
-3. Gate 3: Net income linkage
-- Compares net income across income, cashflow, equity.
-- Fails if relative gap > `0.03`.
+The ratio engine produces a per-year normalized ratio map and a latest-year view.
 
-4. Gate 4: Multi-year continuity
-- For assets, revenue, equity series.
-- YoY jump threshold = `3.0 * year_gap`.
-- Fails when absolute YoY exceeds threshold.
+#### Growth metrics
 
-5. Gate 5: Unit consistency
-- Fails if more than one currency or multiplier appears across years.
+- `revenue_growth_yoy = (rev_t - rev_t-1) / abs(rev_t-1)`
+- `net_profit_growth_yoy = (np_t - np_t-1) / abs(np_t-1)`
+- `operating_profit_growth_yoy = (op_t - op_t-1) / abs(op_t-1)`
+- `eps_growth_yoy = (eps_t - eps_t-1) / abs(eps_t-1)`
+- `asset_growth_yoy = (assets_t - assets_t-1) / abs(assets_t-1)`
+- `equity_growth_yoy = (equity_t - equity_t-1) / abs(equity_t-1)`
+- `earnings_growth_rate = net_profit YoY`
+- `net_asset_growth_rate = equity YoY`
+- `revenue_cagr` / `profit_cagr` / `asset_growth_rate` / `equity_growth_rate` are produced as multi-year growth rates when enough history exists
 
-If any gate fails:
-- analysis enters restricted mode,
-- advanced analytics are blocked/reduced,
-- confidence is later capped (see section 6.4).
+The multi-year growth formula is:
 
-### 11.4 Ratio Engine Formulas
+- `((last / first)^(1 / periods)) - 1`
 
-Implemented in `services/analysis_service/analytics/ratio_engine.py`.
+#### Profitability and efficiency
 
-## 4.1 Growth Metrics
+- `gross_profit_margin = gross_profit / revenue`
+- `net_profit_margin = net_profit / revenue`
+- `effective_tax_rate = tax_expense / profit_before_tax`
+- `operating_expense_ratio = operating_expenses / revenue`
+- `return_on_equity = net_profit / avg(equity_t, equity_t-1)` with current-equity fallback
+- `return_on_assets = net_profit / avg(assets_t, assets_t-1)` with current-asset fallback
+- `equity_ratio = equity / assets`
+- `net_asset_value = equity`
+- `tangible_net_worth = equity - intangible_assets` when intangible assets exist
+- `capital_employed = assets - current_liabilities`
+- `ebit_growth_vs_revenue_growth = operating_profit_growth_yoy / revenue_growth_yoy`
+- `expense_elasticity = operating_expenses_growth_yoy / revenue_growth_yoy`
 
-- YoY growth:
-  - `revenue_growth_yoy = (rev_t - rev_t-1) / abs(rev_t-1)`
-  - similarly for net profit, operating profit, EPS, assets, equity.
-- CAGR-like growth (for revenue/profit/assets/equity series):
-  - `((last / first)^(1/periods)) - 1`, with safeguards for missing/non-positive first value.
-
-## 4.2 Profitability and Return Ratios
-
-- `gross_margin = gross_profit / revenue`
-- `ebitda_margin = ebitda / revenue`
-- `operating_margin = operating_profit / revenue`
-- `net_margin = net_profit / revenue`
-- `return_on_equity (roe) = net_profit / avg(equity_t, equity_t-1)` (fallback to current equity)
-- `return_on_assets (roa) = net_profit / avg(assets_t, assets_t-1)` (fallback to current assets)
-- `roce = operating_profit / (assets - current_liabilities)`
-- `roic = operating_profit / (debt + equity)`
-
-## 4.3 Liquidity and Solvency
+#### Liquidity and solvency
 
 - `current_ratio = current_assets / current_liabilities`
 - `quick_ratio = (current_assets - inventory) / current_liabilities`
 - `cash_ratio = cash / current_liabilities`
-- `operating_cash_flow_ratio = operating_cash_flow / current_liabilities`
-- `debt_to_equity = debt / equity` (debt falls back to liabilities if missing)
+- `debt_to_equity = debt / equity`
 - `debt_ratio = debt / assets`
-- `financial_leverage_ratio = assets / equity`
+- `equity_buffer_ratio = equity / liabilities`
+- `ocf_to_debt_ratio = operating_cash_flow / debt`
 - `interest_coverage = operating_profit / interest_expense`
 
-## 4.4 Efficiency and Working Capital
+#### Cash quality
 
-- `asset_turnover = revenue / assets`
-- `inventory_turnover = cost_of_revenue / inventory`
-- `inventory_days = 365 / inventory_turnover`
-- `receivable_days = (receivables / revenue) * 365`
-- `payable_days = (payables / cost_of_revenue) * 365`
-- `cash_conversion_cycle = receivable_days + inventory_days - payable_days`
-
-## 4.5 Cash Quality and Shareholder Metrics
-
-- `operating_cashflow_to_net_profit = operating_cash_flow / net_profit`
+- `net_cash_flow = operating_cash_flow + investing_cash_flow + financing_cash_flow`
+- `total_cash_flow = same as net_cash_flow`
+- `cash_flow_to_net_income = operating_cash_flow / net_profit`
+- `operating_cash_flow_margin = operating_cash_flow / revenue`
+- `cash_return_on_assets = operating_cash_flow / assets`
+- `cash_return_on_equity = operating_cash_flow / equity`
+- `cash_interest_coverage = operating_cash_flow / interest_expense`
 - `free_cash_flow = operating_cash_flow - capex_proxy`
-  - where capex_proxy may use absolute investing cash flow if investing CF is negative.
-- `free_cash_flow_growth = YoY(free_cash_flow)`
-- `cash_conversion_quality_score = clamp(operating_cash_flow/net_profit, 0..1.5) / 1.5`
-- `book_value_per_share` (if missing) = `equity / shares_outstanding`
-- `earnings_yield = eps / price`
+- `capex_proxy` uses explicit capex when available, otherwise uses absolute investing cash flow when investing CF is negative
+
+#### Shareholder and market metrics
+
+- `eps`
+- `book_value_per_share`
+- `dividend_per_share`
 - `dividend_payout_ratio = dividends_paid / net_profit`
-- `retention_ratio = 1 - dividend_payout_ratio`
+- `dividend_coverage_ratio = net_profit / dividends_paid`
+- `earnings_yield = eps / price`
+- `price_to_earnings_ratio = price / eps`
+- `price_to_book_ratio = price / book_value_per_share`
+- `dividend_yield = dividend_per_share / price`
+- `market_capitalization = price * shares_outstanding`
+- `enterprise_value = market_capitalization + debt - cash`
 
-## 4.6 Financial-Sector-Specific Ratios
+#### Additional balance and sector metrics
 
-- `net_interest_margin = net_interest_income / assets`
-- `loan_to_deposit_ratio = loans / deposits`
-- `cost_to_income_ratio = cost_of_revenue / operating_income_total` (fallback to revenue)
-- `equity_to_assets_proxy = equity / assets`
+- `net_debt_issued_repaid = debt_t - debt_t-1`
+- `net_interest_income`
+- `loan_to_deposit_ratio`
+- `operating_income_total`
 
-## 4.7 Forensic Flags and Trend Diagnostics
+### 7.7 Ratio guardrails
 
-Forensic conditions include patterns such as:
-- Profit rising while operating cash flow falling.
-- Debt growth > 25% YoY.
-- Receivables or inventory growth outpacing revenue growth.
-- Negative latest free cash flow.
+The service nullifies extreme or out-of-range values.
 
-Trend diagnostics:
-- Linear slope of revenue growth series.
-- Linear slope of profit growth series.
-- Earnings volatility as sample standard deviation of net profit series.
-- Growth consistency = positive growth count / growth observation count.
+Current guardrails:
 
-## 4.8 Ratio Guardrails
+- `revenue_growth_yoy` outside `[-0.50, 1.50]`
+- `net_profit_growth_yoy` outside `[-0.50, 1.50]`
+- `roe` outside `[-0.50, 0.60]`
+- `debt_to_equity` outside `[0.0, 10.0]`
+- `interest_coverage` outside `[0.0, 50.0]`
 
-`_apply_ratio_guardrails(...)` nullifies out-of-range values:
-- `revenue_growth_yoy` outside [-0.50, 1.50]
-- `net_profit_growth_yoy` outside [-0.50, 1.50]
-- `roe` outside [-0.50, 0.60]
-- `debt_to_equity` outside [0.0, 10.0]
-- `interest_coverage` outside [0.0, 50.0]
+### 7.8 KPI engine
 
-### 11.5 Data Reliability Report Score
+The KPI engine currently exposes:
 
-`_build_data_reliability_report(...)`:
-- Starts at 100.
-- subtract `12 * gate_failures_count`
-- subtract `min(20, 4 * error_issue_count)`
-- subtract `min(10, 1 * warning_issue_count)`
-- subtract `min(15, 2 * restatement_events_count)`
-- subtract `min(15, 5 * data_gaps_count)`
-- clamp to [0, 100]
+- `net_income`
+- `net_cash_flow`
+
+These are lightweight support values used by confidence and reporting layers.
+
+### 7.9 Confidence score
+
+The confidence score combines validation quality, completeness, unit consistency, year coverage, extraction quality, and issue density.
+
+Key components:
+
+- `validation_pass_rate`
+- `statement_completeness`
+- `ratio_coverage`
+- `year_coverage`
+- `unit_consistency`
+- `multi_year_continuity`
+- `re_extraction_success_rate`
+- `extraction_confidence_component`
+- `extraction_agreement_component`
+- `issue_density_penalty`
+- `hard_fail_penalty`
+
+#### Current formula
+
+The confidence engine computes:
+
+- `ratio_coverage = numeric_ratio_count / 12` for the confidence module’s expected ratio set
+- `year_coverage = len(numeric_years) / 3`
+- `validation_pass_rate = passed_gates / total_gates`
+- `statement_completeness = present_core_metrics / required_core_metrics`
+- `re_extraction_success_rate = 1 - ((avg_attempts - 1) / 3)`
+- `issue_density_penalty = min(0.35, weighted_issue_count / evidence_volume)`
+- `hard_fail_penalty = min(0.40, hard_fail_count * 0.12)`
+
+Evidence weighting inside the confidence score:
+
+- `0.24 * validation_pass_rate`
+- `0.18 * completeness`
+- `0.14 * ratio_coverage`
+- `0.10 * year_coverage`
+- `0.08 * unit_consistency`
+- `0.08 * continuity`
+- `0.07 * re_extraction_success_rate`
+- `0.06 * extraction_confidence_score`
+- `0.05 * extraction_agreement_score`
+
+Penalties:
+
+- subtract issue density
+- subtract hard validation failures
+- subtract `0.10` if no ratios exist
+- subtract `0.08` if no KPIs exist
+
+Output band:
+
+- `high` if score >= `0.8`
+- `medium` if score >= `0.6`
+- `low` otherwise
+
+### 7.10 Risk score
+
+The risk engine converts core weakness signals into a composite 0-100 score.
+
+Component weights:
+
+- profitability strength: `0.20`
+- liquidity strength: `0.15`
+- debt risk: `0.20`
+- cashflow health: `0.20`
+- growth stability: `0.15`
+- accounting red flags: `0.10`
+
+Threshold behavior:
+
+- low profitability margins increase risk
+- low current ratio increases risk
+- high debt-to-equity increases risk
+- weak cashflow-to-net-income increases risk
+- negative or unstable growth increases risk
+- forensic red flags increase risk based on the number of flags
+
+Final score:
+
+- `overall_risk_score = weighted_score_0_1 * 100`
 
 Bands:
-- high: >= 80
-- medium: >= 60 and < 80
-- low: < 60
 
-### 11.6 Confidence and Risk Scoring
+- `low` = `0-30`
+- `moderate` = `31-60`
+- `high` = `61-100`
 
-## 6.1 Confidence Score
+Additional outputs:
 
-`compute_confidence(...)` starts from `0.20` and applies weighted components:
-- `+0.20 * statement_completeness`
-- `+0.20 * validation_pass_rate`
-- `+0.15 * unit_consistency`
-- `+0.15 * multi_year_continuity`
-- `+0.15 * year_coverage`
-- `+0.10 * re_extraction_success`
-- `+0.05 * ratio_coverage`
-- `- issue_penalty`, where `issue_penalty = min(issue_count * 0.04, 0.30)`
-- extra penalties:
-  - `-0.1` if no ratios
-  - `-0.1` if no KPIs
-- final clamp to [0, 1]
+- `risk_scores`
+- `risk_levels`
+- `risk_flags`
+- `known_signal_coverage`
+- `final_financial_health_score`
+- compatibility alias `risk_rating`
 
-Definitions:
-- `ratio_coverage = min(1, numeric_ratio_count / 20)`
-- `year_coverage = min(1, numeric_year_count / 3)`
-- `validation_pass_rate = passed_gates / total_gates`
-- `re_extraction_success = clamp(1 - ((avg_attempts - 1) / 3), 0..1)`
+### 7.11 Sector comparison
 
-Confidence band:
-- high: >= 0.8
-- medium: >= 0.6 and < 0.8
-- low: < 0.6
+The current sector comparison is intentionally small and benchmark-driven.
 
-## 6.2 Risk Score Model
+Benchmarks:
 
-`compute_risk_signals(...)` computes component risk strengths from thresholds, then weighted score:
-- profitability weight 0.20
-- liquidity weight 0.15
-- debt weight 0.20
-- cashflow weight 0.20
-- growth stability weight 0.15
-- accounting red flags weight 0.10
+- `current_ratio = 1.5`
+- `debt_to_assets = 0.55`
+- `return_on_assets = 0.08`
 
-`overall_risk_score = weighted_score_0_1 * 100`
+Output:
 
-Risk band by score:
-- low: 0-30
-- moderate: 31-60
-- high: 61-100
+- `benchmarks`
+- `delta`
 
-## 6.3 Sector Comparison
+Each delta is:
 
-`compare_sector(...)` benchmarks latest values vs static targets:
-- benchmarks:
-  - current_ratio: 1.5
-  - debt_to_assets: 0.55
-  - return_on_assets: 0.08
-- delta per metric = `actual - benchmark`.
+- `actual - benchmark`
 
-## 6.4 Analysis Gating Thresholds
+### 7.12 Pattern engine
 
-In analyze orchestration:
-- Ratio engine blocked if no year reaches required metric count >= 5.
-- Risk blocked if confidence score < 0.75.
-- Risk blocked if latest ratio coverage < 0.25.
-- Sector blocked if latest ratio coverage < 0.50.
-- If hard validation fails:
-  - restricted mode applies,
-  - risk/sector are blocked,
-  - confidence score is capped to max 0.25 and band forced low.
+Pattern detection is rule-based and uses both ratio history and validation issues.
 
-Note: `_latest_ratio_coverage` uses denominator 13 (`numeric_count / 13`) while confidence ratio coverage uses denominator 20 (`numeric_count / 20`).
+When three or more years are available, the engine can detect:
 
-### 11.7 Validation/Anomaly Checks (Additional)
+- upward trend
+- downward trend
+- volatile trend
+- structurally stable trend
+- consistent multi-year growth pattern
+- persistent top-line contraction pattern
+- cyclical revenue behavior
+- margin expansion trend
+- margin compression trend
+- rising debt dependency pattern
+- profit rising while cash conversion is weakening
+- revenue acceleration with improved asset productivity
+- debt rising faster than revenue momentum
+- volatility spike in revenue growth trajectory
 
-- Schema validator raises missing statement issues if income/balance/cashflow sections are empty.
-- Cross-statement validator flags when cashflow exists without income statement.
-- Anomaly detector warns if absolute balance sheet value > `1e14`.
+When fewer than three years are available, the engine emits structural fallback messages:
 
-### 11.8 Node Backend Derived Quality Score (API Layer)
+- trend analysis limited due to single reporting year
+- multi-year pattern detection not available for current dataset
+- long-horizon trend detection limited because fewer than three reporting years are available
+- structural financial snapshot generated from available periods
+- risk interpretation generated from available ratio coverage
 
-In `pipelineRoutes.js`, `deriveQualityScore(...)` for validated view:
+Additional pattern sources:
 
-- `avgRowConfidence = mean(validated_rows[*].confidence_score)`
-- `issuePenalty = min(validation_issue_count * 0.04, 0.4)`
-- `checkBonus = (passed_deterministic_checks / check_count) * 0.1` (if checks exist)
-- `qualityScore = clamp(avgRowConfidence - issuePenalty + checkBonus, 0..1)`
+- validation friction detected
+- re-extraction recommended
+- forensic flags from the ratio engine
 
-This score is returned as `overall_data_quality_score` for validated payloads.
+If nothing else is detected, the fallback pattern is:
 
-### 11.9 Frontend-Derived Display Metrics
+- stable reporting pattern
 
-These are UI summaries, not core analytics model outputs:
+### 7.13 Transparency and coverage outputs
 
-- Quality gauge percent = `round(score * 100)`.
-- Quality color bands:
-  - green if >= 0.8
-  - amber if >= 0.5 and < 0.8
-  - red if < 0.5
-- Valid row count: confidence >= 0.6.
-- Provisional row count: 0.4 <= confidence < 0.6.
-- Confidence distribution buckets:
-  - Weak [0.0, 0.4)
-  - Moderate [0.4, 0.6)
-  - High [0.6, 0.8)
-  - Very High [0.8, 1.01)
+The analysis service writes:
 
-### 11.10 Reporting Narrative Threshold Rules
+- `report:{report_id}:analysis_coverage`
+- `report:{report_id}:data_reliability_report`
+- `report:{report_id}:confidence`
+- `report:{report_id}:risk`
+- `report:{report_id}:sector_comparison`
+- `report:{report_id}:patterns`
+- `report:{report_id}:ratios`
 
-`narrative_generator.py` uses threshold-based statements:
-- Bull point if `net_margin > 0.1`.
-- Bull point if `current_ratio >= 1.2`.
-- Bear point if `overall_risk_score >= 61`.
+The transparency payload includes:
 
-These are narrative interpretation triggers, not upstream scoring formulas.
+- number of uploaded documents
+- detected reporting years
+- which analysis layers executed
+- which analysis layers were limited
 
-### 11.11 Output Stores and Artifacts (Calculation Results)
+### 7.14 Analysis service final response
 
-Main computed artifacts are stored in Redis keys such as:
-- `report:{id}:extraction_coverage`
-- `report:{id}:canonical_validated`
-- `report:{id}:data_reliability_report`
-- `report:{id}:ratios`
-- `report:{id}:patterns`
-- `report:{id}:confidence`
-- `report:{id}:risk`
-- `report:{id}:sector_comparison`
-- `report:{id}:analysis_coverage`
+The current `/analyze` response includes:
 
-These keys represent the current canonical calculation outputs consumed by API and frontend layers.
+- `status`
+- `report_id`
+- `validation_issues`
+- `reextraction_required`
+- `detected_years`
+- `transparency`
+- `metrics_coverage`
 
+## 8) Reporting Service Deep Dive
 
+### 8.1 Inputs
 
-## 14) Core Value Attributes Schema
+The report service reads:
 
-Below is the exhaustive dictionary of numerical attributes extracted and calculated in the platform.
+- `report:{report_id}:strict_extraction`
+- `report:{report_id}:strict_analysis`
+- `report:{report_id}:canonical_validated`
+- `report:{report_id}:ratios`
+- `report:{report_id}:patterns`
+- `report:{report_id}:confidence`
+- `report:{report_id}:sector_comparison`
+- `report:{report_id}:risk`
+- `report:{report_id}:analysis_coverage`
 
-### Extracted Raw Fields (Canonical Mapping)
-- alance_sheet.total_assets
-- alance_sheet.total_liabilities
-- alance_sheet.total_equity
-- alance_sheet.current_assets
-- alance_sheet.current_liabilities
-- alance_sheet.borrowings (mapped as 	otal_debt in contracts)
-- alance_sheet.cash_and_equivalents (mapped as cash in contracts)
-- alance_sheet.inventory
-- income_statement.revenue_or_interest_income (mapped as 
-evenue)
-- income_statement.cost_of_revenue (mapped as cost_of_sales)
-- income_statement.gross_profit
-- income_statement.operating_expenses
-- income_statement.operating_profit
-- income_statement.profit_before_tax
-- income_statement.tax_expense
-- income_statement.interest_expense
-- income_statement.net_profit
-- cashflow_statement.operating_cash_flow
-- cashflow_statement.investing_cash_flow
-- cashflow_statement.financing_cash_flow
-- cashflow_statement.net_cash_change
-- cashflow_statement.opening_cash
-- cashflow_statement.closing_cash
-- equity_statement.net_income
-- equity_statement.change_in_retained_earnings
+### 8.2 Strict report builder
 
-### Computed Analytical Attributes (Ratio Engine)
+`build_strict_report(...)` assembles a reporting-friendly data package from extraction and analysis.
 
-#### Growth Rates
-- 
-evenue_growth_yoy
-- 
-et_profit_growth_yoy
-- operating_profit_growth_yoy
-- eps_growth_yoy
-- ssets_growth_yoy
-- equity_growth_yoy
-- ree_cash_flow_growth_yoy
+It produces:
 
-#### Profitability & Returns
-- gross_margin
-- ebitda_margin
-- operating_margin
-- 
-et_margin
-- 
-eturn_on_equity (ROE)
-- 
-eturn_on_assets (ROA)
-- 
-oce (Return on Capital Employed)
-- 
-oic (Return on Invested Capital)
+- statement tables
+- ratio tables
+- key findings
+- anomalies
+- validation summary
+- financial health score
+- risk score
+- evaluated equations by year
 
-#### Liquidity & Solvency
-- current_ratio
-- quick_ratio
-- cash_ratio
-- operating_cash_flow_ratio
-- debt_to_equity
-- debt_ratio
-- inancial_leverage_ratio
-- interest_coverage
+The strict report is the bridge between low-level analytics and presentation content.
 
-#### Efficiency & Capital
-- sset_turnover
-- inventory_turnover
-- inventory_days
-- 
-eceivable_days
-- payable_days
-- cash_conversion_cycle
+### 8.3 Transparency model
 
-#### Cash & Shareholder Metrics
-- operating_cashflow_to_net_profit
-- ree_cash_flow
-- cash_conversion_quality_score
-- ook_value_per_share
-- earnings_yield
-- dividend_payout_ratio
-- 
-etention_ratio
+The reporting service builds a transparency object with:
 
-#### Financial-Sector Specific
-- 
-et_interest_margin
-- loan_to_deposit_ratio
-- cost_to_income_ratio
-- equity_to_assets_proxy
+- valid years
+- rejected years
+- validation flags
+- metrics coverage
+- confidence band
+- confidence score
 
-### Quality and Evaluation Scores
-- overall_data_quality_score
-- extraction_confidence
-- greement_score
-- cash_conversion_quality_score
-- overall_risk_score
+### 8.4 Narrative generation
 
+`generate_narrative(...)` produces the investor-oriented text payload.
 
-## 15) Source of Truth
+It creates:
 
-This file is the canonical contract and flow reference.
-When behavior changes, update this file together with:
+- `executive_summary`
+- `financial_health_overview`
+- `ratio_analysis`
+- `risk_analysis`
+- `risk_governance_insights`
+- `sector_comparison`
+- `confidence_data_quality`
+- `pattern_summary`
+- `data_scope_and_limitations`
+- `investor_report`
 
-1. README.md
-2. docs/architecture/DATA_FIRST_PROJECT_STRUCTURE.md
-3. docs/architecture/DATA_FIRST_DEEP_SUMMARY.md
+Narrative logic includes:
+
+- a bull case when net profit margin is strong
+- a bull case when current ratio is healthy
+- a bear case when overall risk is elevated
+- a bear case when forensic flags exist
+- sector-specific interpretation text based on detected business profile
+
+### 8.5 Section composition
+
+`compose_sections(...)` returns two major section trees:
+
+- `investor_grade_report`
+- `institutional_research_report`
+
+It also preserves a legacy report structure with:
+
+- executive summary
+- company performance overview
+- financial analysis
+- risk analysis
+- risk governance insights
+- limitations disclosure
+- confidence and quality view
+- charts
+
+### 8.6 Chart generation
+
+`build_chart_data(...)` generates:
+
+- `required_charts`
+- `ratio_chart`
+- `trend_chart`
+
+Required chart coverage includes:
+
+- revenue trend
+- net income
+- gross profit margin
+- net profit margin
+- return on equity
+- return on assets
+- debt to equity
+- current ratio
+- total assets
+- total liabilities
+- total equity
+- total cash flow
+
+### 8.7 PDF output
+
+When the environment supports ReportLab, the reporting service writes:
+
+- `data/eval/{report_id}.report.pdf`
+
+The PDF contains:
+
+- cover page
+- headline metrics
+- validation and reliability views
+- charts
+- ratio summaries
+- risk sections
+- narrative sections
+
+### 8.8 Final storage and cleanup
+
+After report generation:
+
+- the final report payload is stored in Redis under `report:{report_id}:final_report`
+- the same payload is also persisted through the final report repository
+- temporary financial statements are deleted
+- the service logs a temporary-storage lifecycle record
+- the job is marked successful
+
+### 8.9 Reporting service response
+
+The `/generate-report` endpoint returns the full report payload, including:
+
+- strict report
+- validated data
+- ratios
+- patterns
+- risk
+- confidence
+- sector comparison
+- analysis coverage
+- sections
+- transparency
+- chart data
+- optional PDF path
+
+## 9) Redis Keys and Artifacts
+
+### 9.1 Core report keys
+
+- `report:{report_id}:meta`
+- `report:{report_id}:uploaded_file`
+- `report:{report_id}:pipeline_stages`
+- `report:{report_id}:confidence`
+- `report:{report_id}:canonical_raw`
+- `report:{report_id}:canonical_validated`
+- `report:{report_id}:ratios`
+- `report:{report_id}:patterns`
+- `report:{report_id}:risk`
+- `report:{report_id}:sector_comparison`
+- `report:{report_id}:analysis_coverage`
+- `report:{report_id}:final_report`
+- `report:{report_id}:strict_report`
+
+### 9.2 Analysis-stage keys
+
+- `report:{report_id}:raw_extracted_values`
+- `report:{report_id}:normalized_values`
+- `report:{report_id}:reconstructed_statements`
+- `report:{report_id}:data_reliability_report`
+- `report:{report_id}:extraction_coverage`
+- `report:{report_id}:temporary_storage_lifecycle`
+
+### 9.3 Extraction-stage keys
+
+- `report:{report_id}:document_chunks`
+- `report:{report_id}:structure`
+- `report:{report_id}:governance`
+- `report:{report_id}:risk`
+- `report:{report_id}:esg`
+- `report:{report_id}:strategy`
+
+### 9.4 Batch keys
+
+- `report:batch:{batch_id}:comparative`
+- `report:batch:{batch_id}:eligibility`
+
+### 9.5 Support keys
+
+- `report:{report_id}:sector_comparison`
+- `report:{report_id}:confidence`
+- `report:{report_id}:pipeline_stages`
+
+## 10) Workflow State Model
+
+### 10.1 Workflow states
+
+Derived workflow states:
+
+- `FAILED`
+- `COMPLETED`
+- `LOW_CONFIDENCE`
+- `GENERATING_REPORT`
+- `ANALYZING`
+- `EXTRACTING`
+- `UPLOADED`
+- `PENDING`
+
+### 10.2 Frontend stage tracker
+
+Frontend-visible stages:
+
+- `UPLOAD`
+- `PARSING`
+- `STRUCTURE`
+- `EXTRACTION`
+- `AGGREGATION`
+- `VALIDATION`
+- `ANALYTICS`
+- `REPORT`
+
+## 11) Non-Blocking Behavior Rules
+
+### 11.1 Prohibited response patterns
+
+The system should not respond with:
+
+- upload more PDFs
+- insufficient data to proceed
+- analysis cannot be done
+
+### 11.2 Required response patterns
+
+The system should respond with neutral limitation language such as:
+
+- trend analysis limited due to single reporting year
+- multi-year pattern detection not available for current dataset
+- long-horizon trend detection limited because fewer than three reporting years were detected
+- structural financial snapshot generated from available data
+- risk interpretation generated from available ratio coverage
+
+### 11.3 When limitations are expected
+
+Limitations are expected when:
+
+- only one year exists
+- fewer than three years exist
+- hard validation fails
+- ratio coverage is too low
+- risk coverage is too low
+- sector coverage is too low
+
+## 12) Current Project Plan
+
+This is the implementation plan for keeping the platform maintainable and production-ready.
+
+### Phase 1: Lock the contracts
+
+Goal: make the current data model explicit and stable.
+
+- finalize the canonical raw and validated report shapes
+- document every Redis key used by the pipeline
+- align Node, analysis, and reporting payloads
+- standardize the frontend stage and workflow-state mapping
+
+Deliverables:
+
+- contract document updated
+- payload shape examples added
+- breaking-change checklist defined
+
+### Phase 2: Tighten extraction fidelity
+
+Goal: improve the quality of the raw financial capture.
+
+- expand statement detection heuristics
+- improve OCR fallback handling
+- refine table reconstruction rules
+- increase note and narrative extraction coverage
+- improve year and currency detection
+
+Deliverables:
+
+- stronger raw extraction coverage
+- more complete document-level artifact storage
+- lower extraction failure rate
+
+### Phase 3: Strengthen analysis reliability
+
+Goal: make multi-year analytics more trustworthy.
+
+- refine unit normalization
+- reduce false restatement detection
+- improve cross-statement stabilization
+- add more robust missing-value handling
+- review guardrail thresholds against real company data
+
+Deliverables:
+
+- fewer restricted-mode runs
+- more stable ratio outputs
+- more reliable confidence and risk scores
+
+### Phase 4: Expand pattern intelligence
+
+Goal: make pattern outputs more useful and less brittle.
+
+- extend multi-year trend detection
+- separate structural patterns from forensic signals more clearly
+- add clearer pattern severity labels
+- tune fallbacks for 1-year and 2-year datasets
+
+Deliverables:
+
+- better pattern summaries
+- clearer investor-facing narrative support
+- more explainable anomaly messaging
+
+### Phase 5: Improve reporting quality
+
+Goal: make the report more decision-ready.
+
+- enrich narrative templates
+- improve chart selection and chart labels
+- add clearer limitations language
+- review PDF layout and presentation hierarchy
+- ensure report sections are consistent across runs
+
+Deliverables:
+
+- stronger final report structure
+- better PDF readability
+- more stable report generation under partial data
+
+### Phase 6: Harden orchestration and observability
+
+Goal: make it easier to operate and debug the pipeline.
+
+- improve stage logging
+- track failure reasons by stage
+- expose more useful status snapshots
+- make Redis artifact lookup more transparent
+- add more useful operational metadata
+
+Deliverables:
+
+- easier support and debugging
+- clearer stage-by-stage pipeline visibility
+- better recovery from partial failures
+
+### Phase 7: Testing and regression coverage
+
+Goal: protect the current behavior while the system evolves.
+
+- add fixture-based tests for ratio formulas
+- add tests for hard validation gates
+- add tests for report composition and narrative fallbacks
+- add tests for confidence and risk scoring boundaries
+- add tests for one-year and multi-year scenarios
+
+Deliverables:
+
+- regression safety for analytics
+- repeatable validation for report output
+- confidence in future refactors
+
+### Phase 8: Release hardening
+
+Goal: prepare the workflow for stable rollout.
+
+- confirm Redis TTL behavior
+- confirm cleanup of temporary storage
+- review file deletion after report generation
+- validate PDF generation in target environments
+- document runbooks and rollback guidance
+
+Deliverables:
+
+- release checklist
+- rollback playbook
+- operational runbook
+
+## 13) Source of Truth
+
+This file is the current workflow contract for the platform.
+
+If behavior changes, update this document together with:
+
+1. `README.md`
+2. `docs/architecture/DATA_FIRST_PROJECT_STRUCTURE.md`
+3. `docs/architecture/DATA_FIRST_DEEP_SUMMARY.md`
+4. `docs/CURRENT_SYSTEM_CALCULATIONS.md`
+
