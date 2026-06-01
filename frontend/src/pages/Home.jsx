@@ -8,6 +8,19 @@ import ReportBuilderPanel from '../components/ReportBuilderPanel';
 import ReviewPanel from '../components/ReviewPanel';
 import AnalysisHistory from '../components/AnalysisHistory';
 import ExportSection from '../components/ExportSection';
+
+// Dashboard Components
+import BatchSelector from '../components/dashboard/BatchSelector';
+import ExecutiveSummary from '../components/dashboard/ExecutiveSummary';
+import FinancialHealthOverview from '../components/dashboard/FinancialHealthOverview';
+import RatioAnalysisDashboard from '../components/dashboard/RatioAnalysisDashboard';
+import TrendAnalysisCharts from '../components/dashboard/TrendAnalysisCharts';
+import BalanceSheetVisualization from '../components/dashboard/BalanceSheetVisualization';
+import ProfitabilityDashboard from '../components/dashboard/ProfitabilityDashboard';
+import CashFlowDashboard from '../components/dashboard/CashFlowDashboard';
+import RiskAnalysisDashboard from '../components/dashboard/RiskAnalysisDashboard';
+import QualityGateDashboard from '../components/dashboard/QualityGateDashboard';
+import DiagnosticsDashboard from '../components/dashboard/DiagnosticsDashboard';
 import {
     ArrowUpTrayIcon,
     DocumentTextIcon,
@@ -322,6 +335,74 @@ const Home = () => {
     const [fullReportProgress, setFullReportProgress] = useState(null);
     const [reportGenerating, setReportGenerating] = useState(false);
     const [analysisBundle, setAnalysisBundle] = useState(null);
+
+    // Dashboard states
+    const [batches, setBatches] = useState([]);
+    const [selectedBatchId, setSelectedBatchId] = useState(null);
+    const [batchResults, setBatchResults] = useState(null);
+    const [loadingBatchResults, setLoadingBatchResults] = useState(false);
+    const [viewMode, setViewMode] = useState('extraction'); // 'extraction' | 'dashboard'
+    const [activeDashboardTab, setActiveDashboardTab] = useState('Overview');
+    const [activeEntity, setActiveEntity] = useState('bank'); // 'bank' | 'group'
+
+    const loadBatches = useCallback(async (autoSelectLatest = false) => {
+        try {
+            const res = await pdfService.fetchBatches();
+            if (res?.batches && res.batches.length > 0) {
+                const sorted = [...res.batches].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                setBatches(sorted);
+                if (autoSelectLatest && sorted.length > 0) {
+                    setSelectedBatchId(sorted[0].batch_id);
+                    // Fetch results for the first one asynchronously
+                    const firstId = sorted[0].batch_id;
+                    setLoadingBatchResults(true);
+                    try {
+                        const resultsRes = await pdfService.fetchBatchResults(firstId);
+                        setBatchResults(resultsRes);
+                        const hasB = !!resultsRes?.bank_analysis;
+                        const hasG = !!resultsRes?.group_analysis;
+                        if (hasB) setActiveEntity('bank');
+                        else if (hasG) setActiveEntity('group');
+                    } catch (e) {
+                        console.warn('Failed to load initial batch results:', e);
+                    } finally {
+                        setLoadingBatchResults(false);
+                    }
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to load batches:', err);
+        }
+    }, []);
+
+    const handleSelectBatch = async (batchId) => {
+        setSelectedBatchId(batchId);
+        if (!batchId) {
+            setBatchResults(null);
+            return;
+        }
+        setLoadingBatchResults(true);
+        setError(null);
+        try {
+            const res = await pdfService.fetchBatchResults(batchId);
+            setBatchResults(res);
+            setViewMode('dashboard'); // Auto switch to dashboard view on selection!
+            
+            const hasBank = !!res?.bank_analysis;
+            const hasGroup = !!res?.group_analysis;
+            if (hasBank) setActiveEntity('bank');
+            else if (hasGroup) setActiveEntity('group');
+        } catch (err) {
+            setError(err?.response?.data?.error || err?.message || 'Failed to fetch batch results');
+            setBatchResults(null);
+        } finally {
+            setLoadingBatchResults(false);
+        }
+    };
+
+    useEffect(() => {
+        loadBatches(true);
+    }, [loadBatches]);
 
     const [reviewData, setReviewData] = useState(null);
     const [analysisHistory, setAnalysisHistory] = useState(null);
@@ -808,44 +889,174 @@ const Home = () => {
         { f: 'pdf', l: 'PDF' }, { f: 'docx', l: 'Word' },
     ];
 
+    const renderDashboardContent = () => {
+        if (loadingBatchResults) {
+            return (
+                <div className="py-20 text-center bg-white border border-slate-200/80 rounded-2xl shadow-sm">
+                    <ArrowPathIcon className="w-8 h-8 mx-auto text-indigo-500 animate-spin mb-3" />
+                    <p className="text-sm font-semibold text-slate-600">Loading analysis results...</p>
+                </div>
+            );
+        }
+
+        if (!batchResults) {
+            return (
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-10 text-center shadow-sm">
+                    <p className="text-sm text-slate-400">Select an active analysis session from the top right dropdown to load the dashboards.</p>
+                </div>
+            );
+        }
+
+        const hasBank = !!batchResults?.bank_analysis;
+        const hasGroup = !!batchResults?.group_analysis;
+
+        return (
+            <div className="space-y-6 animate-fade-in">
+                {/* Executive Summary */}
+                <ExecutiveSummary data={batchResults} />
+
+                {/* Dashboard Controls (Entity Toggle + Sub-Tabs) */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+                    {/* Sub-Tabs */}
+                    <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl">
+                        {[
+                            { id: 'Overview', label: 'Overview' },
+                            { id: 'Ratio Analysis', label: 'Ratios' },
+                            { id: 'Trend Charts', label: 'Trends' },
+                            { id: 'Balance Sheet', label: 'Balance Sheet' },
+                            { id: 'Profitability', label: 'Profitability' },
+                            { id: 'Cash Flow', label: 'Cash Flow' },
+                            { id: 'Risk & Warnings', label: 'Risk Analysis' },
+                            { id: 'Quality Gates', label: 'Quality Gates' },
+                            { id: 'Diagnostics', label: 'Diagnostics' }
+                        ].map((t) => (
+                            <button
+                                key={t.id}
+                                onClick={() => setActiveDashboardTab(t.id)}
+                                className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all duration-200 ${
+                                    activeDashboardTab === t.id
+                                        ? 'bg-white text-slate-800 shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Entity Toggle (Bank vs Group) */}
+                    {hasBank && hasGroup && (
+                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Entity:</span>
+                            <button
+                                onClick={() => setActiveEntity('bank')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                                    activeEntity === 'bank'
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                }`}
+                            >
+                                Bank
+                            </button>
+                            <button
+                                onClick={() => setActiveEntity('group')}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                                    activeEntity === 'group'
+                                        ? 'bg-slate-900 text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-900'
+                                }`}
+                            >
+                                Group
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Sub-Tab Content Rendering */}
+                <div className="mt-4">
+                    {activeDashboardTab === 'Overview' && (
+                        <FinancialHealthOverview data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Ratio Analysis' && (
+                        <RatioAnalysisDashboard data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Trend Charts' && (
+                        <TrendAnalysisCharts data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Balance Sheet' && (
+                        <BalanceSheetVisualization data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Profitability' && (
+                        <ProfitabilityDashboard data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Cash Flow' && (
+                        <CashFlowDashboard data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Risk & Warnings' && (
+                        <RiskAnalysisDashboard data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Quality Gates' && (
+                        <QualityGateDashboard data={batchResults} entity={activeEntity} />
+                    )}
+                    {activeDashboardTab === 'Diagnostics' && (
+                        <DiagnosticsDashboard data={batchResults} />
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     // =======================================================================
     // Render
     // =======================================================================
     return (
-        <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="max-w-6xl mx-auto px-4 py-6 animate-fade-in">
 
-            {/* ---- Top bar ------------------------------------------------- */}
-            <div className="flex items-end justify-between mb-8">
-                <div>
-                    <h1 className="text-[22px] font-semibold text-slate-900 leading-heading tracking-heading">
-                        {phase === 'upload' ? 'Annual Report Extractor' : file?.name?.replace(/\.pdf$/i, '')}
-                    </h1>
-                    <p className="text-[13px] text-slate-500 mt-0.5 tracking-refined leading-rhythm">
-                        {phase === 'upload' && 'Upload a PDF to extract structured financial data.'}
-                        {phase === 'extraction' && doneCount > 0 && (
-                            <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; {doneCount}/{EXTRACTION_SECTIONS.length} extracted &middot; {totalRows} rows</>
-                        )}
-                        {phase === 'extraction' && doneCount === 0 && (
-                            <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; Select a statement to extract.</>
-                        )}
-                    </p>
+            {/* ---- Mode Switcher ---- */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 mb-6 gap-4">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setViewMode('extraction')}
+                        className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 border ${
+                            viewMode === 'extraction'
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <DocumentTextIcon className="w-4 h-4" />
+                        Extraction Hub
+                    </button>
+                    <button
+                        onClick={() => setViewMode('dashboard')}
+                        className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition-all duration-200 border ${
+                            viewMode === 'dashboard'
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                    >
+                        <BoltIcon className="w-4 h-4" />
+                        Financial Analysis Dashboard
+                    </button>
                 </div>
-                <div className="flex items-center gap-3">
-                    {phase === 'upload' && (
-                        <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-apple-sm">
-                            <span className={`w-2 h-2 rounded-full ${credits > 0 ? 'bg-green-500' : 'bg-red-400'}`} />
-                            <span className="text-[13px] text-slate-600 font-medium tracking-refined">{credits} credit{credits !== 1 ? 's' : ''}</span>
-                            {credits === 0 && (
-                                <button onClick={() => navigate('/pricing')} className="text-[11px] text-indigo-600 hover:text-indigo-700 font-medium ml-1 tracking-refined">Buy more</button>
-                            )}
-                        </div>
-                    )}
-                    {phase === 'extraction' && (
-                        <button onClick={handleReset} className="text-[13px] text-slate-400 hover:text-slate-600 transition-colors duration-200 tracking-refined">
-                            New file
-                        </button>
-                    )}
-                </div>
+
+                {/* Session Dropdown */}
+                {batches.length > 0 && (
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider hidden sm:inline">Session:</span>
+                        <select
+                            value={selectedBatchId || ''}
+                            onChange={(e) => handleSelectBatch(e.target.value)}
+                            className="text-xs font-semibold px-3 py-1.5 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-700 cursor-pointer"
+                        >
+                            <option value="" disabled>Select session...</option>
+                            {batches.map((b) => (
+                                <option key={b.batch_id} value={b.batch_id}>
+                                    {b.company || b.filename || b.batch_id.slice(0, 8)} ({new Date(b.created_at).toLocaleDateString()})
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
             </div>
 
             {/* ---- Error --------------------------------------------------- */}
@@ -857,280 +1068,320 @@ const Home = () => {
                 </div>
             )}
 
-            {/* ================================================================
-                UPLOAD
-            ================================================================ */}
-            {phase === 'upload' && (
-                <div
-                    onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
-                    onClick={() => !uploading && fileInputRef.current?.click()}
-                    className={`relative rounded-2xl border-2 border-dashed transition-all duration-300 ease-apple text-center cursor-pointer
-                        ${uploading ? 'pointer-events-none opacity-60' : ''}
-                        ${dragActive ? 'border-indigo-400 bg-indigo-50/30 shadow-apple' : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple'}`}
-                >
-                    <div className="py-20 px-6">
-                        {uploading ? (
-                            <div className="space-y-3 animate-fade-in">
-                                <ArrowPathIcon className="w-8 h-8 mx-auto text-indigo-500 animate-spin" />
-                                <p className="text-sm text-slate-600 font-medium tracking-refined">Uploading {file?.name}...</p>
-                                <p className="text-[12px] text-slate-400 tracking-refined">{(file?.size / 1024 / 1024).toFixed(1)} MB</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shadow-apple-sm">
-                                    <ArrowUpTrayIcon className="w-6 h-6 text-slate-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-slate-700 tracking-refined">
-                                        {dragActive ? 'Drop your file' : 'Drop a PDF here or click to browse'}
-                                    </p>
-                                    <p className="text-[12px] text-slate-400 mt-1 tracking-refined">Annual reports up to 100 MB</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <input ref={fileInputRef} type="file" accept=".pdf" onChange={onFileInput} className="hidden" />
-                </div>
-            )}
-
-            {/* ================================================================
-                EXTRACTION
-            ================================================================ */}
-            {phase === 'extraction' && (
-                <div className="space-y-6">
-
-                    {/* ---- Action row ---------------------------------------- */}
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2 shadow-apple-sm">
-                            <DocumentTextIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px] tracking-refined">{file?.name}</span>
-                            <span className="text-[11px] text-green-600 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5 font-medium tracking-wide">
-                                Ready
-                            </span>
+            {viewMode === 'extraction' ? (
+                <>
+                    {/* ---- Top bar ------------------------------------------------- */}
+                    <div className="flex items-end justify-between mb-8">
+                        <div>
+                            <h1 className="text-[22px] font-semibold text-slate-900 leading-heading tracking-heading">
+                                {phase === 'upload' ? 'Annual Report Extractor' : file?.name?.replace(/\.pdf$/i, '')}
+                            </h1>
+                            <p className="text-[13px] text-slate-500 mt-0.5 tracking-refined leading-rhythm">
+                                {phase === 'upload' && 'Upload a PDF to extract structured financial data.'}
+                                {phase === 'extraction' && doneCount > 0 && (
+                                    <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; {doneCount}/{EXTRACTION_SECTIONS.length} extracted &middot; {totalRows} rows</>
+                                )}
+                                {phase === 'extraction' && doneCount === 0 && (
+                                    <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; Select a statement to extract.</>
+                                )}
+                            </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleRunFullPipeline}
-                                disabled={extractingAll || anyBusy || uploading}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white
-                                    hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
-                            >
-                                <BoltIcon className="w-3.5 h-3.5" /> Full Pipeline
-                            </button>
-                            <button
-                                onClick={handleExtractAll}
-                                disabled={extractingAll || anyBusy}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
-                                    hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
-                            >
-                                {extractingAll
-                                    ? <><ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> Extracting...</>
-                                    : <><DocumentArrowDownIcon className="w-3.5 h-3.5" /> Extract All</>}
-                            </button>
+                        <div className="flex items-center gap-3">
+                            {phase === 'upload' && (
+                                <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 shadow-apple-sm">
+                                    <span className={`w-2 h-2 rounded-full ${credits > 0 ? 'bg-green-500' : 'bg-red-400'}`} />
+                                    <span className="text-[13px] text-slate-600 font-medium tracking-refined">{credits} credit{credits !== 1 ? 's' : ''}</span>
+                                    {credits === 0 && (
+                                        <button onClick={() => navigate('/pricing')} className="text-[11px] text-indigo-600 hover:text-indigo-700 font-medium ml-1 tracking-refined">Buy more</button>
+                                    )}
+                                </div>
+                            )}
+                            {phase === 'extraction' && (
+                                <button onClick={handleReset} className="text-[13px] text-slate-400 hover:text-slate-600 transition-colors duration-200 tracking-refined">
+                                    New file
+                                </button>
+                            )}
                         </div>
                     </div>
 
-                    {fullReportProgress && (
-                        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-apple-sm animate-slide-down">
-                            <div className="flex items-center justify-between gap-3">
-                                <p className="text-[12px] font-medium text-slate-700 tracking-refined">{fullReportProgress.message || 'Processing full report extraction...'}</p>
-                                <span className="text-[11px] text-slate-400 tracking-refined">
-                                    {fullReportProgress.total > 0 ? `${fullReportProgress.step}/${fullReportProgress.total}` : 'running'}
-                                </span>
+                    {/* ================================================================
+                        UPLOAD
+                    ================================================================ */}
+                    {phase === 'upload' && (
+                        <div
+                            onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
+                            onClick={() => !uploading && fileInputRef.current?.click()}
+                            className={`relative rounded-2xl border-2 border-dashed transition-all duration-300 ease-apple text-center cursor-pointer
+                                ${uploading ? 'pointer-events-none opacity-60' : ''}
+                                ${dragActive ? 'border-indigo-400 bg-indigo-50/30 shadow-apple' : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple'}`}
+                        >
+                            <div className="py-20 px-6">
+                                {uploading ? (
+                                    <div className="space-y-3 animate-fade-in">
+                                        <ArrowPathIcon className="w-8 h-8 mx-auto text-indigo-500 animate-spin" />
+                                        <p className="text-sm text-slate-600 font-medium tracking-refined">Uploading {file?.name}...</p>
+                                        <p className="text-[12px] text-slate-400 tracking-refined">{(file?.size / 1024 / 1024).toFixed(1)} MB</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-50 border border-slate-200/60 flex items-center justify-center shadow-apple-sm">
+                                            <ArrowUpTrayIcon className="w-6 h-6 text-slate-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-700 tracking-refined">
+                                                {dragActive ? 'Drop your file' : 'Drop a PDF here or click to browse'}
+                                            </p>
+                                            <p className="text-[12px] text-slate-400 mt-1 tracking-refined">Annual reports up to 100 MB</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                                <div
-                                    className="h-full bg-indigo-500 transition-all duration-300 ease-apple rounded-full"
-                                    style={{ width: `${fullReportProgress.total > 0 ? Math.min((fullReportProgress.step / fullReportProgress.total) * 100, 100) : 10}%` }}
-                                />
-                            </div>
+                            <input ref={fileInputRef} type="file" accept=".pdf" onChange={onFileInput} className="hidden" />
                         </div>
                     )}
 
-                    {/* ---- Cards by category --------------------------------- */}
-                    {[...new Set(EXTRACTION_SECTIONS.map(s => s.category))].map(cat => (
-                        <div key={cat}>
-                            <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">{cat}</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {EXTRACTION_SECTIONS.filter(s => s.category === cat).map(sec => {
-                                    const st = sectionStates[sec.key];
-                                    const status = st?.status || 'idle';
-                                    const isExtracting = status === 'extracting';
-                                    const isDone = status === 'done';
-                                    const isErr = status === 'error';
-                                    const rows = rowCount(st?.data);
-                                    const isActive = activeSection === sec.key;
-                                    const Icon = sec.icon;
+                    {/* ================================================================
+                        EXTRACTION
+                    ================================================================ */}
+                    {phase === 'extraction' && (
+                        <div className="space-y-6">
 
-                                    const handleClick = () => {
-                                        if (isExtracting) return;
-                                        if (isDone && st.data) setActiveSection(p => p === sec.key ? null : sec.key);
-                                        else handleExtractSection(sec.key);
-                                    };
-
-                                    return (
-                                        <div
-                                            key={sec.key}
-                                            id={`card-${sec.key}`}
-                                            onClick={handleClick}
-                                            className={`rounded-2xl border p-4 transition-all duration-200 ease-apple select-none
-                                                ${isExtracting ? 'border-indigo-200/80 bg-indigo-50/20 cursor-wait shadow-apple-sm'
-                                                    : isActive ? 'border-slate-900 bg-white shadow-apple cursor-pointer ring-1 ring-slate-900'
-                                                        : isErr ? 'border-red-200/80 bg-red-50/20 cursor-pointer shadow-apple-sm'
-                                                            : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple cursor-pointer shadow-apple-sm'}`}
-                                        >
-                                            {/* top row: icon + title + badge */}
-                                            <div className="flex items-start gap-3">
-                                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
-                                                    ${isActive ? 'bg-slate-900 shadow-apple-sm' : 'bg-slate-50 border border-slate-100'}`}>
-                                                    <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500'}`} />
-                                                </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between gap-2">
-                                                        <h3 className="text-[13px] font-semibold text-slate-800 truncate tracking-refined">{sec.title}</h3>
-                                                        {isExtracting && (
-                                                            <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-100/80 rounded-lg px-1.5 py-0.5">
-                                                                <ArrowPathIcon className="w-3 h-3 animate-spin" /> Working
-                                                            </span>
-                                                        )}
-                                                        {isDone && st.data && (
-                                                            <span className="shrink-0 text-[10px] font-medium text-green-700 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5">
-                                                                {rows} rows
-                                                            </span>
-                                                        )}
-                                                        {isDone && !st.data && (
-                                                            <span className="shrink-0 text-[10px] text-slate-400 bg-slate-50 rounded-lg px-1.5 py-0.5 tracking-refined">
-                                                                Not found
-                                                            </span>
-                                                        )}
-                                                        {isErr && (
-                                                            <span className="shrink-0 text-[10px] text-red-600 bg-red-50/80 border border-red-200/60 rounded-lg px-1.5 py-0.5">
-                                                                Error
-                                                            </span>
-                                                        )}
-                                                        {status === 'idle' && (
-                                                            <span className="shrink-0 text-[10px] text-slate-400 tracking-refined">Click to extract</span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[12px] text-slate-500 mt-0.5 leading-snug tracking-refined">{sec.description}</p>
-                                                    <div className="mt-2 flex items-center gap-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (st?.data) setActiveSection(sec.key);
-                                                            }}
-                                                            disabled={!st?.data}
-                                                            className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
-                                                        >
-                                                            Preview
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleExtractSection(sec.key);
-                                                            }}
-                                                            disabled={isExtracting}
-                                                            className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
-                                                        >
-                                                            Re-extract
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Inline progress when extracting */}
-                                            {isExtracting && <CardProgress sectionTitle={sec.shortTitle} />}
-
-                                            {/* Error message */}
-                                            {isErr && st.error && (
-                                                <p className="mt-2 text-[11px] text-red-500 line-clamp-2 tracking-refined">{st.error}</p>
-                                            )}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ))}
-
-                    {/* ---- Data viewer --------------------------------------- */}
-                    {activeSection && activeData && (
-                        <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-apple-sm animate-scale-in">
-                            <div className="px-5 py-3 border-b border-slate-100/80 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-[15px] font-semibold text-slate-800 tracking-refined">{activeDef?.title}</h2>
-                                    {activeData.title && <p className="text-[11px] text-slate-500 mt-0.5 tracking-refined">{activeData.title}</p>}
-                                    {activeData.notes && <p className="text-[11px] text-slate-400 italic tracking-refined">{activeData.notes}</p>}
+                            {/* ---- Action row ---------------------------------------- */}
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2 shadow-apple-sm">
+                                    <DocumentTextIcon className="w-4 h-4 text-slate-400" />
+                                    <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px] tracking-refined">{file?.name}</span>
+                                    <span className="text-[11px] text-green-600 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5 font-medium tracking-wide">
+                                        Ready
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {activeData.page_numbers?.length > 0 && (
-                                        <span className="text-[11px] text-slate-400 tracking-refined">pg {activeData.page_numbers.join(', ')}</span>
-                                    )}
-                                    <span className="text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg tracking-refined">
-                                        {rowCount(activeData)} rows
-                                    </span>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); handleExtractSection(activeSection); }}
-                                        className="text-[11px] text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg transition-colors duration-150 tracking-refined"
+                                        onClick={handleRunFullPipeline}
+                                        disabled={extractingAll || anyBusy || uploading}
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-[13px] font-medium text-white
+                                            hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
                                     >
-                                        Re-extract
+                                        <BoltIcon className="w-3.5 h-3.5" /> Full Pipeline
+                                    </button>
+                                    <button
+                                        onClick={handleExtractAll}
+                                        disabled={extractingAll || anyBusy}
+                                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-[13px] font-medium text-white
+                                            hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 ease-apple shadow-apple-sm hover:shadow-apple tracking-refined"
+                                    >
+                                        {extractingAll
+                                            ? <><ArrowPathIcon className="w-3.5 h-3.5 animate-spin" /> Extracting...</>
+                                            : <><DocumentArrowDownIcon className="w-3.5 h-3.5" /> Extract All</>}
                                     </button>
                                 </div>
                             </div>
-                            <div className="p-4 max-h-[520px] overflow-auto">
-                                <StatementTable section={activeData} />
-                            </div>
-                        </div>
-                    )}
 
-                    {/* ---- Export bar ----------------------------------------- */}
-                    {hasResults && (
-                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-apple-sm">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mr-1">Export:</span>
-                            {exports.map(({ f, l }) => (
-                                <button
-                                    key={f}
-                                    onClick={() => handleExport(f)}
-                                    disabled={!!exporting}
-                                    className="inline-flex items-center gap-1 rounded-xl border border-slate-200/80 bg-white px-2.5 py-1.5
-                                        text-[12px] font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300
-                                        disabled:opacity-40 transition-all duration-200 ease-apple tracking-refined"
-                                >
-                                    {exporting === f
-                                        ? <ArrowPathIcon className="w-3 h-3 animate-spin" />
-                                        : <ArrowDownTrayIcon className="w-3 h-3" />}
-                                    {l}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    {hasResults && (
-                        <ReportBuilderPanel
-                            extractionData={Object.fromEntries(Object.entries(sectionStates).map(([k, v]) => [k, v?.data || null]))}
-                            analysisData={analysisBundle || {}}
-                            onGenerate={handleGenerateReport}
-                            loading={reportGenerating}
-                        />
-                    )}
-
-                    {showReview && reviewData && (
-                        <div className="mt-8 space-y-6 animate-scale-in">
-                            <ReviewPanel
-                                companyId={activeCompanyId}
-                                financials={reviewData.financials}
-                                companyName={reviewData.name}
-                                onSave={handleSaveReview}
-                                onReanalyse={handleReanalyse}
-                            />
-                            {analysisHistory && (
-                                <AnalysisHistory companyId={activeCompanyId} history={analysisHistory} />
+                            {fullReportProgress && (
+                                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-apple-sm animate-slide-down">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="text-[12px] font-medium text-slate-700 tracking-refined">{fullReportProgress.message || 'Processing full report extraction...'}</p>
+                                        <span className="text-[11px] text-slate-400 tracking-refined">
+                                            {fullReportProgress.total > 0 ? `${fullReportProgress.step}/${fullReportProgress.total}` : 'running'}
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                                        <div
+                                            className="h-full bg-indigo-500 transition-all duration-300 ease-apple rounded-full"
+                                            style={{ width: `${fullReportProgress.total > 0 ? Math.min((fullReportProgress.step / fullReportProgress.total) * 100, 100) : 10}%` }}
+                                        />
+                                    </div>
+                                </div>
                             )}
-                            <ExportSection companyId={activeCompanyId} />
+
+                            {/* ---- Cards by category --------------------------------- */}
+                            {[...new Set(EXTRACTION_SECTIONS.map(s => s.category))].map(cat => (
+                                <div key={cat}>
+                                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-3">{cat}</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {EXTRACTION_SECTIONS.filter(s => s.category === cat).map(sec => {
+                                            const st = sectionStates[sec.key];
+                                            const status = st?.status || 'idle';
+                                            const isExtracting = status === 'extracting';
+                                            const isDone = status === 'done';
+                                            const isErr = status === 'error';
+                                            const rows = rowCount(st?.data);
+                                            const isActive = activeSection === sec.key;
+                                            const Icon = sec.icon;
+
+                                            const handleClick = () => {
+                                                if (isExtracting) return;
+                                                if (isDone && st.data) setActiveSection(p => p === sec.key ? null : sec.key);
+                                                else handleExtractSection(sec.key);
+                                            };
+
+                                            return (
+                                                <div
+                                                    key={sec.key}
+                                                    id={`card-${sec.key}`}
+                                                    onClick={handleClick}
+                                                    className={`rounded-2xl border p-4 transition-all duration-200 ease-apple select-none
+                                                        ${isExtracting ? 'border-indigo-200/80 bg-indigo-50/20 cursor-wait shadow-apple-sm'
+                                                            : isActive ? 'border-slate-900 bg-white shadow-apple cursor-pointer ring-1 ring-slate-900'
+                                                                : isErr ? 'border-red-200/80 bg-red-50/20 cursor-pointer shadow-apple-sm'
+                                                                    : 'border-slate-200/80 bg-white hover:border-slate-300 hover:shadow-apple cursor-pointer shadow-apple-sm'}`}
+                                                >
+                                                    {/* top row: icon + title + badge */}
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200
+                                                            ${isActive ? 'bg-slate-900 shadow-apple-sm' : 'bg-slate-50 border border-slate-100'}`}>
+                                                            <Icon className={`w-4 h-4 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <h3 className="text-[13px] font-semibold text-slate-800 truncate tracking-refined">{sec.title}</h3>
+                                                                {isExtracting && (
+                                                                    <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 bg-indigo-100/80 rounded-lg px-1.5 py-0.5">
+                                                                        <ArrowPathIcon className="w-3 h-3 animate-spin" /> Working
+                                                                    </span>
+                                                                )}
+                                                                {isDone && st.data && (
+                                                                    <span className="shrink-0 text-[10px] font-medium text-green-700 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5">
+                                                                        {rows} rows
+                                                                    </span>
+                                                                )}
+                                                                {isDone && !st.data && (
+                                                                    <span className="shrink-0 text-[10px] text-slate-400 bg-slate-50 rounded-lg px-1.5 py-0.5 tracking-refined">
+                                                                        Not found
+                                                                    </span>
+                                                                )}
+                                                                {isErr && (
+                                                                    <span className="shrink-0 text-[10px] text-red-600 bg-red-50/80 border border-red-200/60 rounded-lg px-1.5 py-0.5">
+                                                                        Error
+                                                                    </span>
+                                                                )}
+                                                                {status === 'idle' && (
+                                                                    <span className="shrink-0 text-[10px] text-slate-400 tracking-refined">Click to extract</span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-[12px] text-slate-500 mt-0.5 leading-snug tracking-refined">{sec.description}</p>
+                                                            <div className="mt-2 flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        if (st?.data) setActiveSection(sec.key);
+                                                                    }}
+                                                                    disabled={!st?.data}
+                                                                    className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
+                                                                >
+                                                                    Preview
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleExtractSection(sec.key);
+                                                                    }}
+                                                                    disabled={isExtracting}
+                                                                    className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/80 bg-white text-slate-600 disabled:opacity-40 hover:bg-slate-50 transition-colors duration-150 tracking-refined"
+                                                                >
+                                                                    Re-extract
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Inline progress when extracting */}
+                                                    {isExtracting && <CardProgress sectionTitle={sec.shortTitle} />}
+
+                                                    {/* Error message */}
+                                                    {isErr && st.error && (
+                                                        <p className="mt-2 text-[11px] text-red-500 line-clamp-2 tracking-refined">{st.error}</p>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* ---- Data viewer --------------------------------------- */}
+                            {activeSection && activeData && (
+                                <div className="rounded-2xl border border-slate-200/80 bg-white overflow-hidden shadow-apple-sm animate-scale-in">
+                                    <div className="px-5 py-3 border-b border-slate-100/80 flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-[15px] font-semibold text-slate-800 tracking-refined">{activeDef?.title}</h2>
+                                            {activeData.title && <p className="text-[11px] text-slate-500 mt-0.5 tracking-refined">{activeData.title}</p>}
+                                            {activeData.notes && <p className="text-[11px] text-slate-400 italic tracking-refined">{activeData.notes}</p>}
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {activeData.page_numbers?.length > 0 && (
+                                                <span className="text-[11px] text-slate-400 tracking-refined">pg {activeData.page_numbers.join(', ')}</span>
+                                            )}
+                                            <span className="text-[11px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg tracking-refined">
+                                                {rowCount(activeData)} rows
+                                            </span>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleExtractSection(activeSection); }}
+                                                className="text-[11px] text-slate-500 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg transition-colors duration-150 tracking-refined"
+                                            >
+                                                Re-extract
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="p-4 max-h-[520px] overflow-auto">
+                                        <StatementTable section={activeData} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* ---- Export bar ----------------------------------------- */}
+                            {hasResults && (
+                                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-4 py-3 shadow-apple-sm">
+                                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-widest mr-1">Export:</span>
+                                    {exports.map(({ f, l }) => (
+                                        <button
+                                            key={f}
+                                            onClick={() => handleExport(f)}
+                                            disabled={!!exporting}
+                                            className="inline-flex items-center gap-1 rounded-xl border border-slate-200/80 bg-white px-2.5 py-1.5
+                                                text-[12px] font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300
+                                                disabled:opacity-40 transition-all duration-200 ease-apple tracking-refined"
+                                        >
+                                            {exporting === f
+                                                ? <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                                                : <ArrowDownTrayIcon className="w-3 h-3" />}
+                                            {l}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            {hasResults && (
+                                <ReportBuilderPanel
+                                    extractionData={Object.fromEntries(Object.entries(sectionStates).map(([k, v]) => [k, v?.data || null]))}
+                                    analysisData={analysisBundle || {}}
+                                    onGenerate={handleGenerateReport}
+                                    loading={reportGenerating}
+                                />
+                            )}
+
+                            {showReview && reviewData && (
+                                <div className="mt-8 space-y-6 animate-scale-in">
+                                    <ReviewPanel
+                                        companyId={activeCompanyId}
+                                        financials={reviewData.financials}
+                                        companyName={reviewData.name}
+                                        onSave={handleSaveReview}
+                                        onReanalyse={handleReanalyse}
+                                    />
+                                    {analysisHistory && (
+                                        <AnalysisHistory companyId={activeCompanyId} history={analysisHistory} />
+                                    )}
+                                    <ExportSection companyId={activeCompanyId} />
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
+                </>
+            ) : (
+                renderDashboardContent()
             )}
 
             {/* Insufficient credits modal */}

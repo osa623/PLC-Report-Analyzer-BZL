@@ -879,11 +879,22 @@ router.post('/reports', upload.array('report', 20), async (req, res, next) => {
       try {
         const redis = await getRedis();
         await redis.set(`report:${reportId}:pipeline_stages`, JSON.stringify(state));
+        await updateBatchStatus(reportId, { status: 'failed' });
       } catch (e) {}
+    });
+
+    // Register this upload as a batch for tracking
+    await registerBatch(reportId, {
+      report_id: reportId,
+      company_name: req.body.name || 'Unknown Company',
+      sector: req.body.sector || 'Diversified',
+      file_count: uploadedPaths.length,
+      files: uploadedPaths.map((p) => p.split(/[/\\]/).pop()),
     });
 
     return res.status(201).json({
       report_id: reportId,
+      batch_id: reportId,
       pipeline_status: 'PROCESSING',
       workflow_state: 'UPLOADED',
       message: 'Report created. Pipeline started.',
@@ -1513,6 +1524,112 @@ router.get('/pipeline/:reportId/documents', async (req, res, next) => {
     };
 
     return res.json({ report_id: reportId, documents, counts });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// ── Batch Management API ──────────────────────────────────────────────────
+const BATCH_REGISTRY_KEY = 'pipeline:batch_registry';
+
+async function registerBatch(batchId, metadata) {
+  const redis = await getRedis();
+  const entry = {
+    batch_id: batchId,
+    created_at: new Date().toISOString(),
+    status: 'processing',
+    ...metadata,
+  };
+  await redis.hSet(BATCH_REGISTRY_KEY, batchId, JSON.stringify(entry));
+  return entry;
+}
+
+async function updateBatchStatus(batchId, updates) {
+  const redis = await getRedis();
+  const raw = await redis.hGet(BATCH_REGISTRY_KEY, batchId);
+  const entry = raw ? JSON.parse(raw) : { batch_id: batchId };
+  const updated = { ...entry, ...updates, updated_at: new Date().toISOString() };
+  await redis.hSet(BATCH_REGISTRY_KEY, batchId, JSON.stringify(updated));
+  return updated;
+}
+
+router.get('/batches', async (_req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const all = await redis.hGetAll(BATCH_REGISTRY_KEY);
+    const batches = Object.values(all || {})
+      .map((raw) => { try { return JSON.parse(raw); } catch { return null; } })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return res.json({ batches, total: batches.length });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/batches/:batchId/status', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const { batchId } = req.params;
+    const raw = await redis.hGet(BATCH_REGISTRY_KEY, batchId);
+    if (!raw) return res.status(404).json({ error: 'Batch not found' });
+    const batch = JSON.parse(raw);
+    let stages = null;
+    if (batch.report_id) {
+      const stagesRaw = await redis.get(`report:${batch.report_id}:pipeline_stages`);
+      stages = stagesRaw ? JSON.parse(stagesRaw) : null;
+    }
+    return res.json({
+      batch_id: batchId,
+      ...batch,
+      stages: stages ? {
+        upload: { status: 'completed', timestamp: batch.created_at },
+        extraction: { status: stages.EXTRACTION?.status || 'pending', timestamp: stages.EXTRACTION?.start_time },
+        normalization: { status: stages.EXTRACTION?.status === 'completed' ? 'completed' : 'pending' },
+        analysis: { status: stages.ANALYSIS?.status || 'pending', timestamp: stages.ANALYSIS?.start_time },
+        report_generation: { status: stages.REPORTING?.status || 'pending', timestamp: stages.REPORTING?.start_time },
+        completed: { status: stages.REPORTING?.status === 'completed' ? 'completed' : 'pending' },
+      } : null,
+      current_stage: !stages ? 'upload'
+        : stages.REPORTING?.status === 'completed' ? 'completed'
+        : stages.REPORTING?.status === 'running' ? 'report_generation'
+        : stages.ANALYSIS?.status === 'running' ? 'analysis'
+        : stages.EXTRACTION?.status === 'running' ? 'extraction' : 'upload',
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/batches/:batchId/results', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const { batchId } = req.params;
+    const raw = await redis.hGet(BATCH_REGISTRY_KEY, batchId);
+    if (!raw) return res.status(404).json({ error: 'Batch not found' });
+    const batch = JSON.parse(raw);
+    if (!batch.report_id) {
+      return res.json({ batch_id: batchId, status: 'no_results', message: 'No report linked to this batch' });
+    }
+    const [finalReportRaw, strictAnalysisRaw, ratiosRaw, riskRaw, patternsRaw, confidenceRaw] = await Promise.all([
+      redis.get(`report:${batch.report_id}:final_report`),
+      redis.get(`report:${batch.report_id}:strict_analysis`),
+      redis.get(`report:${batch.report_id}:ratios`),
+      redis.get(`report:${batch.report_id}:risk`),
+      redis.get(`report:${batch.report_id}:patterns`),
+      redis.get(`report:${batch.report_id}:confidence`),
+    ]);
+    return res.json({
+      batch_id: batchId,
+      report_id: batch.report_id,
+      status: batch.status,
+      final_report: parseJson(finalReportRaw),
+      analysis: parseJson(strictAnalysisRaw),
+      ratios: parseJson(ratiosRaw, {}),
+      risk: parseJson(riskRaw, {}),
+      patterns: parseJson(patternsRaw, []),
+      confidence: parseJson(confidenceRaw, {}),
+    });
   } catch (error) {
     return next(error);
   }

@@ -362,6 +362,22 @@ export const pdfService = {
     return response.data;
   },
 
+  // ── Batch Management API ──
+  fetchBatches: async () => {
+    const response = await gatewayApi.get('/pipeline/batches', { timeout: 15000 });
+    return response.data;
+  },
+
+  fetchBatchStatus: async (batchId) => {
+    const response = await gatewayApi.get(`/pipeline/batches/${batchId}/status`, { timeout: 15000 });
+    return response.data;
+  },
+
+  fetchBatchResults: async (batchId) => {
+    const response = await gatewayApi.get(`/pipeline/batches/${batchId}/results`, { timeout: 30000 });
+    return response.data;
+  },
+
   /**
    * Health check
    */
