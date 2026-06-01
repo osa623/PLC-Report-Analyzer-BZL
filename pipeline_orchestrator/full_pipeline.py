@@ -66,6 +66,18 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
 
 
+def _normalized_results_path() -> Path:
+    return _workspace_root() / "services" / "extraction_service" / "normalized_results.json"
+
+
+def _load_normalized_results() -> list[dict[str, Any]] | None:
+    path = _normalized_results_path()
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, list) else [data]
+
+
 def _append_log(log_file: Path, message: str) -> None:
     log_file.parent.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().isoformat(timespec="seconds")
@@ -152,7 +164,40 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     )
     _append_log(log_file, "Running financial analysis")
 
-    analysis_result = build_strict_analysis_result(strict_extraction)
+    def convert_strict_to_normalized_results(strict_ext: dict[str, Any]) -> list[dict[str, Any]]:
+        financials = {}
+        for y, y_data in strict_ext.get("years", {}).items():
+            financials[y] = {
+                "group": y_data,
+                "bank": y_data,
+                "company": y_data,
+                "entity": y_data,
+                "parent": y_data,
+                "standalone": y_data,
+            }
+        return [
+            {
+                "company": strict_ext.get("company_name", "Unknown"),
+                "company_name": strict_ext.get("company_name", "Unknown"),
+                "financials": financials,
+                "source_pdf": strict_ext.get("document_name", pdf_path.name),
+            }
+        ]
+
+    normalized_results = convert_strict_to_normalized_results(strict_extraction)
+    
+    # Save the fresh normalized_results.json specific to the batch
+    batch_out_dir = _workspace_root() / "outputs" / report_id
+    batch_out_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(batch_out_dir / "normalized_results.json", normalized_results)
+    _write_json(log_dir / "normalized_results.json", normalized_results)
+    
+    # Write to global path as well to keep legacy test suites happy
+    global_norm_path = _workspace_root() / "services" / "extraction_service" / "normalized_results.json"
+    _write_json(global_norm_path, normalized_results)
+
+    analysis_input = {"normalized_results": normalized_results}
+    analysis_result = build_strict_analysis_result(analysis_input)
     _write_json(log_dir / "analysis.json", analysis_result)
 
     # ── Save analysis artifacts to Redis ──
@@ -213,9 +258,55 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
         "company_name": company_name,
         "log_dir": str(log_dir),
         "extraction": strict_extraction,
+        "extraction_metadata": {
+            "normalized_results_consumed": normalized_results is not None,
+            "normalized_results_path": str(_normalized_results_path()),
+            "normalized_record_count": len(normalized_results or []),
+        },
+        "normalized_dataset_metadata": analysis_result.get("normalized_dataset_metadata", {}),
+        "completeness_metrics": analysis_result.get("completeness_metrics", {}),
+        "sector_classification": analysis_result.get("sector_classification", {}),
+        "bank_analysis": analysis_result.get("bank_analysis", {}),
+        "group_analysis": analysis_result.get("group_analysis", {}),
+        "ratio_analysis": analysis_result.get("ratio_analysis", {}),
+        "growth_analysis": analysis_result.get("growth_analysis", {}),
+        "validation_results": analysis_result.get("validation_results", {}),
+        "confidence_scores": analysis_result.get("confidence_scores", {}),
+        "reliability_scores": analysis_result.get("reliability_scores", {}),
+        "risk_scores": analysis_result.get("risk_scores", {}),
+        "diagnostics": analysis_result.get("diagnostics", []),
         "analysis": analysis_result,
         "report": report_result,
     }
+
+
+def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | None = None) -> dict[str, Any]:
+    """Orchestrate the full pipeline for up to 5 PDFs sequentially."""
+    if isinstance(pdf_paths_or_folder, list):
+        pdf_paths = [Path(p).expanduser().resolve() for p in pdf_paths_or_folder]
+    else:
+        pdf_paths = _collect_pdf_paths(pdf_paths_or_folder)
+        
+    if not pdf_paths:
+        raise FileNotFoundError(f"No PDF files found at {pdf_paths_or_folder}")
+
+    pdf_paths = pdf_paths[:5]
+    report_id = report_id or str(uuid.uuid4())
+
+    redis_client = get_redis_client(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
+    init_pipeline_stages(redis_client, report_id, PIPELINE_TTL_SECONDS)
+
+    # ── Save pipeline metadata so the frontend recognises the upload ──
+    save_pipeline_metadata(redis_client, report_id, pdf_paths, PIPELINE_TTL_SECONDS)
+
+    results: list[dict[str, Any]] = []
+    failures: list[dict[str, Any]] = []
+
+    for pdf_path in pdf_paths:
+        try:
+            result = _process_pdf(pdf_path, report_id, redis_client)
+            results.append(result)
+        except Exception as exc:
 
 
 def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | None = None) -> dict[str, Any]:
@@ -289,5 +380,14 @@ def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | Non
             "results": [],
             "failures": failures,
         }
+
+    # Save to the batch outputs directory
+    batch_out_dir = _workspace_root() / "outputs" / report_id
+    batch_out_dir.mkdir(parents=True, exist_ok=True)
+    _write_json(batch_out_dir / "full_pipeline_test_results.json", final_report_payload)
+    
+    # Copy/write to global full_pipeline_test_results.json for test suite compatibility
+    global_results_path = _workspace_root() / "full_pipeline_test_results.json"
+    _write_json(global_results_path, final_report_payload)
 
     return final_report_payload
