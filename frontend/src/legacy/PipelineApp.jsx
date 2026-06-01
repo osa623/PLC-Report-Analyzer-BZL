@@ -168,7 +168,7 @@ export default function PipelineApp() {
           } catch (_) {}
 
           const validationDone = stages.stages?.some(
-            (s) => s.stage === 'VALIDATION' && s.status === 'completed'
+            (s) => (s.stage === 'VALIDATION' || s.stage === 'ACCOUNTING_VALIDATION') && s.status === 'completed'
           );
           let shouldRefreshCurrency = false;
           if (validationDone && !validatedLoadedRef.current) {
@@ -196,7 +196,7 @@ export default function PipelineApp() {
           }
 
           const analyticsDone = stages.stages?.some(
-            (s) => s.stage === 'ANALYTICS' && s.status === 'completed'
+            (s) => (s.stage === 'ANALYTICS' || s.stage === 'FINANCIAL_ANALYSIS') && s.status === 'completed'
           );
           if (analyticsDone && !analyticsLoadedRef.current) {
             try {
@@ -229,7 +229,9 @@ export default function PipelineApp() {
             errorsPayloadLoaded &&
             analyticsPayloadLoaded;
 
-          if (wf === 'FAILED' || canStopCompleted || canStopLowConfidence) {
+          const wfStr = String(wf || '');
+          const wfIsFailed = wfStr === 'FAILED' || wfStr.includes('FAILED') || wfStr === 'EXTRACTION_INCOMPLETE' || wfStr === 'EXTRACTION_FAILED';
+          if (wfIsFailed || canStopCompleted || canStopLowConfidence) {
             clearInterval(pollRef.current);
             pollRef.current = null;
           }

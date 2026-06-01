@@ -120,8 +120,13 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
             pdf_name,
         )
 
+        statement_texts: Dict[str, str] = {}
+        for key, page_idx in statement_pages.items():
+            if page_idx and 1 <= page_idx <= total_pages:
+                statement_texts[key] = pdf.pages[page_idx - 1].extract_text() or ""
+
     statement_images = _render_statement_images(pdf_bytes, statement_pages, pdf_name)
-    extracted = _extract_statements_parallel(statement_images, pdf_name)
+    extracted = _extract_statements_parallel(statement_images, statement_texts, pdf_name)
 
     return {
         "pdf_name": pdf_name,
@@ -431,7 +436,105 @@ def _render_page_png(pdf_bytes: bytes, page_index: int, poppler_path: Optional[s
     return output.getvalue()
 
 
-def _extract_statements_parallel(statement_images: Dict[str, bytes], pdf_name: str) -> Dict[str, Optional[dict]]:
+def _detect_scale_multiplier(page_text: str) -> int:
+    if not page_text:
+        return 1
+    text = page_text.lower()
+    
+    # Check billions first
+    if any(pattern in text for pattern in ["rs. bn", "rs.bn", "rs bn", "lkr. bn", "lkr.bn", "lkr bn", "in billions", "'000,000,000"]):
+        return 1_000_000_000
+    if re.search(r"\b(bn|billion|billions)\b", text):
+        return 1_000_000_000
+        
+    # Check millions
+    if any(pattern in text for pattern in ["rs. mn", "rs.mn", "rs mn", "lkr. mn", "lkr.mn", "lkr mn", "in millions", "'000,000"]):
+        return 1_000_000
+    if re.search(r"\b(mn|million|millions)\b", text):
+        return 1_000_000
+        
+    # Check thousands
+    if any(pattern in text for pattern in [
+        "rs. '000", "rs.'000", "rs 000", "rs. 000", 
+        "lkr. '000", "lkr.'000", "lkr 000", "lkr. 000", 
+        "lkr '000", "lkr 000", 
+        "(000)", "in thousands", "'000"
+    ]):
+        return 1_000
+    if re.search(r"\b(thousand|thousands)\b", text):
+        return 1_000
+        
+    return 1
+
+def _apply_multiplier(data: dict, multiplier: int) -> dict:
+    if multiplier == 1 or not isinstance(data, dict):
+        return data
+        
+    def is_ratio_or_percentage_key(key: str) -> bool:
+        if not key:
+            return False
+        k_low = key.lower()
+        return any(term in k_low for term in ["ratio", "margin", "percent", "eps", "growth", "yoy", "yield", "rate", "interest_rate"])
+
+    def multiply_value(val, key: str = ""):
+        if is_ratio_or_percentage_key(key):
+            return val
+            
+        if isinstance(val, (int, float)):
+            # Don't multiply small ratio/percentage values like 4.50, 5.50
+            if abs(val) < 100.0:
+                return val
+            return val * multiplier
+        elif isinstance(val, str):
+            clean_str = val.strip()
+            # If it has a percent sign, it's a percentage
+            if clean_str.endswith('%'):
+                return val
+            # Very basic check for numeric strings with commas and optional parens
+            if re.fullmatch(r"\(?-?\d[\d,]*(\.\d+)?\)?", clean_str):
+                is_negative = False
+                if clean_str.startswith('(') and clean_str.endswith(')'):
+                    is_negative = True
+                    clean_str = clean_str[1:-1]
+                clean_str = clean_str.replace(',', '')
+                try:
+                    num_val = float(clean_str)
+                    if is_negative:
+                        num_val = -num_val
+                    # Don't multiply if it's a small ratio/percentage value
+                    if abs(num_val) < 100.0:
+                        return num_val if not is_negative else -num_val
+                    ans = num_val * multiplier
+                    if ans.is_integer():
+                        return int(ans)
+                    return ans
+                except ValueError:
+                    pass
+        return val
+
+    for k, v in data.items():
+        if isinstance(v, dict):
+            data[k] = _apply_multiplier(v.copy(), multiplier)
+        elif isinstance(v, list):
+            new_list = []
+            for item in v:
+                if isinstance(item, dict):
+                    new_list.append(_apply_multiplier(item.copy(), multiplier))
+                else:
+                    new_list.append(multiply_value(item, k))
+            data[k] = new_list
+        else:
+            data[k] = multiply_value(v, k)
+            
+    return data
+
+
+
+def _extract_statements_parallel(
+    statement_images: Dict[str, bytes],
+    statement_texts: Dict[str, str],
+    pdf_name: str
+) -> Dict[str, Optional[dict]]:
     extracted: Dict[str, Optional[dict]] = {
         "income_statement": None,
         "balance_sheet": None,
@@ -452,7 +555,15 @@ def _extract_statements_parallel(statement_images: Dict[str, bytes], pdf_name: s
         for future in as_completed(future_map):
             statement_key = future_map[future]
             try:
-                extracted[statement_key] = future.result()
+                result_data = future.result()
+                if result_data:
+                    # Apply multiplier based on detected scale from actual page text
+                    multiplier = _detect_scale_multiplier(statement_texts.get(statement_key, ""))
+                    if multiplier != 1:
+                        logger.info(f"Applying scale multiplier {multiplier} to {statement_key} for {pdf_name}")
+                        result_data = _apply_multiplier(result_data, multiplier)
+                
+                extracted[statement_key] = result_data
                 logger.info("PDF %s extraction success for %s", pdf_name, statement_key)
             except Exception as exc:
                 logger.error("PDF %s extraction failed for %s: %s", pdf_name, statement_key, exc)

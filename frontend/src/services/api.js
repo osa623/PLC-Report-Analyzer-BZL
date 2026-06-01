@@ -199,8 +199,51 @@ export const pdfService = {
     const response = await gatewayApi.get(`/intelligence/pipeline/${reportId}/stages`, {
       timeout: 30000,
     });
-    return response.data;
+    const data = response.data;
+    // Normalize response shape to { stages: [{stage, status, ...}], workflow_state }
+    const normalize = (payload) => {
+      if (!payload) return payload;
+      const out = { ...payload };
+      out.workflow_state = payload.workflow_state || payload.workflowState || payload.state || null;
+      let stagesArr = [];
+      if (Array.isArray(payload.stages)) {
+        stagesArr = payload.stages.map((s) => {
+          if (!s) return null;
+          const stageName = s.stage || s.name || s.key || s.id || null;
+          let status = s.status || s.state || s.result || s.phase || s.status_code || null;
+          if (typeof status === 'string') {
+            const st = status.toLowerCase();
+            if (['done','finished','complete','completed','ok','success'].includes(st)) status = 'completed';
+            else if (['fail','failed','error','errored'].includes(st)) status = 'failed';
+            else if (['pending','waiting','queued','todo','not_started'].includes(st)) status = 'pending';
+            else if (['running','in_progress','processing','active'].includes(st)) status = 'running';
+          } else if (typeof status === 'boolean') status = status ? 'completed' : 'pending';
+          const duration_ms = s.duration_ms ?? s.durationMs ?? s.duration ?? null;
+          return { ...s, stage: stageName || s.stage, status: status || 'pending', duration_ms };
+        }).filter(Boolean);
+      } else if (payload.stages && typeof payload.stages === 'object') {
+        stagesArr = Object.keys(payload.stages).map((k) => ({ stage: k, status: payload.stages[k] }));
+      }
+      out.stages = stagesArr;
+      return out;
+    };
+
+    return normalize(data);
   },
+
+  // Debug helper: log normalized pipeline stages in dev
+  // Note: this decorates getPipelineStages only in dev builds
+  ...(import.meta.env.DEV ? {
+    _debug_wrap_getPipelineStages: (async function () {
+      const orig = pdfService.getPipelineStages;
+      pdfService.getPipelineStages = async function (reportId) {
+        const res = await orig.call(this, reportId);
+        try { console.debug('getPipelineStages normalized ->', res); } catch (_) {}
+        return res;
+      };
+      return true;
+    })()
+  } : {}),
 
   /**
    * Get full report data.
