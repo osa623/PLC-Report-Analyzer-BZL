@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import sys
+import uuid as _uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -122,6 +123,19 @@ for _lbl, _fld in _CASH_LABELS.items():
 
 _YEAR_RE = re.compile(r"(20\d{2})")
 _DEFAULT_NORMALIZED_RESULTS_PATH = _REPO_ROOT / "services" / "extraction_service" / "normalized_results.json"
+_OUTPUTS_ROOT = _REPO_ROOT / "outputs"
+
+
+def generate_batch_id() -> str:
+    """Generate a unique batch identifier."""
+    return _uuid.uuid4().hex[:12]
+
+
+def get_batch_output_dir(batch_id: str) -> Path:
+    """Return (and create) the output directory for a given batch."""
+    batch_dir = _OUTPUTS_ROOT / batch_id
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    return batch_dir
 
 
 def _parse_number(value: Any) -> float | None:
@@ -334,6 +348,7 @@ def run_pipeline_stages(
     progress_callback=None,
     normalized_result: list[dict[str, Any]] | dict[str, Any] | None = None,
     normalized_results_path: str | Path | None = None,
+    batch_id: str | None = None,
 ) -> dict[str, Any]:
     """
     Run the full pipeline: convert → analyze → report.
@@ -346,7 +361,15 @@ def run_pipeline_stages(
         "analysis": {"status": "pending"},
         "report": {"status": "pending"},
     }
+    # ── Batch isolation ──
+    if batch_id is None:
+        batch_id = generate_batch_id()
+    batch_dir = get_batch_output_dir(batch_id)
+    _log_init_msg = f"Pipeline batch {batch_id} → {batch_dir}"
+
     logs: list[str] = []
+    logs.append(f"[{datetime.now().isoformat(timespec='seconds')}] {_log_init_msg}")
+    logger.info(_log_init_msg)
 
     def _log(msg: str):
         ts = datetime.now().isoformat(timespec="seconds")
@@ -366,22 +389,48 @@ def run_pipeline_stages(
     stages["extraction"]["status"] = "running"
     stages["extraction"]["start_time"] = datetime.now().isoformat()
 
-    normalized_results = None
-    if normalized_result is not None:
-        normalized_results = normalized_result if isinstance(normalized_result, list) else [normalized_result]
-    else:
-        candidate_path = Path(normalized_results_path) if normalized_results_path is not None else _DEFAULT_NORMALIZED_RESULTS_PATH
-        if candidate_path.exists():
-            normalized_results = load_normalized_results(candidate_path)
+    def convert_strict_to_normalized_results(strict_ext: dict[str, Any]) -> list[dict[str, Any]]:
+        financials = {}
+        for y, y_data in strict_ext.get("years", {}).items():
+            financials[y] = {
+                "group": y_data,
+                "bank": y_data,
+                "company": y_data,
+                "entity": y_data,
+                "parent": y_data,
+                "standalone": y_data,
+            }
+        return [
+            {
+                "company": strict_ext.get("company_name", "Unknown"),
+                "company_name": strict_ext.get("company_name", "Unknown"),
+                "financials": financials,
+                "source_pdf": strict_ext.get("document_name", filename or "Unknown.pdf"),
+            }
+        ]
 
-    if normalized_results is not None:
-        _log("Using normalized_results.json as authoritative downstream dataset")
-        strict_extraction = convert_normalized_to_strict(normalized_results, filename)
-        analysis_input = {"normalized_results": normalized_results}
-    else:
-        _log("WARN: normalized_results.json unavailable; using legacy strict conversion fallback")
-        strict_extraction = convert_gemini_to_strict(gemini_result, filename)
-        analysis_input = strict_extraction
+    # First build strict extraction from Gemini result
+    strict_extraction = convert_gemini_to_strict(gemini_result, filename)
+
+    # Dynamically generate normalized results for batch isolation
+    normalized_results = convert_strict_to_normalized_results(strict_extraction)
+
+    # Save fresh normalized_results.json dynamically
+    # Write normalized results into the batch directory for isolation
+    batch_norm_path = batch_dir / "normalized_results.json"
+    target_norm_path = Path(normalized_results_path) if normalized_results_path is not None else batch_norm_path
+    try:
+        target_norm_path.parent.mkdir(parents=True, exist_ok=True)
+        target_norm_path.write_text(
+            json.dumps(normalized_results, indent=2, ensure_ascii=False, default=str),
+            encoding="utf-8"
+        )
+        _log(f"Saved fresh normalized results to: {target_norm_path}")
+    except Exception as err:
+        _log(f"Warning: Could not write normalized results to {target_norm_path}: {err}")
+
+    # Set as authoritative downstream analysis input
+    analysis_input = {"normalized_results": normalized_results}
 
     year_count = len(strict_extraction.get("years", {}))
     _log(f"Strict extraction built: {year_count} years detected")
@@ -436,7 +485,9 @@ def run_pipeline_stages(
     stages["report"]["end_time"] = datetime.now().isoformat()
     _log("Report generation complete")
 
-    return {
+    pipeline_output = {
+        "batch_id": batch_id,
+        "batch_dir": str(batch_dir),
         "extraction": strict_extraction,
         "extraction_metadata": {
             "source": strict_extraction.get("source", "legacy_extraction_conversion"),
@@ -460,6 +511,19 @@ def run_pipeline_stages(
         "stages": stages,
         "logs": logs,
     }
+
+    # Persist full results into the batch directory
+    try:
+        results_path = batch_dir / "full_pipeline_test_results.json"
+        results_path.write_text(
+            json.dumps(pipeline_output, indent=2, ensure_ascii=False, default=str),
+            encoding="utf-8",
+        )
+        _log(f"Batch results saved to {results_path}")
+    except Exception as err:
+        _log(f"Warning: Could not write batch results: {err}")
+
+    return pipeline_output
 
 
 def save_pipeline_logs(job_id: str, pipeline_result: dict) -> str | None:

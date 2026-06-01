@@ -11,34 +11,109 @@ STATEMENT_KEYS = ("income_statement", "balance_sheet", "cash_flow", "equity", "c
 
 FIELD_MAPPING: dict[str, dict[str, tuple[str, tuple[str, ...]]]] = {
     "Diversified": {
-        "revenue": ("income_statement", ("revenue", "turnover", "sales", "total_revenue", "gross_income", "total_operating_income")),
-        "net_profit": ("income_statement", ("net_profit", "profit_for_the_year", "profit_after_tax", "net_income")),
-        "operating_profit": ("income_statement", ("operating_profit", "results_from_operating_activities", "operating_income", "ebit")),
-        "profit_before_tax": ("income_statement", ("profit_before_tax", "profit_before_income_tax")),
-        "tax_expense": ("income_statement", ("tax_expense", "income_tax_expense", "tax_expenses")),
-        "cost_of_sales": ("income_statement", ("cost_of_sales", "cost_of_revenue", "cost_of_goods_sold")),
-        "gross_profit": ("income_statement", ("gross_profit",)),
-        "finance_cost": ("income_statement", ("finance_cost", "finance_costs", "interest_expense", "interest_expenses")),
-        "eps": ("income_statement", ("eps", "earnings_per_share", "earnings_per_share_basic", "basic_earnings_per_share")),
-        "total_assets": ("balance_sheet", ("total_assets",)),
-        "total_liabilities": ("balance_sheet", ("total_liabilities",)),
-        "equity": ("balance_sheet", ("total_equity", "equity", "shareholders_equity", "total_shareholders_equity")),
-        "cash": ("balance_sheet", ("cash_and_cash_equivalents", "cash", "cash_and_equivalents")),
-        "current_assets": ("balance_sheet", ("current_assets",)),
-        "current_liabilities": ("balance_sheet", ("current_liabilities",)),
-        "inventory": ("balance_sheet", ("inventory", "inventories")),
-        "receivables": ("balance_sheet", ("receivables", "trade_receivables", "accounts_receivable", "loans_and_receivables_to_other_customers")),
-        "borrowings": ("balance_sheet", ("borrowings", "total_debt", "debt", "interest_bearing_debt", "debt_securities_issued")),
-        "deposits": ("balance_sheet", ("deposits", "customer_deposits", "due_to_depositors", "due_to_other_customers")),
-        "loans": ("balance_sheet", ("loans", "loans_and_advances", "loans_and_receivables_to_other_customers", "financing_and_receivables_to_other_customers")),
-        "operating_cash_flow": ("cash_flow", ("operating_cash_flow", "net_cash_from_operating_activities", "net_cash_flow_from_operating_activities", "net_cash_from_used_in_operating_activities")),
-        "investing_cash_flow": ("cash_flow", ("investing_cash_flow", "net_cash_from_investing_activities", "net_cash_used_in_investing_activities", "net_cash_flows_used_in_investing_activities")),
-        "financing_cash_flow": ("cash_flow", ("financing_cash_flow", "net_cash_from_financing_activities", "net_cash_flows_from_financing_activities", "net_cash_from_investing_activities")),
-        "net_cash_flow": ("cash_flow", ("net_cash_flow", "net_cash_change", "net_increase_decrease_in_cash_and_cash_equivalents")),
-        "opening_cash": ("cash_flow", ("opening_cash", "cash_at_beginning", "cash_and_cash_equivalents_at_beginning_of_the_year")),
-        "closing_cash": ("cash_flow", ("closing_cash", "cash_at_end", "cash_and_cash_equivalents_at_end_of_the_year")),
-        "capex": ("cash_flow", ("capex", "capital_expenditure", "purchase_of_property_plant_equipment", "acquisition_of_property_plant_and_equipment")),
-        "dividends_paid": ("cash_flow", ("dividends_paid", "dividend_paid", "dividend_paid_used_in")),
+        "revenue": ("income_statement", (
+            "revenue", "turnover", "sales", "total_revenue", "gross_income", "total_operating_income",
+            "operating_income", "total_income", "gross_revenue", "revenue_from_contracts_with_customers"
+        )),
+        "net_profit": ("income_statement", (
+            "net_profit", "profit_for_the_year", "profit_after_tax", "net_income", "profit_for_the_period",
+            "profit_attributable_to_owners", "profit_after_taxation", "pat", "profit_attributable_to_equity_holders"
+        )),
+        "operating_profit": ("income_statement", (
+            "operating_profit", "results_from_operating_activities", "operating_income", "ebit",
+            "profit_from_operations", "operating_profit_before_tax", "operating_profit_after_tax"
+        )),
+        "profit_before_tax": ("income_statement", (
+            "profit_before_tax", "profit_before_income_tax", "profit_before_taxation", "pbt"
+        )),
+        "tax_expense": ("income_statement", (
+            "tax_expense", "income_tax_expense", "tax_expenses", "income_tax", "taxation"
+        )),
+        "cost_of_sales": ("income_statement", (
+            "cost_of_sales", "cost_of_revenue", "cost_of_goods_sold", "cost_of_sales_and_services", "cogs"
+        )),
+        "gross_profit": ("income_statement", (
+            "gross_profit", "gross_margin_value"
+        )),
+        "finance_cost": ("income_statement", (
+            "finance_cost", "finance_costs", "interest_expense", "interest_expenses", "borrowing_costs"
+        )),
+        "eps": ("income_statement", (
+            "eps", "earnings_per_share", "earnings_per_share_basic", "basic_earnings_per_share",
+            "earnings_per_share_diluted_lkr", "earnings_per_share_basic_lkr"
+        )),
+        "total_assets": ("balance_sheet", (
+            "total_assets", "assets_total", "total_assets_as_at"
+        )),
+        "total_liabilities": ("balance_sheet", (
+            "total_liabilities", "liabilities_total", "total_liabilities_and_equity"
+        )),
+        "equity": ("balance_sheet", (
+            "total_equity", "equity", "shareholders_equity", "total_shareholders_equity",
+            "equity_attributable_to_owners", "total_equity_attributable_to_equity_holders_of_the_bank",
+            "total_equity_attributable_to_equity_holders"
+        )),
+        "cash": ("balance_sheet", (
+            "cash_and_cash_equivalents", "cash", "cash_and_equivalents", "cash_in_hand_and_at_banks",
+            "cash_in_hand"
+        )),
+        "current_assets": ("balance_sheet", (
+            "current_assets", "total_current_assets"
+        )),
+        "current_liabilities": ("balance_sheet", (
+            "current_liabilities", "total_current_liabilities"
+        )),
+        "inventory": ("balance_sheet", (
+            "inventory", "inventories", "stock", "stocks"
+        )),
+        "receivables": ("balance_sheet", (
+            "receivables", "trade_receivables", "accounts_receivable", "trade_and_other_receivables",
+            "loans_and_receivables_to_other_customers", "loans_and_advances_to_customers"
+        )),
+        "borrowings": ("balance_sheet", (
+            "borrowings", "total_debt", "debt", "interest_bearing_debt", "debt_securities_issued",
+            "financial_liabilities_at_amortised_cost_other_borrowed_funds", "other_borrowed_funds"
+        )),
+        "deposits": ("balance_sheet", (
+            "deposits", "customer_deposits", "due_to_depositors", "due_to_other_customers",
+            "financial_liabilities_at_amortised_cost_due_to_customers", "due_to_customers"
+        )),
+        "loans": ("balance_sheet", (
+            "loans", "loans_and_advances", "loans_and_receivables_to_other_customers",
+            "financing_and_receivables_to_other_customers", "financial_assets_at_amortised_cost_loans_and_advances_to_customers",
+            "loans_and_advances_to_customers"
+        )),
+        "operating_cash_flow": ("cash_flow", (
+            "operating_cash_flow", "net_cash_from_operating_activities", "net_cash_flow_from_operating_activities",
+            "net_cash_from_used_in_operating_activities", "net_cash_generated_from_operating_activities"
+        )),
+        "investing_cash_flow": ("cash_flow", (
+            "investing_cash_flow", "net_cash_from_investing_activities", "net_cash_used_in_investing_activities",
+            "net_cash_flows_used_in_investing_activities", "net_cash_from_used_in_investing_activities"
+        )),
+        "financing_cash_flow": ("cash_flow", (
+            "financing_cash_flow", "net_cash_from_financing_activities", "net_cash_flows_from_financing_activities",
+            "net_cash_from_used_in_financing_activities"
+        )),
+        "net_cash_flow": ("cash_flow", (
+            "net_cash_flow", "net_cash_change", "net_increase_decrease_in_cash_and_cash_equivalents",
+            "net_increase_in_cash_and_cash_equivalents"
+        )),
+        "opening_cash": ("cash_flow", (
+            "opening_cash", "cash_at_beginning", "cash_and_cash_equivalents_at_beginning_of_the_year",
+            "cash_and_cash_equivalents_at_beginning"
+        )),
+        "closing_cash": ("cash_flow", (
+            "closing_cash", "cash_at_end", "cash_and_cash_equivalents_at_end_of_the_year",
+            "cash_and_cash_equivalents_at_end", "total_cash_and_cash_equivalents_at_end_of_the_year"
+        )),
+        "capex": ("cash_flow", (
+            "capex", "capital_expenditure", "purchase_of_property_plant_equipment", "acquisition_of_property_plant_and_equipment",
+            "purchase_of_property_plant_and_equipment_and_intangibles"
+        )),
+        "dividends_paid": ("cash_flow", (
+            "dividends_paid", "dividend_paid", "dividend_paid_used_in", "dividends"
+        )),
     }
 }
 
@@ -48,18 +123,34 @@ FIELD_MAPPING["Manufacturing"] = {
 }
 FIELD_MAPPING["Banking"] = {
     **FIELD_MAPPING["Diversified"],
-    "revenue": ("income_statement", ("total_operating_income", "gross_income", "interest_income", "net_interest_income", "net_operating_income")),
-    "net_profit": ("income_statement", ("profit_for_the_year", "net_profit", "profit_after_tax", "equity_holders_of_the_parent")),
-    "operating_profit": ("income_statement", ("results_from_operating_activities", "operating_profit", "net_operating_income")),
+    "revenue": ("income_statement", (
+        "total_operating_income", "gross_income", "interest_income", "net_interest_income",
+        "net_operating_income", "total_income", "operating_income"
+    )),
+    "net_profit": ("income_statement", (
+        "profit_for_the_year", "net_profit", "profit_after_tax", "equity_holders_of_the_parent",
+        "profit_for_the_period"
+    )),
+    "operating_profit": ("income_statement", (
+        "results_from_operating_activities", "operating_profit", "net_operating_income",
+        "profit_before_value_added_tax_vat_on_financial_services_social_security_contribution_levy_sscl",
+        "profit_before_vat"
+    )),
 }
 FIELD_MAPPING["Finance"] = {
     **FIELD_MAPPING["Banking"],
-    "revenue": ("income_statement", ("total_operating_income", "financing_income", "gross_income", "interest_income", "net_financing_income")),
+    "revenue": ("income_statement", (
+        "total_operating_income", "financing_income", "gross_income", "interest_income", "net_financing_income"
+    )),
 }
 FIELD_MAPPING["Insurance"] = {
     **FIELD_MAPPING["Diversified"],
-    "revenue": ("income_statement", ("gross_written_premium", "net_premium_income", "insurance_revenue", "total_operating_income", "gross_income")),
-    "cost_of_sales": ("income_statement", ("claims_and_benefits", "net_claims", "benefits_claims_and_underwriting_expenditure")),
+    "revenue": ("income_statement", (
+        "gross_written_premium", "net_premium_income", "insurance_revenue", "total_operating_income", "gross_income"
+    )),
+    "cost_of_sales": ("income_statement", (
+        "claims_and_benefits", "net_claims", "benefits_claims_and_underwriting_expenditure"
+    )),
 }
 
 
@@ -129,13 +220,21 @@ def _match_field(entity_payload: dict[str, Any], sector: str, standard_field: st
     for statement in sections_to_search:
         section = _get_statement(entity_payload, statement)
         flattened = _flatten_numeric(section)
+        # 1. Exact matches (normalized keys) first
         for alias in aliases:
-            if alias in flattened:
-                return flattened[alias], {"statement": statement, "source_field": alias, "source_path": f"{statement}.{alias}"}
+            norm_alias = alias.lower().replace("_", "").replace(" ", "")
+            for path, val in flattened.items():
+                leaf = path.split(".")[-1]
+                norm_leaf = leaf.lower().replace("_", "").replace(" ", "")
+                if norm_leaf == norm_alias:
+                    return val, {"statement": statement, "source_field": leaf, "source_path": f"{statement}.{path}"}
+        # 2. Suffix/contains heuristic match second
         for source_path, value in flattened.items():
             leaf = source_path.split(".")[-1]
+            norm_leaf = leaf.lower().replace("_", "").replace(" ", "")
             for alias in aliases:
-                if leaf == alias or leaf.endswith(f"_{alias}") or alias in leaf:
+                norm_alias = alias.lower().replace("_", "").replace(" ", "")
+                if norm_alias in norm_leaf or norm_leaf in norm_alias:
                     return value, {"statement": statement, "source_field": leaf, "source_path": f"{statement}.{source_path}"}
     return None, None
 
@@ -194,31 +293,67 @@ def map_entity_year(entity_payload: dict[str, Any], sector: str) -> dict[str, An
     return {"standardized": standardized, "trace": trace, "missing_fields": missing, "unmapped_normalized_values": unmapped}
 
 
-def _ratio(numerator: float | None, denominator: float | None, source_fields: list[str], sector: str, applicable: bool = True) -> dict[str, Any]:
+def _ratio(numerator: float | None, denominator: float | None, source_fields: list[str], sector: str, calculation: str, year: Any = None, applicable: bool = True) -> dict[str, Any]:
     if not applicable:
         return {"status": "NOT_APPLICABLE", "reason": f"Metric not applicable to {sector} sector", "source_fields": source_fields}
     missing = [field for field, value in zip(source_fields, (numerator, denominator)) if value is None]
     if missing:
-        return {"status": "FAILED", "reason": "Required field missing after mapping", "missing_fields": missing, "source_fields": source_fields}
+        return {
+            "status": "FAILED",
+            "reason": f"Required field missing after mapping: {', '.join(missing)}",
+            "missing_fields": missing,
+            "calculation": calculation,
+            "year": int(year) if year and str(year).isdigit() else year,
+            "source_fields": source_fields
+        }
     if denominator == 0:
-        return {"status": "FAILED", "reason": "Denominator is zero", "source_fields": source_fields}
+        return {
+            "status": "FAILED",
+            "reason": "Denominator is zero",
+            "calculation": calculation,
+            "year": int(year) if year and str(year).isdigit() else year,
+            "source_fields": source_fields
+        }
     return {"status": "OK", "value": round(float(numerator) / float(denominator), 6), "source_fields": source_fields}
 
 
-def _difference(a: float | None, b: float | None, source_fields: list[str]) -> dict[str, Any]:
+def _difference(a: float | None, b: float | None, source_fields: list[str], calculation: str, year: Any = None) -> dict[str, Any]:
     missing = [field for field, value in zip(source_fields, (a, b)) if value is None]
     if missing:
-        return {"status": "FAILED", "reason": "Required field missing after mapping", "missing_fields": missing, "source_fields": source_fields}
+        return {
+            "status": "FAILED",
+            "reason": f"Required field missing after mapping: {', '.join(missing)}",
+            "missing_fields": missing,
+            "calculation": calculation,
+            "year": int(year) if year and str(year).isdigit() else year,
+            "source_fields": source_fields
+        }
     return {"status": "OK", "value": round(float(a) - abs(float(b)), 3), "source_fields": source_fields}
 
 
-def _growth(current: float | None, previous: float | None, source_fields: list[str]) -> dict[str, Any]:
-    if previous is None:
-        return {"status": "FAILED", "reason": "Previous period is unavailable", "missing_fields": [source_fields[1]], "source_fields": source_fields}
-    if current is None:
-        return {"status": "FAILED", "reason": "Current period is unavailable", "missing_fields": [source_fields[0]], "source_fields": source_fields}
+def _growth(current: float | None, previous: float | None, source_fields: list[str], calculation: str, year: Any = None) -> dict[str, Any]:
+    if previous is None or current is None:
+        missing = []
+        if current is None:
+            missing.append(source_fields[0])
+        if previous is None:
+            missing.append(source_fields[1])
+        return {
+            "status": "FAILED",
+            "reason": f"Required field missing for growth: {', '.join(missing)}",
+            "missing_fields": missing,
+            "calculation": calculation,
+            "year": int(year) if year and str(year).isdigit() else year,
+            "source_fields": source_fields
+        }
     if previous == 0:
-        return {"status": "FAILED", "reason": "Previous period denominator is zero", "source_fields": source_fields}
+        return {
+            "status": "FAILED",
+            "reason": "Previous period denominator is zero",
+            "calculation": calculation,
+            "year": int(year) if year and str(year).isdigit() else year,
+            "source_fields": source_fields
+        }
     return {"status": "OK", "value": round((float(current) - float(previous)) / abs(float(previous)), 6), "source_fields": source_fields}
 
 
@@ -275,7 +410,7 @@ def _validation(v: dict[str, float | None], prev: dict[str, float | None] | None
     return checks
 
 
-def _sector_ratios(v: dict[str, float | None], sector: str) -> dict[str, Any]:
+def _sector_ratios(v: dict[str, float | None], sector: str, year: Any = None) -> dict[str, Any]:
     manufacturing_like = sector in {"Manufacturing", "Diversified", "Insurance"}
     quick_assets = None
     if v.get("current_assets") is not None and v.get("inventory") is not None:
@@ -285,21 +420,21 @@ def _sector_ratios(v: dict[str, float | None], sector: str) -> dict[str, Any]:
         capex = abs(v["investing_cash_flow"])
 
     return {
-        "ROA": _ratio(v.get("net_profit"), v.get("total_assets"), ["net_profit", "total_assets"], sector),
-        "ROE": _ratio(v.get("net_profit"), v.get("equity"), ["net_profit", "equity"], sector),
-        "Debt To Equity": _ratio(v.get("total_liabilities"), v.get("equity"), ["total_liabilities", "equity"], sector),
-        "Debt Ratio": _ratio(v.get("total_liabilities"), v.get("total_assets"), ["total_liabilities", "total_assets"], sector),
-        "Net Profit Margin": _ratio(v.get("net_profit"), v.get("revenue"), ["net_profit", "revenue"], sector),
-        "Operating Margin": _ratio(v.get("operating_profit"), v.get("revenue"), ["operating_profit", "revenue"], sector),
-        "Gross Margin": _ratio(v.get("gross_profit"), v.get("revenue"), ["gross_profit", "revenue"], sector, applicable=manufacturing_like),
-        "Current Ratio": _ratio(v.get("current_assets"), v.get("current_liabilities"), ["current_assets", "current_liabilities"], sector, applicable=manufacturing_like),
-        "Quick Ratio": _ratio(quick_assets, v.get("current_liabilities"), ["current_assets", "inventory", "current_liabilities"], sector, applicable=manufacturing_like),
-        "Cash Ratio": _ratio(v.get("cash"), v.get("current_liabilities"), ["cash", "current_liabilities"], sector, applicable=manufacturing_like),
-        "Asset Turnover": _ratio(v.get("revenue"), v.get("total_assets"), ["revenue", "total_assets"], sector),
-        "Cash Flow to Net Income": _ratio(v.get("operating_cash_flow"), v.get("net_profit"), ["operating_cash_flow", "net_profit"], sector),
-        "OCF Ratio": _ratio(v.get("operating_cash_flow"), v.get("current_liabilities"), ["operating_cash_flow", "current_liabilities"], sector, applicable=manufacturing_like),
-        "Free Cash Flow": _difference(v.get("operating_cash_flow"), capex, ["operating_cash_flow", "capex"]),
-        "Loan To Deposit Ratio": _ratio(v.get("loans"), v.get("deposits"), ["loans", "deposits"], sector, applicable=sector in {"Banking", "Finance"}),
+        "ROA": _ratio(v.get("net_profit"), v.get("total_assets"), ["net_profit", "total_assets"], sector, "ROA = net_profit / total_assets", year),
+        "ROE": _ratio(v.get("net_profit"), v.get("equity"), ["net_profit", "equity"], sector, "ROE = net_profit / equity", year),
+        "Debt To Equity": _ratio(v.get("total_liabilities"), v.get("equity"), ["total_liabilities", "equity"], sector, "Debt To Equity = total_liabilities / equity", year),
+        "Debt Ratio": _ratio(v.get("total_liabilities"), v.get("total_assets"), ["total_liabilities", "total_assets"], sector, "Debt Ratio = total_liabilities / total_assets", year),
+        "Net Profit Margin": _ratio(v.get("net_profit"), v.get("revenue"), ["net_profit", "revenue"], sector, "Net Profit Margin = net_profit / revenue", year),
+        "Operating Margin": _ratio(v.get("operating_profit"), v.get("revenue"), ["operating_profit", "revenue"], sector, "Operating Margin = operating_profit / revenue", year),
+        "Gross Margin": _ratio(v.get("gross_profit"), v.get("revenue"), ["gross_profit", "revenue"], sector, "Gross Margin = gross_profit / revenue", year, applicable=manufacturing_like),
+        "Current Ratio": _ratio(v.get("current_assets"), v.get("current_liabilities"), ["current_assets", "current_liabilities"], sector, "Current Ratio = current_assets / current_liabilities", year, applicable=manufacturing_like),
+        "Quick Ratio": _ratio(quick_assets, v.get("current_liabilities"), ["current_assets", "inventory", "current_liabilities"], sector, "Quick Ratio = (current_assets - inventory) / current_liabilities", year, applicable=manufacturing_like),
+        "Cash Ratio": _ratio(v.get("cash"), v.get("current_liabilities"), ["cash", "current_liabilities"], sector, "Cash Ratio = cash / current_liabilities", year, applicable=manufacturing_like),
+        "Asset Turnover": _ratio(v.get("revenue"), v.get("total_assets"), ["revenue", "total_assets"], sector, "Asset Turnover = revenue / total_assets", year),
+        "Cash Flow to Net Income": _ratio(v.get("operating_cash_flow"), v.get("net_profit"), ["operating_cash_flow", "net_profit"], sector, "Cash Flow to Net Income = operating_cash_flow / net_profit", year),
+        "OCF Ratio": _ratio(v.get("operating_cash_flow"), v.get("current_liabilities"), ["operating_cash_flow", "current_liabilities"], sector, "OCF Ratio = operating_cash_flow / current_liabilities", year, applicable=manufacturing_like),
+        "Free Cash Flow": _difference(v.get("operating_cash_flow"), capex, ["operating_cash_flow", "capex"], "Free Cash Flow = operating_cash_flow - capex", year),
+        "Loan To Deposit Ratio": _ratio(v.get("loans"), v.get("deposits"), ["loans", "deposits"], sector, "Loan To Deposit Ratio = loans / deposits", year, applicable=sector in {"Banking", "Finance"}),
     }
 
 
@@ -384,12 +519,12 @@ def analyze_normalized_results(normalized_results: Any) -> dict[str, Any]:
         prev_fields = None
         for year in sorted(years.keys(), key=int):
             fields = years[year]["standardized_fields"]
-            years[year]["ratio_analysis"] = _sector_ratios(fields, years[year]["sector"])
+            years[year]["ratio_analysis"] = _sector_ratios(fields, years[year]["sector"], year)
             years[year]["growth_analysis"] = {
-                "Revenue Growth": _growth(fields.get("revenue"), prev_fields.get("revenue") if prev_fields else None, ["revenue", "previous_revenue"]),
-                "Net Profit Growth": _growth(fields.get("net_profit"), prev_fields.get("net_profit") if prev_fields else None, ["net_profit", "previous_net_profit"]),
-                "Asset Growth": _growth(fields.get("total_assets"), prev_fields.get("total_assets") if prev_fields else None, ["total_assets", "previous_total_assets"]),
-                "Equity Growth": _growth(fields.get("equity"), prev_fields.get("equity") if prev_fields else None, ["equity", "previous_equity"]),
+                "Revenue Growth": _growth(fields.get("revenue"), prev_fields.get("revenue") if prev_fields else None, ["revenue", "previous_revenue"], "Revenue Growth = (revenue - previous_revenue) / previous_revenue", year),
+                "Net Profit Growth": _growth(fields.get("net_profit"), prev_fields.get("net_profit") if prev_fields else None, ["net_profit", "previous_net_profit"], "Net Profit Growth = (net_profit - previous_net_profit) / previous_net_profit", year),
+                "Asset Growth": _growth(fields.get("total_assets"), prev_fields.get("total_assets") if prev_fields else None, ["total_assets", "previous_total_assets"], "Asset Growth = (total_assets - previous_total_assets) / previous_total_assets", year),
+                "Equity Growth": _growth(fields.get("equity"), prev_fields.get("equity") if prev_fields else None, ["equity", "previous_equity"], "Equity Growth = (equity - previous_equity) / previous_equity", year),
             }
             years[year]["validation_results"] = _validation(fields, prev_fields, years[year]["completeness_metrics"])
             prev_fields = fields
