@@ -22,3 +22,4 @@ paddleocr==2.7.0.3
 pdfplumber>=0.10.0
 pandas>=2.0.0
 rapidfuzz>=3.0.0
+dnspython>=2.6.1

@@ -1,0 +1,8 @@
+{
+  "field_precision": 1.0,
+  "field_recall": 1.0,
+  "numeric_exact_match": 1.0,
+  "table_structure_correctness": 1.0,
+  "deterministic_parity": 1.0,
+  "max_relative_error_pct": 0.01
+}

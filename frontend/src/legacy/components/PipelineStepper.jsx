@@ -2,8 +2,19 @@ import React from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Clock, SkipForward } from 'lucide-react';
 
 const STAGE_LABELS = {
+  // Legacy stage names
   UPLOAD: 'Upload', PARSING: 'Parsing', STRUCTURE: 'Structure', EXTRACTION: 'Extraction',
-  AGGREGATION: 'Aggregation', VALIDATION: 'Validation', ANALYTICS: 'Analytics', REPORT: 'Report Generation',
+  AGGREGATION: 'Aggregation', VALIDATION: 'Validation', ANALYTICS: 'Analytics', REPORT: 'Report Gen',
+  // New 9-stage pipeline names from backend
+  DOCUMENT_INGESTION: 'Ingestion',
+  PAGE_CLASSIFICATION: 'Classification',
+  STATEMENT_DETECTION: 'Detection',
+  MULTI_EXTRACTOR_EXECUTION: 'Extraction',
+  CROSS_EXTRACTOR_RECONCILIATION: 'Reconciliation',
+  ACCOUNTING_VALIDATION: 'Validation',
+  COVERAGE_SCORING_GATE: 'Scoring Gate',
+  FINANCIAL_ANALYSIS: 'Analysis',
+  REPORT_GENERATION: 'Report Gen',
 };
 
 function StepIcon({ status }) {
@@ -44,6 +55,7 @@ export default function PipelineStepper({ stages }) {
             stage.status === 'skipped' ? 'Skipped' :
             'Pending';
           const duration = formatDuration(stage.duration_ms);
+          const diag = (stage.diagnostics && (stage.diagnostics.reason || stage.diagnostics.error || stage.diagnostics.message)) || stage.message || null;
 
           return (
             <React.Fragment key={stage.stage}>
@@ -55,6 +67,7 @@ export default function PipelineStepper({ stages }) {
                 <div className="pipeline-step-status">
                   {statusLabel}
                   {duration && ` · ${duration}`}
+                  {diag && <div className="text-[11px] text-red-600 mt-1">{diag}</div>}
                 </div>
               </div>
               {i < stages.length - 1 && (
