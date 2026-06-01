@@ -440,23 +440,56 @@ def _detect_scale_multiplier(page_text: str) -> int:
     if not page_text:
         return 1
     text = page_text.lower()
-    if "rs. bn" in text or "rs.bn" in text or "'000,000,000" in text:
+    
+    # Check billions first
+    if any(pattern in text for pattern in ["rs. bn", "rs.bn", "rs bn", "lkr. bn", "lkr.bn", "lkr bn", "in billions", "'000,000,000"]):
         return 1_000_000_000
-    elif "rs. mn" in text or "rs.mn" in text or "'000,000" in text:
+    if re.search(r"\b(bn|billion|billions)\b", text):
+        return 1_000_000_000
+        
+    # Check millions
+    if any(pattern in text for pattern in ["rs. mn", "rs.mn", "rs mn", "lkr. mn", "lkr.mn", "lkr mn", "in millions", "'000,000"]):
         return 1_000_000
-    elif "rs. '000" in text or "rs.'000" in text or "rs 000" in text or "rs. 000" in text or "(000)" in text or "in thousands" in text:
+    if re.search(r"\b(mn|million|millions)\b", text):
+        return 1_000_000
+        
+    # Check thousands
+    if any(pattern in text for pattern in [
+        "rs. '000", "rs.'000", "rs 000", "rs. 000", 
+        "lkr. '000", "lkr.'000", "lkr 000", "lkr. 000", 
+        "lkr '000", "lkr 000", 
+        "(000)", "in thousands", "'000"
+    ]):
         return 1_000
+    if re.search(r"\b(thousand|thousands)\b", text):
+        return 1_000
+        
     return 1
 
 def _apply_multiplier(data: dict, multiplier: int) -> dict:
     if multiplier == 1 or not isinstance(data, dict):
         return data
         
-    def multiply_value(val):
+    def is_ratio_or_percentage_key(key: str) -> bool:
+        if not key:
+            return False
+        k_low = key.lower()
+        return any(term in k_low for term in ["ratio", "margin", "percent", "eps", "growth", "yoy", "yield", "rate", "interest_rate"])
+
+    def multiply_value(val, key: str = ""):
+        if is_ratio_or_percentage_key(key):
+            return val
+            
         if isinstance(val, (int, float)):
+            # Don't multiply small ratio/percentage values like 4.50, 5.50
+            if abs(val) < 100.0:
+                return val
             return val * multiplier
         elif isinstance(val, str):
             clean_str = val.strip()
+            # If it has a percent sign, it's a percentage
+            if clean_str.endswith('%'):
+                return val
             # Very basic check for numeric strings with commas and optional parens
             if re.fullmatch(r"\(?-?\d[\d,]*(\.\d+)?\)?", clean_str):
                 is_negative = False
@@ -468,6 +501,9 @@ def _apply_multiplier(data: dict, multiplier: int) -> dict:
                     num_val = float(clean_str)
                     if is_negative:
                         num_val = -num_val
+                    # Don't multiply if it's a small ratio/percentage value
+                    if abs(num_val) < 100.0:
+                        return num_val if not is_negative else -num_val
                     ans = num_val * multiplier
                     if ans.is_integer():
                         return int(ans)
@@ -485,12 +521,13 @@ def _apply_multiplier(data: dict, multiplier: int) -> dict:
                 if isinstance(item, dict):
                     new_list.append(_apply_multiplier(item.copy(), multiplier))
                 else:
-                    new_list.append(multiply_value(item))
+                    new_list.append(multiply_value(item, k))
             data[k] = new_list
         else:
-            data[k] = multiply_value(v)
+            data[k] = multiply_value(v, k)
             
     return data
+
 
 
 def _extract_statements_parallel(

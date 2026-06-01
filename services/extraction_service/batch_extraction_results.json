@@ -16,245 +16,269 @@
           "warnings": []
         },
         "document_name": "STATEMENT OF PROFIT OR LOSS",
-        "period": "For the year ended 31 December",
-        "financial_data": [
+        "period_ending": "For the year ended 31 December",
+        "currency": "LKR '000",
+        "tables": [
           {
-            "label": "Gross income",
-            "Note": "6",
-            "2024 (Bank)": "16,450,684",
-            "2023 (Bank)": "22,410,834",
-            "2024 (Group)": "18,677,455",
-            "2023 (Group)": "24,893,435"
-          },
-          {
-            "label": "Interest income",
-            "Note": "7.1",
-            "2024 (Bank)": "14,008,163",
-            "2023 (Bank)": "20,216,418",
-            "2024 (Group)": "15,974,939",
-            "2023 (Group)": "22,493,007"
-          },
-          {
-            "label": "Less: Interest expenses",
-            "Note": "7.2",
-            "2024 (Bank)": "9,181,644",
-            "2023 (Bank)": "13,926,221",
-            "2024 (Group)": "10,358,394",
-            "2023 (Group)": "15,318,594"
-          },
-          {
-            "label": "Net interest income",
-            "2024 (Bank)": "4,826,519",
-            "2023 (Bank)": "6,290,197",
-            "2024 (Group)": "5,616,545",
-            "2023 (Group)": "7,174,413"
-          },
-          {
-            "label": "Fee and commission income",
-            "Note": "8.1",
-            "2024 (Bank)": "1,543,796",
-            "2023 (Bank)": "1,586,792",
-            "2024 (Group)": "1,678,780",
-            "2023 (Group)": "1,685,569"
-          },
-          {
-            "label": "Less: Fee and commission expenses",
-            "Note": "8.2",
-            "2024 (Bank)": "391,417",
-            "2023 (Bank)": "386,983",
-            "2024 (Group)": "417,988",
-            "2023 (Group)": "397,043"
-          },
-          {
-            "label": "Net fee and commission income",
-            "2024 (Bank)": "1,152,379",
-            "2023 (Bank)": "1,199,809",
-            "2024 (Group)": "1,260,792",
-            "2023 (Group)": "1,288,526"
-          },
-          {
-            "label": "Net fair value gains/ (losses) from financial instruments at fair value through profit or loss",
-            "Note": "9",
-            "2024 (Bank)": "133,668",
-            "2023 (Bank)": "55,843",
-            "2024 (Group)": "129,448",
-            "2023 (Group)": "55,843"
-          },
-          {
-            "label": "Net gains/(losses) from derecognition of financial investments",
-            "Note": "10",
-            "2024 (Bank)": "737,131",
-            "2023 (Bank)": "456,200",
-            "2024 (Group)": "754,902",
-            "2023 (Group)": "456,907"
-          },
-          {
-            "label": "Net other operating income",
-            "Note": "11",
-            "2024 (Bank)": "27,926",
-            "2023 (Bank)": "95,582",
-            "2024 (Group)": "139,386",
-            "2023 (Group)": "202,111"
-          },
-          {
-            "label": "Total operating income",
-            "2024 (Bank)": "6,877,623",
-            "2023 (Bank)": "8,097,630",
-            "2024 (Group)": "7,901,073",
-            "2023 (Group)": "9,177,798"
-          },
-          {
-            "label": "Less: Impairment for loans and other losses",
-            "Note": "12",
-            "2024 (Bank)": "141,901",
-            "2023 (Bank)": "1,643,327",
-            "2024 (Group)": "182,064",
-            "2023 (Group)": "1,740,474"
-          },
-          {
-            "label": "Net operating income",
-            "2024 (Bank)": "6,735,722",
-            "2023 (Bank)": "6,454,303",
-            "2024 (Group)": "7,719,009",
-            "2023 (Group)": "7,437,324"
-          },
-          {
-            "label": "Personnel expenses",
-            "Note": "13",
-            "2024 (Bank)": "2,425,758",
-            "2023 (Bank)": "2,349,674",
-            "2024 (Group)": "2,775,329",
-            "2023 (Group)": "2,685,089"
-          },
-          {
-            "label": "Depreciation and amortisation",
-            "Note": "14",
-            "2024 (Bank)": "814,325",
-            "2023 (Bank)": "766,341",
-            "2024 (Group)": "895,383",
-            "2023 (Group)": "832,774"
-          },
-          {
-            "label": "Other expenses",
-            "Note": "15",
-            "2024 (Bank)": "2,287,444",
-            "2023 (Bank)": "2,003,687",
-            "2024 (Group)": "2,678,192",
-            "2023 (Group)": "2,324,591"
-          },
-          {
-            "label": "Total operating expenses",
-            "2024 (Bank)": "5,527,527",
-            "2023 (Bank)": "5,119,702",
-            "2024 (Group)": "6,348,904",
-            "2023 (Group)": "5,842,454"
-          },
-          {
-            "label": "Results from operating activities",
-            "2024 (Bank)": "1,208,195",
-            "2023 (Bank)": "1,334,601",
-            "2024 (Group)": "1,370,105",
-            "2023 (Group)": "1,594,870"
-          },
-          {
-            "label": "Share of profit/(losses) of equity accounted investees, net of tax",
-            "Note": "32.1",
-            "2024 (Bank)": "(1,471)",
-            "2023 (Bank)": "57,499",
-            "2024 (Group)": "-",
-            "2023 (Group)": null
-          },
-          {
-            "label": "Profit before value added tax (VAT) on financial services & social security contribution Levy (SSCL)",
-            "2024 (Bank)": "1,206,724",
-            "2023 (Bank)": "1,392,100",
-            "2024 (Group)": "1,370,105",
-            "2023 (Group)": "1,594,870"
-          },
-          {
-            "label": "Less: VAT on financial services & SSCL",
-            "Note": "16",
-            "2024 (Bank)": "549,446",
-            "2023 (Bank)": "611,856",
-            "2024 (Group)": "636,692",
-            "2023 (Group)": "694,003"
-          },
-          {
-            "label": "Profit before income tax",
-            "2024 (Bank)": "657,278",
-            "2023 (Bank)": "780,244",
-            "2024 (Group)": "733,413",
-            "2023 (Group)": "900,867"
-          },
-          {
-            "label": "Less: Income tax expense",
-            "Note": "17",
-            "2024 (Bank)": "357,076",
-            "2023 (Bank)": "401,038",
-            "2024 (Group)": "433,687",
-            "2023 (Group)": "436,980"
-          },
-          {
-            "label": "Profit for the year",
-            "2024 (Bank)": "300,202",
-            "2023 (Bank)": "379,206",
-            "2024 (Group)": "299,726",
-            "2023 (Group)": "463,887"
-          },
-          {
-            "label": "Equity holders of the parent",
-            "2024 (Bank)": "300,202",
-            "2023 (Bank)": "379,206",
-            "2024 (Group)": "297,673",
-            "2023 (Group)": "456,292"
-          },
-          {
-            "label": "Non-controlling interest",
-            "Note": "45",
-            "2024 (Bank)": "-",
-            "2023 (Bank)": null,
-            "2024 (Group)": "2,053",
-            "2023 (Group)": "7,595"
-          },
-          {
-            "label": "Profit for the year",
-            "2024 (Bank)": "300,202",
-            "2023 (Bank)": "379,206",
-            "2024 (Group)": "299,726",
-            "2023 (Group)": "463,887"
-          },
-          {
-            "label": "Earnings per share - Basic (LKR)",
-            "Note": "18.1",
-            "2024 (Bank)": "0.28",
-            "2023 (Bank)": "0.35",
-            "2024 (Group)": "0.27",
-            "2023 (Group)": "0.42"
-          },
-          {
-            "label": "Earnings per share - Diluted (LKR)",
-            "Note": "18.2",
-            "2024 (Bank)": "0.28",
-            "2023 (Bank)": "0.35",
-            "2024 (Group)": "0.27",
-            "2023 (Group)": "0.42"
+            "table_num": 1,
+            "headers": [
+              "Note",
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "Note": "6",
+                "2024 (Bank)": "16,450,684",
+                "2023 (Bank)": "22,410,834",
+                "2024 (Group)": "18,677,455",
+                "2023 (Group)": "24,893,435",
+                "label": "Gross income"
+              },
+              {
+                "Note": "7.1",
+                "2024 (Bank)": "14,008,163",
+                "2023 (Bank)": "20,216,418",
+                "2024 (Group)": "15,974,939",
+                "2023 (Group)": "22,493,007",
+                "label": "Interest income"
+              },
+              {
+                "Note": "7.2",
+                "2024 (Bank)": "9,181,644",
+                "2023 (Bank)": "13,926,221",
+                "2024 (Group)": "10,358,394",
+                "2023 (Group)": "15,318,594",
+                "label": "Less: Interest expenses"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "4,826,519",
+                "2023 (Bank)": "6,290,197",
+                "2024 (Group)": "5,616,545",
+                "2023 (Group)": "7,174,413",
+                "label": "Net interest income"
+              },
+              {
+                "Note": "8.1",
+                "2024 (Bank)": "1,543,796",
+                "2023 (Bank)": "1,586,792",
+                "2024 (Group)": "1,678,780",
+                "2023 (Group)": "1,685,569",
+                "label": "Fee and commission income"
+              },
+              {
+                "Note": "8.2",
+                "2024 (Bank)": "391,417",
+                "2023 (Bank)": "386,983",
+                "2024 (Group)": "417,988",
+                "2023 (Group)": "397,043",
+                "label": "Less: Fee and commission expenses"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "1,152,379",
+                "2023 (Bank)": "1,199,809",
+                "2024 (Group)": "1,260,792",
+                "2023 (Group)": "1,288,526",
+                "label": "Net fee and commission income"
+              },
+              {
+                "Note": "9",
+                "2024 (Bank)": "133,668",
+                "2023 (Bank)": "55,843",
+                "2024 (Group)": "129,448",
+                "2023 (Group)": "55,843",
+                "label": "Net fair value gains/ (losses) from financial instruments at fair value through profit or loss"
+              },
+              {
+                "Note": "10",
+                "2024 (Bank)": "737,131",
+                "2023 (Bank)": "456,200",
+                "2024 (Group)": "754,902",
+                "2023 (Group)": "456,907",
+                "label": "Net gains/(losses) from derecognition of financial investments"
+              },
+              {
+                "Note": "11",
+                "2024 (Bank)": "27,926",
+                "2023 (Bank)": "95,582",
+                "2024 (Group)": "139,386",
+                "2023 (Group)": "202,111",
+                "label": "Net other operating income"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "6,877,623",
+                "2023 (Bank)": "8,097,630",
+                "2024 (Group)": "7,901,073",
+                "2023 (Group)": "9,177,798",
+                "label": "Total operating income"
+              },
+              {
+                "Note": "12",
+                "2024 (Bank)": "141,901",
+                "2023 (Bank)": "1,643,327",
+                "2024 (Group)": "182,064",
+                "2023 (Group)": "1,740,474",
+                "label": "Less: Impairment for loans and other losses"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "6,735,722",
+                "2023 (Bank)": "6,454,303",
+                "2024 (Group)": "7,719,009",
+                "2023 (Group)": "7,437,324",
+                "label": "Net operating income"
+              },
+              {
+                "Note": "13",
+                "2024 (Bank)": "2,425,758",
+                "2023 (Bank)": "2,349,674",
+                "2024 (Group)": "2,775,329",
+                "2023 (Group)": "2,685,089",
+                "label": "Personnel expenses"
+              },
+              {
+                "Note": "14",
+                "2024 (Bank)": "814,325",
+                "2023 (Bank)": "766,341",
+                "2024 (Group)": "895,383",
+                "2023 (Group)": "832,774",
+                "label": "Depreciation and amortisation"
+              },
+              {
+                "Note": "15",
+                "2024 (Bank)": "2,287,444",
+                "2023 (Bank)": "2,003,687",
+                "2024 (Group)": "2,678,192",
+                "2023 (Group)": "2,324,591",
+                "label": "Other expenses"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "5,527,527",
+                "2023 (Bank)": "5,119,702",
+                "2024 (Group)": "6,348,904",
+                "2023 (Group)": "5,842,454",
+                "label": "Total operating expenses"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "1,208,195",
+                "2023 (Bank)": "1,334,601",
+                "2024 (Group)": "1,370,105",
+                "2023 (Group)": "1,594,870",
+                "label": "Results from operating activities"
+              },
+              {
+                "Note": "32.1",
+                "2024 (Bank)": "(1,471)",
+                "2023 (Bank)": "57,499",
+                "2024 (Group)": null,
+                "2023 (Group)": null,
+                "label": "Share of profit/(losses) of equity accounted investees, net of tax"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "1,206,724",
+                "2023 (Bank)": "1,392,100",
+                "2024 (Group)": "1,370,105",
+                "2023 (Group)": "1,594,870",
+                "label": "Profit before value added tax (VAT) on financial services & social security contribution Levy (SSCL)"
+              },
+              {
+                "Note": "16",
+                "2024 (Bank)": "549,446",
+                "2023 (Bank)": "611,856",
+                "2024 (Group)": "636,692",
+                "2023 (Group)": "694,003",
+                "label": "Less: VAT on financial services & SSCL"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "657,278",
+                "2023 (Bank)": "780,244",
+                "2024 (Group)": "733,413",
+                "2023 (Group)": "900,867",
+                "label": "Profit before income tax"
+              },
+              {
+                "Note": "17",
+                "2024 (Bank)": "357,076",
+                "2023 (Bank)": "401,038",
+                "2024 (Group)": "433,687",
+                "2023 (Group)": "436,980",
+                "label": "Less: Income tax expense"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "300,202",
+                "2023 (Bank)": "379,206",
+                "2024 (Group)": "299,726",
+                "2023 (Group)": "463,887",
+                "label": "Profit for the year"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "300,202",
+                "2023 (Bank)": "379,206",
+                "2024 (Group)": "297,673",
+                "2023 (Group)": "456,292",
+                "label": "Equity holders of the parent"
+              },
+              {
+                "Note": "45",
+                "2024 (Bank)": null,
+                "2023 (Bank)": null,
+                "2024 (Group)": "2,053",
+                "2023 (Group)": "7,595",
+                "label": "Non-controlling interest"
+              },
+              {
+                "Note": null,
+                "2024 (Bank)": "300,202",
+                "2023 (Bank)": "379,206",
+                "2024 (Group)": "299,726",
+                "2023 (Group)": "463,887",
+                "label": "Profit for the year"
+              },
+              {
+                "Note": "18.1",
+                "2024 (Bank)": "0.28",
+                "2023 (Bank)": "0.35",
+                "2024 (Group)": "0.27",
+                "2023 (Group)": "0.42",
+                "label": "Earnings per share - Basic (LKR)"
+              },
+              {
+                "Note": "18.2",
+                "2024 (Bank)": "0.28",
+                "2023 (Bank)": "0.35",
+                "2024 (Group)": "0.27",
+                "2023 (Group)": "0.42",
+                "label": "Earnings per share - Diluted (LKR)"
+              }
+            ]
           }
         ]
       },
       "balance_sheet": {
         "parse_meta": {
-          "version": "0.2",
+          "version": "0.1",
           "confidence": "0.95",
           "warnings": []
         },
         "financial_statement": {
-          "header": {
-            "title": "STATEMENT OF FINANCIAL POSITION",
-            "date": "As at 31 December"
-          },
+          "statement_title": "STATEMENT OF FINANCIAL POSITION",
+          "period_ending": "As at 31 December",
+          "currency": "LKR '000",
+          "units": "Thousands",
           "sections": [
             {
-              "name": "Assets",
+              "title": "Assets",
               "rows": [
                 {
                   "label": "Cash and cash equivalents",
@@ -382,7 +406,7 @@
               ]
             },
             {
-              "name": "Liabilities",
+              "title": "Liabilities",
               "rows": [
                 {
                   "label": "Due to Banks",
@@ -447,7 +471,7 @@
               ]
             },
             {
-              "name": "Equity",
+              "title": "Equity",
               "rows": [
                 {
                   "label": "Stated capital",
@@ -526,7 +550,7 @@
               ]
             },
             {
-              "name": "Total equity and liabilities",
+              "title": "Total equity and liabilities",
               "rows": [
                 {
                   "label": "Total equity and liabilities",
@@ -538,7 +562,7 @@
               ]
             },
             {
-              "name": "Contingent liabilities and Commitments",
+              "title": "Contingent liabilities and Commitments",
               "rows": [
                 {
                   "label": "Contingent liabilities and Commitments",
@@ -551,7 +575,7 @@
               ]
             },
             {
-              "name": "Net asset value per share (LKR)",
+              "title": "Net asset value per share (LKR)",
               "rows": [
                 {
                   "label": "Net asset value per share (LKR)",
@@ -567,261 +591,333 @@
       },
       "cash_flow": {
         "parse_meta": {
-          "version": "0.1",
+          "version": "0.0.1",
           "confidence": "0.95",
           "warnings": []
         },
         "document_name": "STATEMENT OF CASH FLOWS",
-        "table": [
+        "currency": "LKR '000",
+        "tables": [
           {
-            "label": "Interest receipts",
-            "2024 (Bank)": "13,068,063",
-            "2023 (Bank)": "19,716,630",
-            "2024 (Group)": "15,190,718",
-            "2023 (Group)": "21,933,995"
+            "table_name": "Cash Flow from Operating Activities",
+            "columns": [
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "label": "Interest receipts",
+                "2024 (Bank)": "13,068,063",
+                "2023 (Bank)": "19,716,630",
+                "2024 (Group)": "15,190,718",
+                "2023 (Group)": "21,933,995"
+              },
+              {
+                "label": "Fee and commission receipts",
+                "2024 (Bank)": "1,152,380",
+                "2023 (Bank)": "1,199,809",
+                "2024 (Group)": "1,260,793",
+                "2023 (Group)": "1,288,526"
+              },
+              {
+                "label": "Interest payments",
+                "2024 (Bank)": "(10,003,842)",
+                "2023 (Bank)": "(13,990,350)",
+                "2024 (Group)": "(11,967,467)",
+                "2023 (Group)": "(14,384,929)"
+              },
+              {
+                "label": "Receipts from other operating activities",
+                "2024 (Bank)": "1,039,233",
+                "2023 (Bank)": "653,131",
+                "2024 (Group)": "1,156,194",
+                "2023 (Group)": "749,195"
+              },
+              {
+                "label": "Payments on other operating activities",
+                "2024 (Bank)": "(5,499,366)",
+                "2023 (Bank)": "(5,210,254)",
+                "2024 (Group)": "(6,374,705)",
+                "2023 (Group)": "(5,990,353)"
+              },
+              {
+                "label": "Operating profit before changes in operating assets & liabilities",
+                "2024 (Bank)": "(243,532)",
+                "2023 (Bank)": "2,368,966",
+                "2024 (Group)": "(734,467)",
+                "2023 (Group)": "3,596,434"
+              },
+              {
+                "label": "(Increase)/decrease in operating assets:\nBalances with Central Bank of Sri Lanka",
+                "2024 (Bank)": "109,280",
+                "2023 (Bank)": "1,685,372",
+                "2024 (Group)": "109,280",
+                "2023 (Group)": "1,685,372"
+              },
+              {
+                "label": "Financial assets at amortised cost - loans and advances to customers",
+                "2024 (Bank)": "(18,458,049)",
+                "2023 (Bank)": "3,796,832",
+                "2024 (Group)": "(19,988,019)",
+                "2023 (Group)": "4,644,798"
+              },
+              {
+                "label": "Others",
+                "2024 (Bank)": "830,953",
+                "2023 (Bank)": "(110,119)",
+                "2024 (Group)": "816,501",
+                "2023 (Group)": "(116,507)"
+              },
+              {
+                "label": "Increase /(decrease) in operating liabilities:",
+                "2024 (Bank)": null,
+                "2023 (Bank)": null,
+                "2024 (Group)": null,
+                "2023 (Group)": null
+              },
+              {
+                "label": "Due to Banks",
+                "2024 (Bank)": "2,079,883",
+                "2023 (Bank)": "249,778",
+                "2024 (Group)": "2,079,883",
+                "2023 (Group)": "249,778"
+              },
+              {
+                "label": "Due to customers",
+                "2024 (Bank)": "16,403,496",
+                "2023 (Bank)": "(4,386,671)",
+                "2024 (Group)": "16,571,273",
+                "2023 (Group)": "(4,340,973)"
+              },
+              {
+                "label": "Repurchase agreements",
+                "2024 (Bank)": "(12,163,695)",
+                "2023 (Bank)": "12,836,803",
+                "2024 (Group)": "(12,163,695)",
+                "2023 (Group)": "12,936,866"
+              },
+              {
+                "label": "Others",
+                "2024 (Bank)": "(241,691)",
+                "2023 (Bank)": "157,460",
+                "2024 (Group)": "(194,447)",
+                "2023 (Group)": "161,196"
+              },
+              {
+                "label": "Net cash from/(used in) operating activities before income tax",
+                "2024 (Bank)": "(11,683,355)",
+                "2023 (Bank)": "16,598,421",
+                "2024 (Group)": "(13,503,691)",
+                "2023 (Group)": "18,816,964"
+              },
+              {
+                "label": "Retirement benefit obligation paid",
+                "2024 (Bank)": "(108,129)",
+                "2023 (Bank)": "(55,417)",
+                "2024 (Group)": "(111,192)",
+                "2023 (Group)": "(62,897)"
+              },
+              {
+                "label": "Income tax paid",
+                "2024 (Bank)": "(556,129)",
+                "2023 (Bank)": "(685,661)",
+                "2024 (Group)": "(559,488)",
+                "2023 (Group)": "(687,153)"
+              },
+              {
+                "label": "Net cash from/(used in) operating activities",
+                "2024 (Bank)": "(12,347,613)",
+                "2023 (Bank)": "15,857,343",
+                "2024 (Group)": "(14,174,371)",
+                "2023 (Group)": "18,066,914"
+              }
+            ]
           },
           {
-            "label": "Fee and commission receipts",
-            "2024 (Bank)": "1,152,380",
-            "2023 (Bank)": "1,199,809",
-            "2024 (Group)": "1,260,793",
-            "2023 (Group)": "1,288,526"
+            "table_name": "Cash Flow from Investing Activities",
+            "columns": [
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "label": "Dividends received",
+                "2024 (Bank)": "1,536",
+                "2023 (Bank)": "1,019",
+                "2024 (Group)": "2,133",
+                "2023 (Group)": "1,725"
+              },
+              {
+                "label": "Financial assets at fair value through profit or loss",
+                "2024 (Bank)": "1,641,200",
+                "2023 (Bank)": "(4,769,819)",
+                "2024 (Group)": "1,774,930",
+                "2023 (Group)": "(4,305,399)"
+              },
+              {
+                "label": "Financial assets at fair value through other comprehensive income",
+                "2024 (Bank)": "(2,500,335)",
+                "2023 (Bank)": "(14,863,250)",
+                "2024 (Group)": "(2,509,990)",
+                "2023 (Group)": "(14,863,375)"
+              },
+              {
+                "label": "Financial assets at amortised cost - debt and other instruments",
+                "2024 (Bank)": "7,982,917",
+                "2023 (Bank)": "5,305,661",
+                "2024 (Group)": "9,423,898",
+                "2023 (Group)": "2,849,875"
+              },
+              {
+                "label": "Investment in subsidiaries",
+                "2024 (Bank)": "(228,703)",
+                "2023 (Bank)": null,
+                "2024 (Group)": null,
+                "2023 (Group)": null
+              },
+              {
+                "label": "Purchase of property, plant & equipment",
+                "2024 (Bank)": "(758,921)",
+                "2023 (Bank)": "(98,236)",
+                "2024 (Group)": "(863,584)",
+                "2023 (Group)": "(142,610)"
+              },
+              {
+                "label": "Purchase of intangible assets",
+                "2024 (Bank)": "(686,169)",
+                "2023 (Bank)": "(30,990)",
+                "2024 (Group)": "(686,845)",
+                "2023 (Group)": "(35,530)"
+              },
+              {
+                "label": "Proceeds from sale of property, plant & equipment",
+                "2024 (Bank)": "1,216",
+                "2023 (Bank)": "847",
+                "2024 (Group)": "4,988",
+                "2023 (Group)": "2.197"
+              },
+              {
+                "label": "Net cash from/(used in) investing activities",
+                "2024 (Bank)": "5,452,741",
+                "2023 (Bank)": "(14,454,768)",
+                "2024 (Group)": "7,145,530",
+                "2023 (Group)": "(16,493,117)"
+              }
+            ]
           },
           {
-            "label": "Interest payments",
-            "2024 (Bank)": "(10,003,842)",
-            "2023 (Bank)": "(13,990,350)",
-            "2024 (Group)": "(11,967,467)",
-            "2023 (Group)": "(14,384,929)"
+            "table_name": "Cash Flow from Financing Activities",
+            "columns": [
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "label": "Increase/(decrease) in borrowings",
+                "2024 (Bank)": "2,351,543",
+                "2023 (Bank)": "558,269",
+                "2024 (Group)": "2,756,970",
+                "2023 (Group)": "228,867"
+              },
+              {
+                "label": "Proceeds from shares",
+                "2024 (Bank)": null,
+                "2023 (Bank)": null,
+                "2024 (Group)": "25,576",
+                "2023 (Group)": "55,000"
+              },
+              {
+                "label": "Net cash from/(used in) financing activities",
+                "2024 (Bank)": "2,351,543",
+                "2023 (Bank)": "558,269",
+                "2024 (Group)": "2,782,546",
+                "2023 (Group)": "283.867"
+              }
+            ]
           },
           {
-            "label": "Receipts from other operating activities",
-            "2024 (Bank)": "1,039,233",
-            "2023 (Bank)": "653,131",
-            "2024 (Group)": "1,156,194",
-            "2023 (Group)": "749,195"
+            "table_name": "Cash and cash equivalents",
+            "columns": [
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "label": "Net increase/(decrease) in cash and cash equivalents",
+                "2024 (Bank)": "(4,543,329)",
+                "2023 (Bank)": "1,960,844",
+                "2024 (Group)": "(4,246,295)",
+                "2023 (Group)": "1,857,663"
+              },
+              {
+                "label": "Cash and cash equivalents at beginning of the year",
+                "2024 (Bank)": "9,767,999",
+                "2023 (Bank)": "7,807,155",
+                "2024 (Group)": "9,849,960",
+                "2023 (Group)": "7,992,297"
+              },
+              {
+                "label": "Cash and cash equivalents at end of the year",
+                "2024 (Bank)": "5,224,670",
+                "2023 (Bank)": "9,767,999",
+                "2024 (Group)": "5,603,665",
+                "2023 (Group)": "9,849,960"
+              }
+            ]
           },
           {
-            "label": "Payments on other operating activities",
-            "2024 (Bank)": "(5,499,366)",
-            "2023 (Bank)": "(5,210,254)",
-            "2024 (Group)": "(6,374,705)",
-            "2023 (Group)": "(5,990,353)"
-          },
-          {
-            "label": "Operating profit before changes in operating assets & liabilities",
-            "2024 (Bank)": "(243,532)",
-            "2023 (Bank)": "2,368,966",
-            "2024 (Group)": "(734,467)",
-            "2023 (Group)": "3,596,434"
-          },
-          {
-            "label": "Balances with Central Bank of Sri Lanka",
-            "2024 (Bank)": "109,280",
-            "2023 (Bank)": "1,685,372",
-            "2024 (Group)": "109,280",
-            "2023 (Group)": "1,685,372"
-          },
-          {
-            "label": "Financial assets at amortised cost - loans and advances to customers",
-            "2024 (Bank)": "(18,458,049)",
-            "2023 (Bank)": "3,796,832",
-            "2024 (Group)": "(19,988,019)",
-            "2023 (Group)": "4,644,798"
-          },
-          {
-            "label": "Others",
-            "2024 (Bank)": "830,953",
-            "2023 (Bank)": "(110,119)",
-            "2024 (Group)": "816,501",
-            "2023 (Group)": "(116,507)"
-          },
-          {
-            "label": "Due to Banks",
-            "2024 (Bank)": "2,079,883",
-            "2023 (Bank)": "249,778",
-            "2024 (Group)": "2,079,883",
-            "2023 (Group)": "249,778"
-          },
-          {
-            "label": "Due to customers",
-            "2024 (Bank)": "16,403,496",
-            "2023 (Bank)": "(4,386,671)",
-            "2024 (Group)": "16,571,273",
-            "2023 (Group)": "(4,340,973)"
-          },
-          {
-            "label": "Repurchase agreements",
-            "2024 (Bank)": "(12,163,695)",
-            "2023 (Bank)": "12,836,803",
-            "2024 (Group)": "(12,163,695)",
-            "2023 (Group)": "12,936,866"
-          },
-          {
-            "label": "Others",
-            "2024 (Bank)": "(241,691)",
-            "2023 (Bank)": "157,460",
-            "2024 (Group)": "(194,447)",
-            "2023 (Group)": "161,196"
-          },
-          {
-            "label": "Net cash from/(used in) operating activities before income tax",
-            "2024 (Bank)": "(11,683,355)",
-            "2023 (Bank)": "16,598,421",
-            "2024 (Group)": "(13,503,691)",
-            "2023 (Group)": "18,816,964"
-          },
-          {
-            "label": "Retirement benefit obligation paid",
-            "2024 (Bank)": "(108,129)",
-            "2023 (Bank)": "(55,417)",
-            "2024 (Group)": "(111,192)",
-            "2023 (Group)": "(62,897)"
-          },
-          {
-            "label": "Income tax paid",
-            "2024 (Bank)": "(556,129)",
-            "2023 (Bank)": "(685,661)",
-            "2024 (Group)": "(559,488)",
-            "2023 (Group)": "(687,153)"
-          },
-          {
-            "label": "Net cash from/(used in) operating activities",
-            "2024 (Bank)": "(12,347,613)",
-            "2023 (Bank)": "15,857,343",
-            "2024 (Group)": "(14,174,371)",
-            "2023 (Group)": "18,066,914"
-          },
-          {
-            "label": "Dividends received",
-            "2024 (Bank)": "1,536",
-            "2023 (Bank)": "1,019",
-            "2024 (Group)": "2,133",
-            "2023 (Group)": "1,725"
-          },
-          {
-            "label": "Financial assets at fair value through profit or loss",
-            "2024 (Bank)": "1,641,200",
-            "2023 (Bank)": "(4,769,819)",
-            "2024 (Group)": "1,774,930",
-            "2023 (Group)": "(4,305,399)"
-          },
-          {
-            "label": "Financial assets at fair value through other comprehensive income",
-            "2024 (Bank)": "(2,500,335)",
-            "2023 (Bank)": "(14,863,250)",
-            "2024 (Group)": "(2,509,990)",
-            "2023 (Group)": "(14,863,375)"
-          },
-          {
-            "label": "Financial assets at amortised cost - debt and other instruments",
-            "2024 (Bank)": "7,982,917",
-            "2023 (Bank)": "5,305,661",
-            "2024 (Group)": "9,423,898",
-            "2023 (Group)": "2,849,875"
-          },
-          {
-            "label": "Purchase of property, plant & equipment",
-            "2024 (Bank)": "(758,921)",
-            "2023 (Bank)": "(98,236)",
-            "2024 (Group)": "(863,584)",
-            "2023 (Group)": "(142,610)"
-          },
-          {
-            "label": "Purchase of intangible assets",
-            "2024 (Bank)": "(686,169)",
-            "2023 (Bank)": "(30,990)",
-            "2024 (Group)": "(686,845)",
-            "2023 (Group)": "(35,530)"
-          },
-          {
-            "label": "Proceeds from sale of property, plant & equipment",
-            "2024 (Bank)": "1,216",
-            "2023 (Bank)": "847",
-            "2024 (Group)": "4,988",
-            "2023 (Group)": "2.197"
-          },
-          {
-            "label": "Net cash from/(used in) investing activities",
-            "2024 (Bank)": "5,452,741",
-            "2023 (Bank)": "(14,454,768)",
-            "2024 (Group)": "7,145,530",
-            "2023 (Group)": "(16,493,117)"
-          },
-          {
-            "label": "Increase/(decrease) in borrowings",
-            "2024 (Bank)": "2,351,543",
-            "2023 (Bank)": "558,269",
-            "2024 (Group)": "2,756,970",
-            "2023 (Group)": "228,867"
-          },
-          {
-            "label": "Proceeds from shares",
-            "2024 (Group)": "25,576",
-            "2023 (Group)": "55,000"
-          },
-          {
-            "label": "Net cash from/(used in) financing activities",
-            "2024 (Bank)": "2,351,543",
-            "2023 (Bank)": "558,269",
-            "2024 (Group)": "2,782,546",
-            "2023 (Group)": "283.867"
-          },
-          {
-            "label": "Net increase/(decrease) in cash and cash equivalents",
-            "2024 (Bank)": "(4,543,329)",
-            "2023 (Bank)": "1,960,844",
-            "2024 (Group)": "(4,246,295)",
-            "2023 (Group)": "1,857,663"
-          },
-          {
-            "label": "Cash and cash equivalents at beginning of the year",
-            "2024 (Bank)": "9,767,999",
-            "2023 (Bank)": "7,807,155",
-            "2024 (Group)": "9,849,960",
-            "2023 (Group)": "7,992,297"
-          },
-          {
-            "label": "Cash and cash equivalents at end of the year",
-            "2024 (Bank)": "5,224,670",
-            "2023 (Bank)": "9,767,999",
-            "2024 (Group)": "5,603,665",
-            "2023 (Group)": "9,849,960"
-          },
-          {
-            "label": "Cash in hand and at Banks",
-            "2024 (Bank)": "3,736,158",
-            "2023 (Bank)": "3,181,546",
-            "2024 (Group)": "4,333,380",
-            "2023 (Group)": "3,329,804"
-          },
-          {
-            "label": "Placements with Banks",
-            "2024 (Bank)": "1,134,133",
-            "2023 (Bank)": "3,618,819",
-            "2024 (Group)": "1,135,072",
-            "2023 (Group)": "3,618,819"
-          },
-          {
-            "label": "Due to Banks - unfavourable balances with Banks",
-            "2024 (Bank)": "(208,091)",
-            "2023 (Bank)": "(22,019)",
-            "2024 (Group)": "(427,257)",
-            "2023 (Group)": "(88,316)"
-          },
-          {
-            "label": "Reverse repurchase agreements",
-            "2024 (Bank)": "562,470",
-            "2023 (Bank)": "2,989,653",
-            "2024 (Group)": "562,470",
-            "2023 (Group)": "2,989,653"
-          },
-          {
-            "label": "Total cash and cash equivalents at end of the year",
-            "2024 (Bank)": "5,224,670",
-            "2023 (Bank)": "9,767,999",
-            "2024 (Group)": "5,603,665",
-            "2023 (Group)": "9,849,960"
+            "table_name": "Reconciliation of cash and cash equivalents",
+            "columns": [
+              "2024 (Bank)",
+              "2023 (Bank)",
+              "2024 (Group)",
+              "2023 (Group)"
+            ],
+            "rows": [
+              {
+                "label": "Cash in hand and at Banks",
+                "2024 (Bank)": "3,736,158",
+                "2023 (Bank)": "3,181,546",
+                "2024 (Group)": "4,333,380",
+                "2023 (Group)": "3,329,804"
+              },
+              {
+                "label": "Placements with Banks",
+                "2024 (Bank)": "1,134,133",
+                "2023 (Bank)": "3,618,819",
+                "2024 (Group)": "1,135,072",
+                "2023 (Group)": "3,618,819"
+              },
+              {
+                "label": "Due to Banks - unfavourable balances with Banks",
+                "2024 (Bank)": "(208,091)",
+                "2023 (Bank)": "(22,019)",
+                "2024 (Group)": "(427,257)",
+                "2023 (Group)": "(88,316)"
+              },
+              {
+                "label": "Reverse repurchase agreements",
+                "2024 (Bank)": "562,470",
+                "2023 (Bank)": "2,989,653",
+                "2024 (Group)": "562,470",
+                "2023 (Group)": "2,989,653"
+              },
+              {
+                "label": "Total cash and cash equivalents at end of the year",
+                "2024 (Bank)": "5,224,670",
+                "2023 (Bank)": "9,767,999",
+                "2024 (Group)": "5,603,665",
+                "2023 (Group)": "9,849,960"
+              }
+            ]
           }
         ]
       },

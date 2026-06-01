@@ -12,3 +12,4 @@ opencv-python
 google-generativeai
 pdfplumber
 pdf2image
+dnspython>=2.6.1

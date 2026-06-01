@@ -1,0 +1,22 @@
+{
+  "company": "Sample PLC",
+  "currency": "LKR",
+  "financials": [
+    {
+      "year": 2024,
+      "revenue": 1000.0,
+      "gross_profit": 450.0,
+      "net_profit": 120.0
+    },
+    {
+      "year": 2023,
+      "revenue": 900.0,
+      "gross_profit": 390.0,
+      "net_profit": 100.0
+    }
+  ],
+  "ratios": {
+    "gross_margin": 0.45,
+    "net_margin": 0.12
+  }
+}

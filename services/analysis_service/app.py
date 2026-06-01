@@ -792,58 +792,131 @@ def analyze(request: AnalyzeRequest) -> dict[str, Any]:
         mark_running(redis, request.report_id)
 
         import json
+        import logging
         import os
+        import re
         from pathlib import Path
-        
-        # Data Retrieval Layer Swap: read from normalize.json as primary, fallback to MongoDB
-        normalize_path = Path("normalize.json")
-        temp_docs = []
-        if normalize_path.exists():
-            with open(normalize_path, "r", encoding="utf-8") as f:
-                raw_data = json.load(f)
-                
-            if not isinstance(raw_data, list):
-                raw_data = [raw_data]
-                
-            for item in raw_data:
-                # Mapping layer: Handles variations in field names from the JSON
-                # Default validation: Convert missing/null numeric values to 0.0 or None as needed
-                mapped_doc = {
-                    "year": item.get("year", item.get("Year")),
-                    "balance_sheet": {
-                        "total_assets": item.get("total_assets", item.get("Total Assets", item.get("totalAssets"))),
-                        "total_liabilities": item.get("total_liabilities", item.get("Total Liabilities", item.get("totalLiabilities"))),
-                        "total_equity": item.get("total_equity", item.get("Total Equity", item.get("totalEquity"))),
-                        "borrowings": item.get("borrowings", item.get("Borrowings", item.get("borrowings"))),
-                        "cash_and_equivalents": item.get("cash_and_equivalents", item.get("Cash and Equivalents", item.get("cashAndEquivalents")))
-                    },
-                    "income_statement": {
-                        "revenue_or_interest_income": item.get("revenue_or_interest_income", item.get("Revenue", item.get("revenue"))),
-                        "net_profit": item.get("net_profit", item.get("Net Profit", item.get("netProfit"))),
-                        "operating_expenses": item.get("operating_expenses", item.get("Operating Expenses", item.get("operatingExpenses"))),
-                        "operating_profit": item.get("operating_profit", item.get("Operating Profit", item.get("operatingProfit")))
-                    },
-                    "cashflow_statement": {
-                        "net_cash_change": item.get("net_cash_change", item.get("Net Cash Change", item.get("netCashChange"))),
-                        "investing_cash_flow": item.get("investing_cash_flow", item.get("Investing Cash Flow", item.get("investingCashFlow")))
-                    },
-                    "source_file": "normalize.json",
-                    "extraction_confidence": 1.0,
-                    "metrics_extracted_count": 0
-                }
-                
-                # Validation: None/missing check. For analysis, typically None is preserved, but we ensure structure.
-                for section in ["balance_sheet", "income_statement", "cashflow_statement"]:
-                    for k, v in mapped_doc[section].items():
-                        if v is not None:
-                            try:
-                                mapped_doc[section][k] = float(v)
-                            except (ValueError, TypeError):
-                                mapped_doc[section][k] = None
 
-                temp_docs.append(mapped_doc)
-        else:
-            temp_docs = fetch_temporary_financial_statements(request.report_id)
+        _analyze_logger = logging.getLogger("analysis_service.analyze")
+
+        # ── Data Retrieval Layer ──
+        # Priority:
+        #   1. MongoDB "companies" collection (clean LLM-extracted financials)
+        #   2. fetch_temporary_financial_statements (Redis/Mongo temp docs)
+        #   3. normalize.json (local fallback file)
+
+        temp_docs = []
+        data_source = "none"
+
+        # --- Attempt 1: MongoDB companies collection ---
+        try:
+            from platform_core.mongo_client import get_mongo_db
+
+            meta = get_json(redis, f"report:{request.report_id}:meta", default={})
+            company_name_raw = meta.get("company_name") or meta.get("companyName") or ""
+
+            if company_name_raw:
+                # Slugify: "Hatton National Bank PLC" -> "hatton-national-bank-plc"
+                slug = re.sub(r"[^a-z0-9]+", "-", company_name_raw.lower()).strip("-")
+                db = get_mongo_db()
+                company_doc = db["companies"].find_one({"slug": slug})
+
+                if not company_doc:
+                    # Try a case-insensitive name match as fallback
+                    company_doc = db["companies"].find_one(
+                        {"name": {"$regex": f"^{re.escape(company_name_raw)}$", "$options": "i"}}
+                    )
+
+                if company_doc and isinstance(company_doc.get("financials"), dict):
+                    _analyze_logger.info("Found company '%s' in MongoDB companies collection", company_name_raw)
+                    financials = company_doc["financials"]
+
+                    for year_key, year_data in financials.items():
+                        if not isinstance(year_data, dict):
+                            continue
+                        mapped_doc = {
+                            "year": year_key,
+                            "balance_sheet": year_data.get("balance_sheet") if isinstance(year_data.get("balance_sheet"), dict) else {},
+                            "income_statement": year_data.get("income_statement") if isinstance(year_data.get("income_statement"), dict) else {},
+                            "cashflow_statement": year_data.get("cashflow_statement") if isinstance(year_data.get("cashflow_statement"), dict) else {},
+                            "equity_statement": year_data.get("equity_statement") if isinstance(year_data.get("equity_statement"), dict) else {},
+                            "currency": year_data.get("currency", company_doc.get("currency", "LKR")),
+                            "unit_multiplier": year_data.get("unit_multiplier"),
+                            "unit_detected": year_data.get("unit_detected"),
+                            "source_file": f"mongodb:companies:{slug}",
+                            "extraction_confidence": float(year_data.get("extraction_confidence", 1.0) or 1.0),
+                            "metrics_extracted_count": int(year_data.get("metrics_extracted_count", 0) or 0),
+                        }
+                        temp_docs.append(mapped_doc)
+
+                    if temp_docs:
+                        data_source = "mongodb_companies"
+                        _analyze_logger.info("Loaded %d year(s) from MongoDB companies collection for '%s'", len(temp_docs), company_name_raw)
+                else:
+                    _analyze_logger.info("Company '%s' not found in MongoDB companies collection, trying fallbacks", company_name_raw)
+        except Exception as exc:
+            _analyze_logger.warning("MongoDB companies lookup failed: %s", exc)
+
+        # --- Attempt 2: fetch_temporary_financial_statements (Redis/Atlas temp docs) ---
+        if not temp_docs:
+            try:
+                temp_docs = fetch_temporary_financial_statements(request.report_id)
+                if temp_docs:
+                    data_source = "temp_financial_statements"
+                    _analyze_logger.info("Loaded %d temp doc(s) via fetch_temporary_financial_statements", len(temp_docs))
+            except Exception as exc:
+                _analyze_logger.warning("fetch_temporary_financial_statements failed: %s", exc)
+
+        # --- Attempt 3: normalize.json local file fallback ---
+        if not temp_docs:
+            normalize_path = Path("normalize.json")
+            if normalize_path.exists():
+                with open(normalize_path, "r", encoding="utf-8") as f:
+                    raw_data = json.load(f)
+
+                if not isinstance(raw_data, list):
+                    raw_data = [raw_data]
+
+                for item in raw_data:
+                    mapped_doc = {
+                        "year": item.get("year", item.get("Year")),
+                        "balance_sheet": {
+                            "total_assets": item.get("total_assets", item.get("Total Assets", item.get("totalAssets"))),
+                            "total_liabilities": item.get("total_liabilities", item.get("Total Liabilities", item.get("totalLiabilities"))),
+                            "total_equity": item.get("total_equity", item.get("Total Equity", item.get("totalEquity"))),
+                            "borrowings": item.get("borrowings", item.get("Borrowings", item.get("borrowings"))),
+                            "cash_and_equivalents": item.get("cash_and_equivalents", item.get("Cash and Equivalents", item.get("cashAndEquivalents")))
+                        },
+                        "income_statement": {
+                            "revenue_or_interest_income": item.get("revenue_or_interest_income", item.get("Revenue", item.get("revenue"))),
+                            "net_profit": item.get("net_profit", item.get("Net Profit", item.get("netProfit"))),
+                            "operating_expenses": item.get("operating_expenses", item.get("Operating Expenses", item.get("operatingExpenses"))),
+                            "operating_profit": item.get("operating_profit", item.get("Operating Profit", item.get("operatingProfit")))
+                        },
+                        "cashflow_statement": {
+                            "net_cash_change": item.get("net_cash_change", item.get("Net Cash Change", item.get("netCashChange"))),
+                            "investing_cash_flow": item.get("investing_cash_flow", item.get("Investing Cash Flow", item.get("investingCashFlow")))
+                        },
+                        "source_file": "normalize.json",
+                        "extraction_confidence": 1.0,
+                        "metrics_extracted_count": 0
+                    }
+
+                    for section in ["balance_sheet", "income_statement", "cashflow_statement"]:
+                        for k, v in mapped_doc[section].items():
+                            if v is not None:
+                                try:
+                                    mapped_doc[section][k] = float(v)
+                                except (ValueError, TypeError):
+                                    mapped_doc[section][k] = None
+
+                    temp_docs.append(mapped_doc)
+
+                if temp_docs:
+                    data_source = "normalize_json"
+                    _analyze_logger.info("Loaded %d doc(s) from normalize.json", len(temp_docs))
+
+        _analyze_logger.info("Data source for report_id=%s: %s (%d docs)", request.report_id, data_source, len(temp_docs))
         merged = _merge_temp_docs(temp_docs)
         if not merged["years"]:
             extraction_failure = get_json(redis, f"report:{request.report_id}:extraction_failure", default={})
