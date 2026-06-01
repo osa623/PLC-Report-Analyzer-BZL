@@ -130,7 +130,8 @@ function DashboardApp() {
     const current = fallbackIndex[wfState] ?? 0;
     return PIPELINE_STAGE_SEQUENCE.map((stage, idx) => {
       let status = 'pending';
-      if (wfState === 'FAILED' && idx >= Math.max(0, current)) status = 'failed';
+      const wfStr = String(wfState || '');
+      if ((wfStr === 'FAILED' || wfStr.includes('FAILED') || wfStr === 'EXTRACTION_INCOMPLETE' || wfStr === 'EXTRACTION_FAILED') && idx >= Math.max(0, current)) status = 'failed';
       else if (current > idx) status = 'completed';
       else if (current === idx) status = 'running';
       if (wfState === 'LOW_CONFIDENCE' && (stage === 'ANALYTICS' || stage === 'REPORT')) status = 'skipped';
@@ -166,8 +167,9 @@ function DashboardApp() {
     if (hasAnalytics[key]) return 'completed';
     const stage = SERVICE_STAGE_MAP[key];
     if (stage && stageStatusMap[stage]) return stageStatusMap[stage];
-    if (details.workflow_state === 'COMPLETED') return 'completed';
-    if (details.workflow_state === 'FAILED') return 'failed';
+    const wf = String(details.workflow_state || '');
+    if (wf === 'COMPLETED') return 'completed';
+    if (wf === 'FAILED' || wf.includes('FAILED') || wf === 'EXTRACTION_INCOMPLETE' || wf === 'EXTRACTION_FAILED') return 'failed';
     return 'pending';
   };
 

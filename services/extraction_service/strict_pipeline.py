@@ -102,12 +102,14 @@ def _currency_hint(payload: dict[str, Any]) -> str:
     return ""
 
 
-def _scale_factor(raw_value: float, currency_hint: str) -> float:
+def _detect_multiplier(currency_hint: str) -> float:
     hint = currency_hint.lower()
-    if "000" in hint or "thousand" in hint or "rs 000" in hint:
-        return 1000.0
-    if abs(raw_value) >= 100_000_000:
+    if "bn" in hint or "billion" in hint:
+        return 1_000_000_000.0
+    elif "mn" in hint or "million" in hint or "mln" in hint:
         return 1_000_000.0
+    elif "000" in hint or "thousand" in hint or "k" in hint:
+        return 1000.0
     return 1.0
 
 
@@ -115,8 +117,8 @@ def _normalize_value(value: Any, currency_hint: str) -> float | None:
     number = _parse_number(value)
     if number is None:
         return None
-    divisor = _scale_factor(number, currency_hint)
-    result = number / divisor
+    multiplier = _detect_multiplier(currency_hint)
+    result = number * multiplier
     # For large financial figures, round to integer to avoid ambiguous decimals
     # (e.g. 145.401 could be misread as 145,401 in some locales).
     # Keep decimals only for per-share / ratio-scale values (abs < 100).

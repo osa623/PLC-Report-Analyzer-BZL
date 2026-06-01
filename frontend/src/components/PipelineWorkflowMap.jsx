@@ -186,8 +186,10 @@ export default function PipelineWorkflowMap({ stagesData, documentStatuses, work
         map['UPLOAD'] = 'completed'; // always done at this point
         for (const s of stages) {
             const key = s.stage;
-            if (['PARSING', 'STRUCTURE', 'EXTRACTION'].includes(key)) {
-                // Map sub-stages to EXTRACTION
+            // Map extraction-related sub-stages to EXTRACTION (legacy + new names)
+            if (['PARSING', 'STRUCTURE', 'EXTRACTION',
+                 'DOCUMENT_INGESTION', 'PAGE_CLASSIFICATION', 'STATEMENT_DETECTION',
+                 'MULTI_EXTRACTOR_EXECUTION', 'CROSS_EXTRACTOR_RECONCILIATION'].includes(key)) {
                 if (!map['EXTRACTION'] || map['EXTRACTION'] === 'pending') {
                     map['EXTRACTION'] = s.status;
                 } else if (s.status === 'running') {
@@ -196,7 +198,9 @@ export default function PipelineWorkflowMap({ stagesData, documentStatuses, work
                     map['EXTRACTION'] = 'failed';
                 }
             }
-            if (['AGGREGATION', 'VALIDATION', 'ANALYTICS'].includes(key)) {
+            // Map analysis-related sub-stages to ANALYSIS (legacy + new names)
+            if (['AGGREGATION', 'VALIDATION', 'ANALYTICS',
+                 'ACCOUNTING_VALIDATION', 'COVERAGE_SCORING_GATE', 'FINANCIAL_ANALYSIS'].includes(key)) {
                 if (!map['ANALYSIS'] || map['ANALYSIS'] === 'pending') {
                     map['ANALYSIS'] = s.status;
                 } else if (s.status === 'running') {
@@ -205,15 +209,17 @@ export default function PipelineWorkflowMap({ stagesData, documentStatuses, work
                     map['ANALYSIS'] = 'completed';
                 }
             }
-            if (key === 'REPORT') {
+            // Map report stage (legacy + new name)
+            if (key === 'REPORT' || key === 'REPORT_GENERATION') {
                 map['REPORTING'] = s.status;
             }
         }
         return map;
     }, [stages]);
 
-    const isComplete = workflowState === 'COMPLETED' || workflowState === 'LOW_CONFIDENCE';
-    const isFailed = workflowState === 'FAILED';
+    const wf = String(workflowState || '');
+    const isComplete = wf === 'COMPLETED' || wf === 'LOW_CONFIDENCE';
+    const isFailed = wf === 'FAILED' || wf.includes('FAILED') || wf === 'EXTRACTION_INCOMPLETE' || wf === 'EXTRACTION_FAILED';
 
     return (
         <div className="space-y-4 fade-in">
@@ -236,6 +242,9 @@ export default function PipelineWorkflowMap({ stagesData, documentStatuses, work
                         </span>
                         {!isComplete && !isFailed && (
                             <ArrowPathIcon className="w-4 h-4 text-slate-400 animate-spin" />
+                        )}
+                        {isFailed && (
+                          <span className="text-[12px] text-red-600 ml-3">Pipeline reported failure — check stage diagnostics.</span>
                         )}
                     </div>
                 </div>
