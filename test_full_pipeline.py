@@ -21,7 +21,7 @@ load_dotenv()
 
 # Import the orchestrators from both services
 from src.pipeline.pdf_image_orchestrator import process_annual_reports
-from pipeline_bridge import run_pipeline_stages, save_pipeline_logs
+from pipeline_bridge import load_normalized_results, run_pipeline_stages, save_pipeline_logs
 
 # Configure logging
 logging.basicConfig(
@@ -69,6 +69,9 @@ def main():
 
     # 3. Run the strict Analysis + Report pipeline
     logging.info("Starting analysis and report generation phases...")
+    normalized_results_path = EXTRACTION_SERVICE_DIR / "normalized_results.json"
+    normalized_results = load_normalized_results(normalized_results_path)
+    logging.info(f"Loaded normalized dataset from: {normalized_results_path}")
     
     final_outputs = []
     
@@ -91,7 +94,9 @@ def main():
         pipeline_result = run_pipeline_stages(
             gemini_result=gemini_data,
             filename=actual_name,
-            progress_callback=progress_cb
+            progress_callback=progress_cb,
+            normalized_result=normalized_results,
+            normalized_results_path=normalized_results_path,
         )
         
         # Save individual job logs to the backend directory

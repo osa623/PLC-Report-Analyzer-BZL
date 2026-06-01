@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from .financial_mapping_layer import analyze_normalized_results, normalized_analysis_to_legacy
+
 logger = logging.getLogger(__name__)
 
 # =============================================================================
@@ -474,6 +476,18 @@ def _compute_scores(yearly_ratios, gates_all, sector_all):
 # =============================================================================
 
 def build_strict_analysis_result(extraction_dataset: dict[str, Any]) -> dict[str, Any]:
+    if isinstance(extraction_dataset.get("normalized_results"), (list, dict)):
+        normalized_analysis = analyze_normalized_results(extraction_dataset["normalized_results"])
+        return normalized_analysis_to_legacy(normalized_analysis)
+
+    if extraction_dataset.get("source") == "normalized_results.json":
+        normalized_payload = {
+            "company": extraction_dataset.get("company_name") or extraction_dataset.get("company") or "Unknown",
+            "financials": extraction_dataset.get("financials") or extraction_dataset.get("years") or {},
+        }
+        normalized_analysis = analyze_normalized_results(normalized_payload)
+        return normalized_analysis_to_legacy(normalized_analysis)
+
     years = extraction_dataset.get("years") or extraction_dataset.get("financial_graph")
     if not isinstance(years, dict) or not years:
         return {"status": "VALIDATION_FAILED", "reasons": ["No year data available"]}

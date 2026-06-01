@@ -121,6 +121,7 @@ for _lbl, _fld in _CASH_LABELS.items():
     _LABEL_MAP[_lbl] = ("cash_flow", _fld)
 
 _YEAR_RE = re.compile(r"(20\d{2})")
+_DEFAULT_NORMALIZED_RESULTS_PATH = _REPO_ROOT / "services" / "extraction_service" / "normalized_results.json"
 
 
 def _parse_number(value: Any) -> float | None:
@@ -280,10 +281,59 @@ def convert_gemini_to_strict(gemini_result: dict, filename: str = "") -> dict[st
     return build_strict_extraction_dataset([record])
 
 
+def load_normalized_results(path: str | Path | None = None) -> list[dict[str, Any]]:
+    normalized_path = Path(path) if path is not None else _DEFAULT_NORMALIZED_RESULTS_PATH
+    if not normalized_path.exists():
+        raise FileNotFoundError(f"normalized_results.json not found at {normalized_path}")
+    data = json.loads(normalized_path.read_text(encoding="utf-8"))
+    return data if isinstance(data, list) else [data]
+
+
+def convert_normalized_to_strict(normalized_results: list[dict[str, Any]], filename: str = "") -> dict[str, Any]:
+    years: dict[str, Any] = {}
+    company_name = Path(filename).stem if filename else "Unknown"
+
+    for record in normalized_results:
+        if not isinstance(record, dict):
+            continue
+        company_name = str(record.get("company") or record.get("company_name") or company_name)
+        financials = record.get("financials") if isinstance(record.get("financials"), dict) else {}
+        for year, year_payload in financials.items():
+            if not str(year).isdigit() or not isinstance(year_payload, dict):
+                continue
+            entity_payload = None
+            for entity_key in ("group", "bank", "company", "entity", "parent", "standalone"):
+                if isinstance(year_payload.get(entity_key), dict):
+                    entity_payload = year_payload[entity_key]
+                    break
+            if not isinstance(entity_payload, dict):
+                continue
+            years[str(year)] = {
+                "income_statement": entity_payload.get("income_statement", {}) if isinstance(entity_payload.get("income_statement"), dict) else {},
+                "balance_sheet": entity_payload.get("balance_sheet", {}) if isinstance(entity_payload.get("balance_sheet"), dict) else {},
+                "cash_flow": entity_payload.get("cash_flow", {}) if isinstance(entity_payload.get("cash_flow"), dict) else {},
+                "equity": entity_payload.get("equity", {}) if isinstance(entity_payload.get("equity"), dict) else {},
+                "comprehensive_income": entity_payload.get("comprehensive_income", {}) if isinstance(entity_payload.get("comprehensive_income"), dict) else {},
+                "extraction_confidence": entity_payload.get("extraction_confidence", year_payload.get("extraction_confidence", 0)),
+            }
+
+    return {
+        "company_name": company_name,
+        "company": company_name,
+        "currency": "LKR",
+        "years": years,
+        "financial_graph": years,
+        "source": "normalized_results.json",
+        "normalized_results": normalized_results,
+    }
+
+
 def run_pipeline_stages(
     gemini_result: dict,
     filename: str = "",
     progress_callback=None,
+    normalized_result: list[dict[str, Any]] | dict[str, Any] | None = None,
+    normalized_results_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """
     Run the full pipeline: convert → analyze → report.
@@ -316,7 +366,23 @@ def run_pipeline_stages(
     stages["extraction"]["status"] = "running"
     stages["extraction"]["start_time"] = datetime.now().isoformat()
 
-    strict_extraction = convert_gemini_to_strict(gemini_result, filename)
+    normalized_results = None
+    if normalized_result is not None:
+        normalized_results = normalized_result if isinstance(normalized_result, list) else [normalized_result]
+    else:
+        candidate_path = Path(normalized_results_path) if normalized_results_path is not None else _DEFAULT_NORMALIZED_RESULTS_PATH
+        if candidate_path.exists():
+            normalized_results = load_normalized_results(candidate_path)
+
+    if normalized_results is not None:
+        _log("Using normalized_results.json as authoritative downstream dataset")
+        strict_extraction = convert_normalized_to_strict(normalized_results, filename)
+        analysis_input = {"normalized_results": normalized_results}
+    else:
+        _log("WARN: normalized_results.json unavailable; using legacy strict conversion fallback")
+        strict_extraction = convert_gemini_to_strict(gemini_result, filename)
+        analysis_input = strict_extraction
+
     year_count = len(strict_extraction.get("years", {}))
     _log(f"Strict extraction built: {year_count} years detected")
 
@@ -343,7 +409,7 @@ def run_pipeline_stages(
     stages["analysis"]["start_time"] = datetime.now().isoformat()
 
     try:
-        analysis_result = build_strict_analysis_result(strict_extraction)
+        analysis_result = build_strict_analysis_result(analysis_input)
     except Exception as exc:
         _log(f"Analysis failed: {exc}")
         analysis_result = build_validation_failed_diagnostic(strict_extraction, [str(exc)])
@@ -372,6 +438,23 @@ def run_pipeline_stages(
 
     return {
         "extraction": strict_extraction,
+        "extraction_metadata": {
+            "source": strict_extraction.get("source", "legacy_extraction_conversion"),
+            "normalized_results_consumed": normalized_results is not None,
+            "normalized_record_count": len(normalized_results or []),
+        },
+        "normalized_dataset_metadata": analysis_result.get("normalized_dataset_metadata", {}),
+        "completeness_metrics": analysis_result.get("completeness_metrics", {}),
+        "sector_classification": analysis_result.get("sector_classification", {}),
+        "bank_analysis": analysis_result.get("bank_analysis", {}),
+        "group_analysis": analysis_result.get("group_analysis", {}),
+        "ratio_analysis": analysis_result.get("ratio_analysis", {}),
+        "growth_analysis": analysis_result.get("growth_analysis", {}),
+        "validation_results": analysis_result.get("validation_results", {}),
+        "confidence_scores": analysis_result.get("confidence_scores", {}),
+        "reliability_scores": analysis_result.get("reliability_scores", {}),
+        "risk_scores": analysis_result.get("risk_scores", {}),
+        "diagnostics": analysis_result.get("diagnostics", []),
         "analysis": analysis_result,
         "report": report_result,
         "stages": stages,

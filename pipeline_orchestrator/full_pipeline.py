@@ -66,6 +66,18 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
 
 
+def _normalized_results_path() -> Path:
+    return _workspace_root() / "services" / "extraction_service" / "normalized_results.json"
+
+
+def _load_normalized_results() -> list[dict[str, Any]] | None:
+    path = _normalized_results_path()
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, list) else [data]
+
+
 def _append_log(log_file: Path, message: str) -> None:
     log_file.parent.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().isoformat(timespec="seconds")
@@ -152,7 +164,9 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     )
     _append_log(log_file, "Running financial analysis")
 
-    analysis_result = build_strict_analysis_result(strict_extraction)
+    normalized_results = _load_normalized_results()
+    analysis_input = {"normalized_results": normalized_results} if normalized_results is not None else strict_extraction
+    analysis_result = build_strict_analysis_result(analysis_input)
     _write_json(log_dir / "analysis.json", analysis_result)
 
     # ── Save analysis artifacts to Redis ──
@@ -213,6 +227,23 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
         "company_name": company_name,
         "log_dir": str(log_dir),
         "extraction": strict_extraction,
+        "extraction_metadata": {
+            "normalized_results_consumed": normalized_results is not None,
+            "normalized_results_path": str(_normalized_results_path()),
+            "normalized_record_count": len(normalized_results or []),
+        },
+        "normalized_dataset_metadata": analysis_result.get("normalized_dataset_metadata", {}),
+        "completeness_metrics": analysis_result.get("completeness_metrics", {}),
+        "sector_classification": analysis_result.get("sector_classification", {}),
+        "bank_analysis": analysis_result.get("bank_analysis", {}),
+        "group_analysis": analysis_result.get("group_analysis", {}),
+        "ratio_analysis": analysis_result.get("ratio_analysis", {}),
+        "growth_analysis": analysis_result.get("growth_analysis", {}),
+        "validation_results": analysis_result.get("validation_results", {}),
+        "confidence_scores": analysis_result.get("confidence_scores", {}),
+        "reliability_scores": analysis_result.get("reliability_scores", {}),
+        "risk_scores": analysis_result.get("risk_scores", {}),
+        "diagnostics": analysis_result.get("diagnostics", []),
         "analysis": analysis_result,
         "report": report_result,
     }
