@@ -328,6 +328,7 @@ def _field_map(statement_key: str, label: str) -> str | None:
             ("ordinary shares", "shares_outstanding"),
             ("market price", "market_price"),
             ("market value", "market_price"),
+            ("financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers","Receivables")
         ]
     else:
         mapping = [
@@ -367,6 +368,7 @@ def _field_map(statement_key: str, label: str) -> str | None:
             ("financing cash flow", "financing_cash_flow"),
             ("dividends paid", "dividends_paid"),
             ("dividend paid", "dividends_paid"),
+            ("net_cash_used_in_generated_from_operating_activities","operating Cash Flow")
         ]
 
     for needle, canonical in mapping:
