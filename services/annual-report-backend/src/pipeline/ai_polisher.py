@@ -52,9 +52,9 @@ class AIPolisher:
     def _init_model(self):
         """Create a fresh Gemini model instance."""
         genai.configure(api_key=self._api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         self._request_count = 0
-        logger.info("AIPolisher: Fresh gemini-2.0-flash model initialized")
+        logger.info("AIPolisher: Fresh gemini-2.5-flash model initialized")
 
     def force_refresh(self):
         """Force a full model refresh. Call this after each batch completes."""

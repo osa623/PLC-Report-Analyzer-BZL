@@ -477,15 +477,129 @@ def _build_from_financials_format(
     }
 
 
+def _source_report_year(record: dict[str, Any]) -> str | None:
+    for key in ("source_pdf", "pdf_name", "document_name"):
+        value = record.get(key)
+        if isinstance(value, str):
+            match = re.search(r"(20\d{2})", value)
+            if match:
+                return match.group(1)
+    return None
+
+
+def _merge_strict_years(
+    target: dict[str, Any],
+    incoming: dict[str, Any],
+    source_report_year: str | None,
+) -> None:
+    target_years = target.setdefault("years", {})
+    target_graph = target.setdefault("financial_graph", target_years)
+    incoming_years = incoming.get("years") if isinstance(incoming.get("years"), dict) else {}
+    source_weights = target.setdefault("_source_weights", {})
+
+    for year, year_payload in incoming_years.items():
+        if not isinstance(year, str) or not isinstance(year_payload, dict):
+            continue
+        incoming_weight = 2 if source_report_year == year else 1
+        existing_weight = source_weights.get(year, 0)
+        if year not in target_years:
+            target_years[year] = {
+                "income_statement": {},
+                "balance_sheet": {},
+                "cash_flow": {},
+            }
+
+        for section_name in ("income_statement", "balance_sheet", "cash_flow"):
+            incoming_section = year_payload.get(section_name)
+            if not isinstance(incoming_section, dict):
+                continue
+            target_section = target_years[year].setdefault(section_name, {})
+            for field_name, value in incoming_section.items():
+                if field_name == "extraction_confidence":
+                    continue
+                current_value = target_section.get(field_name)
+                if current_value is None or incoming_weight >= existing_weight:
+                    target_section[field_name] = value
+
+        if incoming_weight >= existing_weight:
+            source_weights[year] = incoming_weight
+
+    target["financial_graph"] = target_graph
+
+
+def _build_from_financials_records(records: list[dict[str, Any]]) -> dict[str, Any]:
+    merged: dict[str, Any] = {
+        "company_name": "Unknown Company",
+        "company": "Unknown Company",
+        "currency": "LKR_millions",
+        "years": {},
+        "financial_graph": {},
+        "metadata": {
+            "unit_scale": "LKR_millions",
+            "confidence": {
+                "overall": 0.0,
+                "per_year": {},
+                "duplicate_year_merges": 0,
+            },
+        },
+        "extraction_confidence": 0,
+        "_source_weights": {},
+    }
+    company_name = None
+
+    for record in records:
+        statements = record.get("statements") if isinstance(record.get("statements"), dict) else {}
+        financials = None
+        if isinstance(statements, dict):
+            if "financials" in statements:
+                financials = statements["financials"]
+            elif any(isinstance(k, str) and re.match(r"^\d{4}$", k) for k in statements):
+                financials = statements
+        if financials is None and "financials" in record:
+            financials = record["financials"]
+        if not (isinstance(financials, dict) and any(isinstance(k, str) and re.match(r"^\d{4}$", k) for k in financials)):
+            continue
+
+        if not company_name:
+            company_name = (
+                record.get("company_name")
+                or record.get("company")
+                or record.get("pdf_name")
+                or record.get("source_pdf")
+                or record.get("document_name")
+                or (statements.get("company") if isinstance(statements, dict) else None)
+            )
+        partial = _build_from_financials_format(financials, str(company_name) if company_name else None)
+        _merge_strict_years(merged, partial, _source_report_year(record))
+
+    ordered_years = sorted(
+        (year for year in merged["years"] if isinstance(year, str) and year.isdigit()),
+        key=int,
+    )
+    merged["years"] = {year: merged["years"][year] for year in ordered_years}
+    merged["financial_graph"] = merged["years"]
+
+    confidence_by_year = {
+        year: round(min(100.0, max(0.0, 20.0 + 5.0 * _field_count(payload))), 2)
+        for year, payload in merged["years"].items()
+    }
+    for year, payload in merged["years"].items():
+        payload["extraction_confidence"] = confidence_by_year.get(year, 0.0)
+
+    normalized_company = _slugify_company_name(str(company_name) if company_name else None)
+    duplicate_merges = sum(1 for weight in merged.pop("_source_weights", {}).values() if weight > 1)
+    merged["company_name"] = normalized_company
+    merged["company"] = normalized_company
+    merged["metadata"]["confidence"] = {
+        "overall": round(sum(confidence_by_year.values()) / float(len(confidence_by_year)) if confidence_by_year else 0.0, 2),
+        "per_year": confidence_by_year,
+        "duplicate_year_merges": duplicate_merges,
+    }
+    merged["extraction_confidence"] = 100 if merged["years"] else 0
+    return merged
+
+
 def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) -> dict[str, Any]:
-
-    print("\n===== STRICT INPUT =====")
-    print(extraction_outputs[0].keys())
-
-    import json
-    print(json.dumps(extraction_outputs[0], indent=2)[:2000])
-    print("========================\n")
-
     records = [item for item in extraction_outputs if isinstance(item, dict)]
     if not records:
         return {
@@ -501,7 +615,10 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
             "extraction_confidence": 0,
         }
 
-    # Structured format detection and routing
+    # Structured normalized_results.json format detection and routing.
+    # Build from all records; each annual report usually contributes current
+    # and comparative years, so returning after the first record drops history.
+    structured_records: list[dict[str, Any]] = []
     for record in records:
         financials = None
         statements = record.get("statements")
@@ -514,14 +631,10 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
             financials = record["financials"]
             
         if isinstance(financials, dict) and any(isinstance(k, str) and re.match(r"^\d{4}$", k) for k in financials):
-            company_name = (
-                record.get("company_name")
-                or record.get("company")
-                or record.get("pdf_name")
-                or record.get("document_name")
-                or (statements.get("company") if isinstance(statements, dict) else None)
-            )
-            return _build_from_financials_format(financials, company_name)
+            structured_records.append(record)
+
+    if structured_records:
+        return _build_from_financials_records(structured_records)
 
     all_rows = _collect_all_rows(records)
     master_years = _detect_master_years(all_rows)

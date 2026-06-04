@@ -21,7 +21,8 @@ load_dotenv()
 
 # Import the orchestrators from both services
 from src.pipeline.pdf_image_orchestrator import process_annual_reports
-from pipeline_bridge import run_pipeline_stages, save_pipeline_logs
+from services.extraction_service.canonical_results import persist_normalized_results
+from pipeline_bridge import run_pipeline_for_extraction_records, save_pipeline_logs
 
 # Configure logging
 logging.basicConfig(
@@ -35,11 +36,13 @@ logging.basicConfig(
 # -------------------------------------------------------------------
 PDF_PATHS = [
 
-   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2020.pdf",
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2018.pdf",
 
-   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2022.pdf",
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2020.pdf",
 
-   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2024.pdf",
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2022.pdf",
+
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2024.pdf"
 ]
 
 def main():
@@ -69,45 +72,33 @@ def main():
         logging.error("Extraction pipeline returned empty results.")
         return
 
-    # 3. Run the strict Analysis + Report pipeline
-    logging.info("Starting analysis and report generation phases...")
-    
-    final_outputs = []
-    
-    for i, result in enumerate(extraction_results):
-        actual_name = loaded_names[i]
-        
-        # In process_annual_reports, the returned dict has {"statements": {...}}
-        gemini_data = result.get("statements", {})
-        
-        if not gemini_data:
-            logging.error(f"No statement data extracted for {actual_name}. Skipping downstream pipeline.")
-            continue
-            
-        def progress_cb(step, total, msg, details=None):
-            logging.info(f"[{actual_name}] Step {step}/{total}: {msg}")
-            
-        logging.info(f"Running full pipeline for {actual_name}...")
-        
-        # This converts the format, runs the strict analysis, and builds the report
-        pipeline_result = run_pipeline_stages(
-            gemini_result=gemini_data,
-            filename=actual_name,
-            progress_callback=progress_cb
-        )
-        
-        # Save individual job logs to the backend directory
-        job_id = f"test_{uuid.uuid4().hex[:8]}"
-        log_dir = save_pipeline_logs(job_id, pipeline_result)
-        if log_dir:
-            logging.info(f"Logs for {actual_name} saved to {log_dir}")
-        
-        final_outputs.append({
-            "pdf_name": actual_name,
-            "pipeline": pipeline_result
-        })
+    # 3. Persist canonical normalized results for the whole batch.
+    normalized_records = persist_normalized_results(extraction_results, loaded_names)
+    logging.info("Canonical normalized_results.json updated with %s reports", len(normalized_records))
 
-    # 4. Save everything to a single output JSON file
+    # 4. Run the strict Analysis + Report pipeline once for all reports.
+    logging.info("Starting combined analysis and report generation phases...")
+
+    def progress_cb(step, total, msg, details=None):
+        logging.info(f"[batch] Step {step}/{total}: {msg}")
+
+    pipeline_result = run_pipeline_for_extraction_records(
+        extraction_records=normalized_records,
+        progress_callback=progress_cb,
+    )
+
+    job_id = f"test_{uuid.uuid4().hex[:8]}"
+    log_dir = save_pipeline_logs(job_id, pipeline_result)
+    if log_dir:
+        logging.info(f"Batch logs saved to {log_dir}")
+
+    final_outputs = {
+        "pdf_names": loaded_names,
+        "normalized_report_count": len(normalized_records),
+        "pipeline": pipeline_result,
+    }
+
+    # 5. Save everything to a single output JSON file
     output_file = Path("full_pipeline_test_results.json")
     output_file.write_text(json.dumps(final_outputs, indent=2), encoding="utf-8")
     logging.info(f"✅ Full pipeline test completed! Results saved to: {output_file.absolute()}")

@@ -280,17 +280,11 @@ def convert_gemini_to_strict(gemini_result: dict, filename: str = "") -> dict[st
     return build_strict_extraction_dataset([record])
 
 
-def run_pipeline_stages(
-    gemini_result: dict,
-    filename: str = "",
+def _run_strict_pipeline(
+    strict_extraction: dict[str, Any],
     progress_callback=None,
 ) -> dict[str, Any]:
-    """
-    Run the full pipeline: convert → analyze → report.
-
-    Returns a dict with {extraction, analysis, report, stages, logs}.
-    If strict pipeline is unavailable, returns partial results.
-    """
+    """Run analysis and reporting for an already-built strict dataset."""
     stages: dict[str, dict[str, Any]] = {
         "extraction": {"status": "pending"},
         "analysis": {"status": "pending"},
@@ -310,18 +304,11 @@ def run_pipeline_stages(
                 "status": status,
             })
 
-    # Stage 1: Convert extraction
-    _emit(1, 5, "Converting extraction to structured format...", "extraction", "running")
-    _log("Converting Gemini output to strict extraction dataset")
-    stages["extraction"]["status"] = "running"
-    stages["extraction"]["start_time"] = datetime.now().isoformat()
-
-    strict_extraction = convert_gemini_to_strict(gemini_result, filename)
     year_count = len(strict_extraction.get("years", {}))
-    _log(f"Strict extraction built: {year_count} years detected")
-
     stages["extraction"]["status"] = "completed"
+    stages["extraction"]["start_time"] = datetime.now().isoformat()
     stages["extraction"]["end_time"] = datetime.now().isoformat()
+    _log(f"Strict extraction built: {year_count} years detected")
     _emit(2, 5, f"Extraction structured ({year_count} years). Running analysis...", "extraction", "completed")
 
     if not PIPELINE_AVAILABLE:
@@ -377,6 +364,47 @@ def run_pipeline_stages(
         "stages": stages,
         "logs": logs,
     }
+
+
+def run_pipeline_for_extraction_records(
+    extraction_records: list[dict[str, Any]],
+    progress_callback=None,
+) -> dict[str, Any]:
+    """
+    Run the full strict pipeline for a batch of normalized/extracted records.
+
+    Use this for multi-report runs so all years are analyzed together.
+    """
+    if progress_callback:
+        progress_callback(1, 5, "Converting extraction batch to structured format...", {
+            "pipeline_stage": "extraction",
+            "status": "running",
+        })
+    strict_extraction = build_strict_extraction_dataset(extraction_records)
+    return _run_strict_pipeline(strict_extraction, progress_callback)
+
+
+def run_pipeline_stages(
+    gemini_result: dict,
+    filename: str = "",
+    progress_callback=None,
+) -> dict[str, Any]:
+    """
+    Run the full pipeline: convert → analyze → report.
+
+    Returns a dict with {extraction, analysis, report, stages, logs}.
+    If strict pipeline is unavailable, returns partial results.
+    """
+    # Stage 1: Convert extraction
+    if progress_callback:
+        progress_callback(1, 5, "Converting extraction to structured format...", {
+            "pipeline_stage": "extraction",
+            "status": "running",
+        })
+    logger.info("Converting Gemini output to strict extraction dataset")
+
+    strict_extraction = convert_gemini_to_strict(gemini_result, filename)
+    return _run_strict_pipeline(strict_extraction, progress_callback)
 
 
 def save_pipeline_logs(job_id: str, pipeline_result: dict) -> str | None:

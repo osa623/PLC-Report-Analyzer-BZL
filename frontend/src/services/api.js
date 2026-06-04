@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Use environment variable or default to localhost
+// Primary app traffic goes through the Node gateway. The annual API is kept
+// only for the older section-by-section extraction tools on Home.jsx.
 const API_BASE_URL = import.meta.env.VITE_ANNUAL_API_URL || '/annual-api/api';
-const GATEWAY_BASE_URL = import.meta.env.VITE_GATEWAY_URL || '/api';
+const GATEWAY_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_GATEWAY_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -106,11 +107,14 @@ export const pdfService = {
     return response;
   },
 
-  runFullIntelligence: async (files) => {
+  runFullIntelligence: async (files, metadata = {}) => {
     const formData = new FormData();
-    (files || []).forEach((file) => formData.append('pdf_files', file));
+    (files || []).forEach((file) => formData.append('report', file));
+    formData.append('symbol', metadata.symbol || 'UNKNOWN');
+    formData.append('name', metadata.name || 'Unknown Company');
+    formData.append('sector', metadata.sector || 'Diversified');
 
-    const response = await gatewayApi.post('/intelligence/full-intelligence', formData, {
+    const response = await gatewayApi.post('/reports', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 360000,
     });
@@ -180,10 +184,13 @@ export const pdfService = {
    * @param {File[]} files - Array of PDF files to process (max 5)
    * @returns {{ report_id, workflow_state, message }}
    */
-  runFullPipeline: async (files) => {
+  runFullPipeline: async (files, metadata = {}) => {
     const formData = new FormData();
     (files || []).forEach((file) => formData.append('report', file));
-    const response = await gatewayApi.post('/intelligence/reports', formData, {
+    formData.append('symbol', metadata.symbol || 'UNKNOWN');
+    formData.append('name', metadata.name || 'Unknown Company');
+    formData.append('sector', metadata.sector || 'Diversified');
+    const response = await gatewayApi.post('/reports', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 600000,
     });
@@ -196,7 +203,7 @@ export const pdfService = {
    * @returns {{ report_id, workflow_state, stages, extraction_substages }}
    */
   getPipelineStages: async (reportId) => {
-    const response = await gatewayApi.get(`/intelligence/pipeline/${reportId}/stages`, {
+    const response = await gatewayApi.get(`/pipeline/${reportId}/stages`, {
       timeout: 30000,
     });
     const data = response.data;
@@ -231,27 +238,13 @@ export const pdfService = {
     return normalize(data);
   },
 
-  // Debug helper: log normalized pipeline stages in dev
-  // Note: this decorates getPipelineStages only in dev builds
-  ...(import.meta.env.DEV ? {
-    _debug_wrap_getPipelineStages: (async function () {
-      const orig = pdfService.getPipelineStages;
-      pdfService.getPipelineStages = async function (reportId) {
-        const res = await orig.call(this, reportId);
-        try { console.debug('getPipelineStages normalized ->', res); } catch (_) {}
-        return res;
-      };
-      return true;
-    })()
-  } : {}),
-
   /**
    * Get full report data.
    * @param {string} reportId
    * @returns {object} Full report payload
    */
   getReport: async (reportId) => {
-    const response = await gatewayApi.get(`/intelligence/reports/${reportId}`, {
+    const response = await gatewayApi.get(`/reports/${reportId}`, {
       timeout: 60000,
     });
     return response.data;

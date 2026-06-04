@@ -44,7 +44,7 @@ except ModuleNotFoundError:
     genai = None
 
 GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
 
 if genai is None:
     logger.error("google-generativeai is not installed")

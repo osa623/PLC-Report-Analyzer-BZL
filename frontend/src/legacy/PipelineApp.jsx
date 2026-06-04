@@ -158,6 +158,9 @@ export default function PipelineApp() {
           setStagesData(stages);
 
           const wf = stages.workflow_state;
+          const wfStr = String(wf || '');
+          const wfIsComplete = wfStr === 'COMPLETED' || wfStr === 'LOW_CONFIDENCE';
+          const wfIsFailed = wfStr === 'FAILED' || wfStr.includes('FAILED') || wfStr === 'EXTRACTION_INCOMPLETE' || wfStr === 'EXTRACTION_FAILED';
           let validationPayloadLoaded = validatedLoadedRef.current;
           let errorsPayloadLoaded = errorsLoadedRef.current;
           let analyticsPayloadLoaded = analyticsLoadedRef.current;
@@ -169,7 +172,7 @@ export default function PipelineApp() {
 
           const validationDone = stages.stages?.some(
             (s) => (s.stage === 'VALIDATION' || s.stage === 'ACCOUNTING_VALIDATION') && s.status === 'completed'
-          );
+          ) || wfIsComplete;
           let shouldRefreshCurrency = false;
           if (validationDone && !validatedLoadedRef.current) {
             try {
@@ -185,6 +188,9 @@ export default function PipelineApp() {
               }
             } catch (_) {}
 
+          }
+
+          if ((validationDone || wfIsFailed) && !errorsLoadedRef.current) {
             try {
               const ed = await fetchErrors(id);
               setErrorsData(ed);
@@ -197,7 +203,7 @@ export default function PipelineApp() {
 
           const analyticsDone = stages.stages?.some(
             (s) => (s.stage === 'ANALYTICS' || s.stage === 'FINANCIAL_ANALYSIS') && s.status === 'completed'
-          );
+          ) || wfIsComplete;
           if (analyticsDone && !analyticsLoadedRef.current) {
             try {
               const ad = await fetchAnalytics(id);
@@ -229,8 +235,6 @@ export default function PipelineApp() {
             errorsPayloadLoaded &&
             analyticsPayloadLoaded;
 
-          const wfStr = String(wf || '');
-          const wfIsFailed = wfStr === 'FAILED' || wfStr.includes('FAILED') || wfStr === 'EXTRACTION_INCOMPLETE' || wfStr === 'EXTRACTION_FAILED';
           if (wfIsFailed || canStopCompleted || canStopLowConfidence) {
             clearInterval(pollRef.current);
             pollRef.current = null;

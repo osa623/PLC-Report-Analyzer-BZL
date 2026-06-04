@@ -336,11 +336,19 @@ const Home = () => {
             .replace(/^-|-$/g, '') || 'unknown';
     };
 
+    const selectedFiles = Array.isArray(file) ? file : (file instanceof File ? [file] : []);
+    const selectedFileCount = selectedFiles.length || Number(file?.file_count || 0);
+    const selectedFileName = selectedFileCount > 1 ? `${selectedFileCount} annual reports` : (file?.name || 'Selected report');
+    const selectedFileSize = selectedFiles.length > 0
+        ? selectedFiles.reduce((total, item) => total + (item?.size || 0), 0)
+        : Number(file?.size || 0);
+    const selectedFileSizeMb = selectedFileSize > 0 ? (selectedFileSize / 1024 / 1024).toFixed(1) : null;
+
     useEffect(() => {
         const hasRes = EXTRACTION_SECTIONS.some(s => sectionStates[s.key]?.data);
         if (hasRes) {
             const firstSec = Object.values(sectionStates).find(s => s?.data);
-            const companyName = firstSec?.data?.company_name || file?.name?.replace(/\.pdf$/i, '') || 'Unknown';
+            const companyName = firstSec?.data?.company_name || selectedFiles[0]?.name?.replace(/\.pdf$/i, '') || file?.name?.replace(/\.pdf$/i, '') || 'Unknown';
             const companyId = slugifyCompany(companyName);
             
             const loadMongoData = async () => {
@@ -502,23 +510,36 @@ const Home = () => {
     const onDragLeave = useCallback((e) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); }, []);
     const onDrop = useCallback((e) => {
         e.preventDefault(); e.stopPropagation(); setDragActive(false);
-        const f = e.dataTransfer.files?.[0];
-        f?.type === 'application/pdf' ? handleFileSelected(f) : setError('Please upload a PDF file.');
+        const dropped = Array.from(e.dataTransfer.files || [])
+            .filter((f) => f.type === 'application/pdf' || f.name?.toLowerCase().endsWith('.pdf'))
+            .slice(0, 5);
+        dropped.length > 0 ? handleFileSelected(dropped) : setError('Please upload PDF files.');
     }, []);
-    const onFileInput = (e) => { const f = e.target.files?.[0]; if (f) handleFileSelected(f); };
+    const onFileInput = (e) => {
+        const picked = Array.from(e.target.files || [])
+            .filter((f) => f.type === 'application/pdf' || f.name?.toLowerCase().endsWith('.pdf'))
+            .slice(0, 5);
+        if (picked.length > 0) handleFileSelected(picked);
+    };
 
     // -- Upload -------------------------------------------------------------
-    const handleFileSelected = async (selectedFile) => {
+    const handleFileSelected = async (selectedFileInput) => {
         // Check credits before allowing upload
         if (credits <= 0) {
             setShowCreditModal(true);
             return;
         }
-        setFile(selectedFile); setError(null); setSectionStates({}); setActiveSection(null); setPdfId(null); setUploading(true);
+        const files = Array.isArray(selectedFileInput) ? selectedFileInput : [selectedFileInput];
+        const selectedFile = files[0];
+        const multiFile = files.length > 1;
+        const totalSize = files.reduce((total, item) => total + item.size, 0);
+        setFile(multiFile ? files : selectedFile); setError(null); setSectionStates({}); setActiveSection(null); setPdfId(null); setUploading(!multiFile);
         setAnalysisBundle(null);
         persistSession({
-            phase: 'upload',
-            fileMeta: { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type },
+            phase: 'extraction',
+            fileMeta: multiFile
+                ? { name: `${files.length} annual reports`, size: totalSize, type: 'application/pdf', file_count: files.length }
+                : { name: selectedFile.name, size: selectedFile.size, type: selectedFile.type },
             sectionStates: {},
             activeSection: null,
             pdfId: null,
@@ -526,26 +547,31 @@ const Home = () => {
             fullReportJobId: null,
             extractingAll: false,
         });
+        setPhase('extraction');
+
+        if (multiFile) {
+            return;
+        }
+
         try {
             const res = await pdfService.uploadPDF(selectedFile);
             setPdfId(res.pdf_id);
-            // Deduct 1 credit on successful upload
-            useCredit();
-            setPhase('extraction');
             persistSession({
                 phase: 'extraction',
                 pdfId: res.pdf_id,
             });
         } catch (err) {
-            setError(err.response?.data?.error || err.message || 'Upload failed');
-            setFile(null);
-            clearPersistedSession();
+            console.warn('Auxiliary section extractor upload failed:', err);
+            setError('Section preview service is unavailable, but you can still run the production Full Pipeline.');
         } finally { setUploading(false); }
     };
 
     // -- Extract single -----------------------------------------------------
     const handleExtractSection = async (key) => {
-        if (!pdfId) return;
+        if (!pdfId) {
+            setError('Section-by-section extraction needs the auxiliary preview service. Use Full Pipeline for production analysis.');
+            return;
+        }
         setSectionStates(p => {
             const next = { ...p, [key]: { status: 'extracting', data: null, error: null } };
             persistSession({ sectionStates: next });
@@ -579,6 +605,10 @@ const Home = () => {
         if (!file || extractingAll) return;
         if (!(file instanceof File)) {
             setError('Cannot restart extraction from restored session without the original file. Please upload the PDF again.');
+            return;
+        }
+        if (!pdfId) {
+            await handleRunFullPipeline();
             return;
         }
 
@@ -818,15 +848,15 @@ const Home = () => {
             <div className="flex items-end justify-between mb-8">
                 <div>
                     <h1 className="text-[22px] font-semibold text-slate-900 leading-heading tracking-heading">
-                        {phase === 'upload' ? 'Annual Report Extractor' : file?.name?.replace(/\.pdf$/i, '')}
+                        {phase === 'upload' ? 'Annual Report Extractor' : selectedFileName.replace(/\.pdf$/i, '')}
                     </h1>
                     <p className="text-[13px] text-slate-500 mt-0.5 tracking-refined leading-rhythm">
-                        {phase === 'upload' && 'Upload a PDF to extract structured financial data.'}
+                        {phase === 'upload' && 'Upload up to 5 annual report PDFs for pipeline analysis.'}
                         {phase === 'extraction' && doneCount > 0 && (
-                            <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; {doneCount}/{EXTRACTION_SECTIONS.length} extracted &middot; {totalRows} rows</>
+                            <>{selectedFileSizeMb || '0.0'} MB &middot; {doneCount}/{EXTRACTION_SECTIONS.length} extracted &middot; {totalRows} rows</>
                         )}
                         {phase === 'extraction' && doneCount === 0 && (
-                            <>{(file?.size / 1024 / 1024).toFixed(1)} MB &middot; Select a statement to extract.</>
+                            <>{selectedFileSizeMb || '0.0'} MB &middot; Run Full Pipeline for multi-year analysis.</>
                         )}
                     </p>
                 </div>
@@ -872,8 +902,8 @@ const Home = () => {
                         {uploading ? (
                             <div className="space-y-3 animate-fade-in">
                                 <ArrowPathIcon className="w-8 h-8 mx-auto text-indigo-500 animate-spin" />
-                                <p className="text-sm text-slate-600 font-medium tracking-refined">Uploading {file?.name}...</p>
-                                <p className="text-[12px] text-slate-400 tracking-refined">{(file?.size / 1024 / 1024).toFixed(1)} MB</p>
+                                <p className="text-sm text-slate-600 font-medium tracking-refined">Uploading {selectedFileName}...</p>
+                                <p className="text-[12px] text-slate-400 tracking-refined">{selectedFileSizeMb || '0.0'} MB</p>
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -882,14 +912,14 @@ const Home = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-slate-700 tracking-refined">
-                                        {dragActive ? 'Drop your file' : 'Drop a PDF here or click to browse'}
+                                        {dragActive ? 'Drop your files' : 'Drop PDFs here or click to browse'}
                                     </p>
-                                    <p className="text-[12px] text-slate-400 mt-1 tracking-refined">Annual reports up to 100 MB</p>
+                                    <p className="text-[12px] text-slate-400 mt-1 tracking-refined">Up to 5 annual reports, PDF only</p>
                                 </div>
                             </div>
                         )}
                     </div>
-                    <input ref={fileInputRef} type="file" accept=".pdf" onChange={onFileInput} className="hidden" />
+                    <input ref={fileInputRef} type="file" accept=".pdf" multiple onChange={onFileInput} className="hidden" />
                 </div>
             )}
 
@@ -903,7 +933,7 @@ const Home = () => {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-2 shadow-apple-sm">
                             <DocumentTextIcon className="w-4 h-4 text-slate-400" />
-                            <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px] tracking-refined">{file?.name}</span>
+                            <span className="text-[13px] text-slate-600 font-medium truncate max-w-[220px] tracking-refined">{selectedFileName}</span>
                             <span className="text-[11px] text-green-600 bg-green-50/80 border border-green-200/60 rounded-lg px-1.5 py-0.5 font-medium tracking-wide">
                                 Ready
                             </span>

@@ -227,8 +227,153 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     }
 
 
+def _process_pdf_batch(pdf_paths: list[Path], report_id: str, redis_client) -> dict[str, Any]:
+    """Process multiple annual reports as one multi-year financial dataset."""
+    pdf_names = [path.name for path in pdf_paths]
+    batch_label = ", ".join(pdf_names)
+    _append_log(Path.cwd() / "logs" / "pipeline-bootstrap.log", f"Starting batch: {batch_label}")
+
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, "running", "EXTRACTION", PIPELINE_TTL_SECONDS)
+
+    update_pipeline_stage(
+        redis_client, report_id, "EXTRACTION", "running", PIPELINE_TTL_SECONDS,
+        {"pdf_names": pdf_names, "stage": "Locating statement pages"},
+    )
+
+    raw_results = process_annual_reports([pdf_path.read_bytes() for pdf_path in pdf_paths])
+    normalized_records = persist_normalized_results(raw_results, pdf_names)
+    analysis_dataset = load_canonical_analysis_dataset()
+
+    company_name = str(analysis_dataset.get("company_name") or pdf_paths[-1].stem)
+    log_dir = _prepare_log_dir(company_name, pdf_paths[-1])
+    log_file = log_dir / "pipeline.log"
+    _append_log(log_file, f"Batch upload received: {batch_label}")
+    _append_log(log_file, "Extracting and normalizing financial statements")
+    _write_json(log_dir / "normalized_results.json", normalized_records)
+
+    save_extraction_artifacts(redis_client, report_id, analysis_dataset, PIPELINE_TTL_SECONDS)
+
+    detected_years = sorted(
+        [year for year in (analysis_dataset.get("years") or {}) if isinstance(year, str) and year.isdigit()],
+        key=int,
+    )
+    extraction_status = "completed" if detected_years else "failed"
+    update_pipeline_stage(
+        redis_client, report_id, "EXTRACTION", extraction_status, PIPELINE_TTL_SECONDS,
+        {
+            "pdf_names": pdf_names,
+            "company_name": company_name,
+            "detected_years": detected_years,
+            "artifacts": ["normalized_results.json"],
+        },
+    )
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, extraction_status, "EXTRACTION", PIPELINE_TTL_SECONDS)
+    _append_log(log_file, f"Extraction {extraction_status}; detected years: {detected_years}")
+
+    if extraction_status == "failed":
+        set_json(redis_client, f"report:{report_id}:extraction_failure", {
+            "pdfs_processed": len(pdf_paths),
+            "years_detected": [],
+            "error": "No financial years extracted from batch",
+        }, PIPELINE_TTL_SECONDS)
+        raise RuntimeError(CANONICAL_MISSING_ERROR)
+
+    try:
+        from platform_core.company_repository import upsert_company_financials
+        years_data = analysis_dataset.get("years") or analysis_dataset.get("financial_graph") or {}
+        if years_data:
+            upsert_company_financials(company_name, "General", years_data)
+    except Exception as mongo_err:
+        import logging
+        logging.getLogger(__name__).warning("MongoDB persistence failed (non-fatal): %s", mongo_err)
+
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, "running", "ANALYSIS", PIPELINE_TTL_SECONDS)
+
+    analysis_start_time = datetime.now().isoformat()
+    update_pipeline_stage(
+        redis_client, report_id, "ANALYSIS", "running", PIPELINE_TTL_SECONDS,
+        {
+            "pdf_names": pdf_names,
+            "company_name": company_name,
+            "stage": "Running financial analysis",
+            "analysis_start_time": analysis_start_time,
+            "calculation_progress": "started",
+            "score_ready": False,
+        },
+    )
+    _append_log(log_file, "Running combined financial analysis")
+
+    analysis_result = build_strict_analysis_result(analysis_dataset)
+    _write_json(log_dir / "analytics.json", analysis_result)
+    save_analysis_artifacts(redis_client, report_id, analysis_dataset, analysis_result, PIPELINE_TTL_SECONDS)
+
+    try:
+        from platform_core.company_repository import save_analysis_result, save_analysis_history_entry, _slugify
+        company_slug = _slugify(company_name)
+        save_analysis_result(company_slug, report_id, analysis_result)
+        save_analysis_history_entry(company_slug, report_id, analysis_result.get("scores", {}))
+    except Exception as mongo_err:
+        import logging
+        logging.getLogger(__name__).warning("MongoDB analysis persistence failed (non-fatal): %s", mongo_err)
+
+    analysis_status = "completed" if analysis_result.get("status") == "COMPLETED" else "failed"
+    update_pipeline_stage(
+        redis_client, report_id, "ANALYSIS", analysis_status, PIPELINE_TTL_SECONDS,
+        {
+            "pdf_names": pdf_names,
+            "company_name": company_name,
+            "valid_years": analysis_result.get("valid_years", []),
+            "artifacts": ["analytics.json"],
+            "analysis_start_time": analysis_start_time,
+            "analysis_end_time": datetime.now().isoformat(),
+            "calculation_progress": "completed",
+            "score_ready": True,
+        },
+    )
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, analysis_status, "ANALYSIS", PIPELINE_TTL_SECONDS)
+    _append_log(log_file, f"Analysis {analysis_status}")
+
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, "running", "REPORTING", PIPELINE_TTL_SECONDS)
+    update_pipeline_stage(
+        redis_client, report_id, "REPORTING", "running", PIPELINE_TTL_SECONDS,
+        {"pdf_names": pdf_names, "company_name": company_name, "stage": "Generating final report"},
+    )
+    _append_log(log_file, "Generating final report")
+
+    analytics_payload = get_json(redis_client, f"report:{report_id}:analytics", default={})
+    if not isinstance(analytics_payload, dict) or not analytics_payload:
+        analytics_payload = analysis_result
+    report_result = build_report_from_analytics(analytics_payload)
+    _write_json(log_dir / "final_report.json", report_result)
+    save_report_artifacts(redis_client, report_id, report_result, PIPELINE_TTL_SECONDS)
+
+    reporting_status = "completed" if isinstance(report_result, dict) else "failed"
+    update_pipeline_stage(
+        redis_client, report_id, "REPORTING", reporting_status, PIPELINE_TTL_SECONDS,
+        {"pdf_names": pdf_names, "company_name": company_name, "artifacts": ["final_report.json"]},
+    )
+    for pdf_path in pdf_paths:
+        update_document_status(redis_client, report_id, pdf_path.name, "completed", "DONE", PIPELINE_TTL_SECONDS)
+    _append_log(log_file, "Completed")
+
+    return {
+        "pdf_names": pdf_names,
+        "company_name": company_name,
+        "log_dir": str(log_dir),
+        "normalized_results": "normalized_results.json",
+        "detected_years": detected_years,
+        "analysis": analysis_result,
+        "report": report_result,
+    }
+
+
 def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | None = None) -> dict[str, Any]:
-    """Orchestrate the full pipeline for up to 5 PDFs sequentially."""
+    """Orchestrate the full pipeline for up to 5 PDFs as one dataset."""
     if isinstance(pdf_paths_or_folder, list):
         pdf_paths = [Path(p).expanduser().resolve() for p in pdf_paths_or_folder]
     else:
@@ -249,41 +394,38 @@ def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | Non
     results: list[dict[str, Any]] = []
     failures: list[dict[str, Any]] = []
 
-    for pdf_path in pdf_paths:
-        try:
-            result = _process_pdf(pdf_path, report_id, redis_client)
-            results.append(result)
-        except Exception as exc:
-            failures.append({"pdf_name": pdf_path.name, "error": str(exc)})
-
-            # Track failed document
+    try:
+        results.append(_process_pdf_batch(pdf_paths, report_id, redis_client))
+    except Exception as exc:
+        pdf_names = [path.name for path in pdf_paths]
+        failures.append({"pdf_names": pdf_names, "error": str(exc)})
+        for pdf_path in pdf_paths:
             update_document_status(redis_client, report_id, pdf_path.name, "failed", "EXTRACTION", PIPELINE_TTL_SECONDS)
 
-            failure_log_dir = _prepare_log_dir(pdf_path.stem, pdf_path)
-            _append_log(failure_log_dir / "pipeline.log", f"FAILED: {exc}")
-            _write_json(failure_log_dir / "normalized_results.json", {"pdf_name": pdf_path.name, "error": str(exc)})
-            _write_json(failure_log_dir / "analytics.json", {"pdf_name": pdf_path.name, "error": str(exc)})
-            _write_json(failure_log_dir / "final_report.json", {"pdf_name": pdf_path.name, "error": str(exc)})
-            update_pipeline_stage(
-                redis_client, report_id, "EXTRACTION", "failed", PIPELINE_TTL_SECONDS,
-                {"pdf_name": pdf_path.name, "error": str(exc)},
-            )
-            update_pipeline_stage(
-                redis_client, report_id, "ANALYSIS", "skipped", PIPELINE_TTL_SECONDS,
-                {"pdf_name": pdf_path.name, "error": str(exc)},
-            )
-            update_pipeline_stage(
-                redis_client, report_id, "REPORTING", "skipped", PIPELINE_TTL_SECONDS,
-                {"pdf_name": pdf_path.name, "error": str(exc)},
-            )
-            continue
+        failure_log_dir = _prepare_log_dir(pdf_paths[0].stem, pdf_paths[0])
+        _append_log(failure_log_dir / "pipeline.log", f"FAILED: {exc}")
+        _write_json(failure_log_dir / "normalized_results.json", {"pdf_names": pdf_names, "error": str(exc)})
+        _write_json(failure_log_dir / "analytics.json", {"pdf_names": pdf_names, "error": str(exc)})
+        _write_json(failure_log_dir / "final_report.json", {"pdf_names": pdf_names, "error": str(exc)})
+        update_pipeline_stage(
+            redis_client, report_id, "EXTRACTION", "failed", PIPELINE_TTL_SECONDS,
+            {"pdf_names": pdf_names, "error": str(exc)},
+        )
+        update_pipeline_stage(
+            redis_client, report_id, "ANALYSIS", "skipped", PIPELINE_TTL_SECONDS,
+            {"pdf_names": pdf_names, "error": str(exc)},
+        )
+        update_pipeline_stage(
+            redis_client, report_id, "REPORTING", "skipped", PIPELINE_TTL_SECONDS,
+            {"pdf_names": pdf_names, "error": str(exc)},
+        )
 
-    overall_status = "completed" if not failures else "completed_with_failures"
+    overall_status = "completed" if results and not failures else "failed"
     if results:
         final_report_payload = {
             "report_id": report_id,
             "status": overall_status,
-            "processed_count": len(results),
+            "processed_count": len(pdf_paths),
             "failed_count": len(failures),
             "results": results,
             "failures": failures,

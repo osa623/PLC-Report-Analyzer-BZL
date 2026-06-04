@@ -93,6 +93,7 @@ def _normalize_year(p: dict, prev: dict | None = None) -> dict[str, float | None
         _gf(p, "income_statement", "net_interest_income"),
         _gf(p, "income_statement", "net_interest_fee_and_commission_income"),
         _gf(p, "income_statement", "gross_income"),
+        gf
     ]
     # Pick the first non-None candidate, but skip suspiciously tiny values
     # when a larger candidate exists (likely a scaling artifact)

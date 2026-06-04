@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
-const { triggerExtract, triggerAnalyze, triggerGenerateReport } = require('../services/pipelineClient');
+const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline } = require('../services/pipelineClient');
 const {
   derivePipelineStatus,
   parseDocumentStatuses,
@@ -473,6 +473,7 @@ function mapLegacyStages(
   const analysis = stageState.ANALYSIS?.status || 'pending';
   const reporting = stageState.REPORTING?.status || 'pending';
   const strictStatus = String(strictAnalysis?.status || '').toUpperCase();
+  const strictValidated = strictStatus === 'VALIDATED_READY' || strictStatus === 'COMPLETED';
 
   const textExtractionStatus = extractionSubstages.text_extraction?.status || null;
   const tableDetectionStatus = extractionSubstages.table_detection?.status || null;
@@ -535,7 +536,7 @@ function mapLegacyStages(
       : 'pending';
 
   const coverageScoringGateStatus =
-    strictStatus === 'VALIDATED_READY'
+    strictValidated
       ? 'completed'
       : strictStatus === 'EXTRACTION_INCOMPLETE' || analysis === 'skipped'
       ? 'failed'
@@ -548,7 +549,7 @@ function mapLegacyStages(
       ? 'skipped'
       : analysis === 'failed'
       ? 'failed'
-      : strictStatus === 'VALIDATED_READY' && (artifacts.hasAnalytics || analysis === 'completed')
+      : strictValidated && (artifacts.hasAnalytics || analysis === 'completed')
       ? 'completed'
       : analysis === 'running'
       ? 'running'
@@ -559,7 +560,7 @@ function mapLegacyStages(
       ? 'skipped'
       : reporting === 'failed'
       ? 'failed'
-      : strictStatus === 'VALIDATED_READY' && artifacts.hasFinalReport
+      : strictValidated && artifacts.hasFinalReport
       ? 'completed'
       : reporting === 'running'
       ? 'running'
@@ -839,7 +840,7 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
   }
 });
 
-router.post('/reports', upload.array('report', 20), async (req, res, next) => {
+router.post('/reports', upload.array('report', 5), async (req, res, next) => {
   try {
     const uploadedPaths = extractUploadedPaths(req, 'report');
     if (uploadedPaths.length === 0) {
@@ -861,7 +862,7 @@ router.post('/reports', upload.array('report', 20), async (req, res, next) => {
       })
     );
 
-    void startPipeline(reportId, uploadedPaths.length === 1 ? uploadedPaths[0] : uploadedPaths).catch(async (error) => {
+    void triggerFullPipeline(reportId, uploadedPaths).catch(async (error) => {
       const failedStage = inferFailedStage(error);
       let stages = {};
       try {
