@@ -36,7 +36,6 @@ logging.basicConfig(
 # -------------------------------------------------------------------
 PDF_PATHS = [
 
-   EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2018.pdf",
 
    EXTRACTION_SERVICE_DIR / "data" / "raw" / "hnb" / "Banking_HNB_2020.pdf",
 

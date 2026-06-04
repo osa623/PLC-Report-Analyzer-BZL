@@ -1,214 +1,75 @@
 {
   "pdf_names": [
-    "Banking_HNB_2018.pdf",
     "Banking_HNB_2020.pdf",
     "Banking_HNB_2022.pdf",
     "Banking_HNB_2024.pdf"
   ],
-  "normalized_report_count": 4,
+  "normalized_report_count": 3,
   "pipeline": {
     "extraction": {
       "company_name": "HNB",
       "company": "HNB",
       "currency": "LKR_millions",
       "years": {
-        "2017": {
-          "income_statement": {},
-          "balance_sheet": {
-            "cash_and_cash_equivalents": 21924898000.0,
-            "placements_with_banks": 9670125000.0,
-            "balances_with_central_bank": 38610940000.0,
-            "reverse_repurchase_agreements": 772002000.0,
-            "derivative_financial_instruments": 1305900000.0,
-            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 266538000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": 655612938000.0,
-            "financial_investments_loans_and_receivables": 125031671000.0,
-            "financial_assets_fvoci": 101742985000.0,
-            "investment_in_joint_venture": 1689263000.0,
-            "investment_in_subsidiaries": 1146564000.0,
-            "investment_properties": 34635034000.0,
-            "property_plant_and_equipment": 1237829000.0,
-            "intangible_assets_and_goodwill": 13038222000.0,
-            "other_assets": 13038222000.0,
-            "total_assets": 1007559969000.0,
-            "due_to_banks": 62464391000.0,
-            "securities_sold_under_repurchase_agreements": 5064360000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 718770051000.0,
-            "dividends_payable": 986880000.0,
-            "financial_liabilities_at_amortised_cost_other_borrowings": 27258006000.0,
-            "debt_securities_issued": 5035958000.0,
-            "current_tax_liabilities": 4066087000.0,
-            "deferred_tax_liabilities": 7309283000.0,
-            "other_provisions": 3416332000.0,
-            "other_liabilities": 7359236000.0,
-            "subordinated_term_debts": 25564596000.0,
-            "total_liabilities": 881901846000.0,
-            "stated_capital": 31409119000.0,
-            "statutory_reserve_fund": 5460000000.0,
-            "retained_earnings": 18082284000.0,
-            "other_reserves": 67058017000.0,
-            "total_shareholders_equity": 122009420000.0,
-            "total_equity": 1007559969000.0,
-            "contingent_liabilities_and_commitments": 598364726000.0,
-            "net_assets_value_per_share_rs": 247790.0,
-            "financial_investments_held_to_maturity": 1565603000.0,
-            "insurance_provision_life": 10915858000.0,
-            "insurance_provision_general": 2384908000.0,
-            "non_controlling_interests": 3648703000.0
-          },
-          "cash_flow": {
-            "interest_receipts": 102642179000.0,
-            "interest_payments": -54672229000.0,
-            "net_commission_receipts": 8983610000.0,
-            "trading_income": 530850000.0,
-            "payments_to_employees": -10224168000.0,
-            "vat_and_nbt_on_financial_services": -5613721000.0,
-            "receipts_from_other_operating_activities": 5753404000.0,
-            "payments_on_other_operating_activities": -13473261000.0,
-            "operating_profit_before_change_in_operating_assets_and_liabilities": 33926664000.0,
-            "balances_with_central_bank": -4833326000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": -62659442000.0,
-            "reverse_repurchase_agreements": 4167210000.0,
-            "other_assets": -1765867000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 79519452000.0,
-            "financial_liabilities_at_amortised_cost_due_to_debt_securities_holders": -158720000.0,
-            "financial_liabilities_at_amortised_cost_due_to_other_borrowers": -7231063000.0,
-            "securities_sold_under_repurchase_agreements": -8106159000.0,
-            "other_liabilities": -66003000.0,
-            "net_cash_generated_from_operating_activities_before_income_tax": 32792746000.0,
-            "income_tax_paid": -6673342000.0,
-            "net_cash_from_operating_activities": 26119404000.0,
-            "purchase_of_property_plant_and_equipment": -1888965000.0,
-            "proceeds_from_the_sale_of_property_plant_and_equipment": 23801000.0,
-            "net_proceeds_from_sale_maturity_and_purchase_of_financial_investments": -25154184000.0,
-            "net_purchase_intangible_assets": -367328000.0,
-            "dividend_received_from_joint_venture": 33220000.0,
-            "dividends_from_subsidiaries": 1790871000.0,
-            "dividends_from_other_investments": 206706000.0,
-            "net_cash_used_in_investing_activities": -27069214000.0,
-            "improvements_to_investment_properties": -39942000.0,
-            "proceeds_from_deemed_disposal_of_subsidiary_company_by_joint_venture": 117478000.0
-          },
-          "extraction_confidence": 100.0
-        },
-        "2018": {
-          "income_statement": {},
-          "balance_sheet": {
-            "cash_and_cash_equivalents": 24966831000.0,
-            "placements_with_banks": 8506255000.0,
-            "balances_with_central_bank": 33907057000.0,
-            "reverse_repurchase_agreements": 1168764000.0,
-            "derivative_financial_instruments": 2519172000.0,
-            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 264420000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": 770263000000.0,
-            "financial_investments_loans_and_receivables": 165821983000.0,
-            "financial_assets_fvoci": 76005258000.0,
-            "investment_in_joint_venture": 2027201000.0,
-            "investment_in_subsidiaries": 1107472000.0,
-            "investment_properties": 42417126000.0,
-            "property_plant_and_equipment": 1377864000.0,
-            "intangible_assets_and_goodwill": 16273512000.0,
-            "other_assets": 16273512000.0,
-            "total_assets": 1148614319000.0,
-            "due_to_banks": 77976010000.0,
-            "securities_sold_under_repurchase_agreements": 16678946000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 818041962000.0,
-            "dividends_payable": 1009468000.0,
-            "financial_liabilities_at_amortised_cost_other_borrowings": 24894155000.0,
-            "debt_securities_issued": 4487763000.0,
-            "current_tax_liabilities": 9559852000.0,
-            "deferred_tax_liabilities": 5831673000.0,
-            "other_provisions": 4081659000.0,
-            "other_liabilities": 8944789000.0,
-            "subordinated_term_debts": 21930246000.0,
-            "total_liabilities": 1011279713000.0,
-            "stated_capital": 32338026000.0,
-            "statutory_reserve_fund": 6260000000.0,
-            "retained_earnings": 20181416000.0,
-            "other_reserves": 73881954000.0,
-            "total_shareholders_equity": 132661396000.0,
-            "total_equity": 1148614319000.0,
-            "contingent_liabilities_and_commitments": 763214236000.0,
-            "net_assets_value_per_share_rs": 269280.0,
-            "insurance_provision_life": 12256686000.0,
-            "insurance_provision_general": 2525095000.0,
-            "non_controlling_interests": 4673210000.0
-          },
-          "cash_flow": {
-            "interest_receipts": 114385642000.0,
-            "interest_payments": -64957879000.0,
-            "net_commission_receipts": 10087205000.0,
-            "trading_income": 2986670000.0,
-            "payments_to_employees": -11379438000.0,
-            "vat_and_nbt_on_financial_services": -6590515000.0,
-            "receipts_from_other_operating_activities": 9861573000.0,
-            "payments_on_other_operating_activities": -16567045000.0,
-            "operating_profit_before_change_in_operating_assets_and_liabilities": 37826213000.0,
-            "balances_with_central_bank": 4703883000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": -128173581000.0,
-            "reverse_repurchase_agreements": -396668000.0,
-            "other_assets": -4874360000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 97766339000.0,
-            "financial_liabilities_at_amortised_cost_due_to_other_borrowers": 13552214000.0,
-            "securities_sold_under_repurchase_agreements": 11626013000.0,
-            "other_liabilities": 2529775000.0,
-            "net_cash_generated_from_operating_activities_before_income_tax": 34559828000.0,
-            "income_tax_paid": -4871157000.0,
-            "net_cash_from_operating_activities": 29688671000.0,
-            "purchase_of_property_plant_and_equipment": -1708263000.0,
-            "proceeds_from_the_sale_of_property_plant_and_equipment": 8171000.0,
-            "net_proceeds_from_sale_maturity_and_purchase_of_financial_investments": -18392639000.0,
-            "net_purchase_intangible_assets": -497025000.0,
-            "dividend_received_from_joint_venture": 33220000.0,
-            "dividends_from_subsidiaries": 221095000.0,
-            "dividends_from_other_investments": 192639000.0,
-            "net_cash_used_in_investing_activities": -20363897000.0
-          },
-          "extraction_confidence": 100.0
-        },
         "2019": {
           "income_statement": {},
           "balance_sheet": {
-            "cash_and_cash_equivalents": 30263654000.0,
-            "placements_with_banks": 15490267000.0,
-            "balances_with_central_bank": 22795332000.0,
-            "derivative_financial_instruments": 527193000.0,
-            "financial_assets_fvtpl": 1155339000.0,
+            "cash_and_cash_equivalents": 25000.0,
+            "placements_with_banks": 26000.0,
+            "balances_with_central_bank": 27000.0,
+            "reverse_repurchase_agreements": 28000.0,
+            "derivative_financial_instruments": 29000.0,
+            "financial_assets_fvtpl": 30000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 769392169000.0,
+            "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers_note": 31000.0,
             "financial_assets_measured_at_amortised_cost_debt_and_other_instruments": 156511277000.0,
-            "financial_assets_fvoci": 133953117000.0,
-            "investment_in_joint_venture": 2137665000.0,
-            "investment_in_subsidiaries": 3017285000.0,
-            "investment_properties": 1026050000.0,
+            "financial_assets_measured_at_amortised_cost_debt_and_other_instruments_note": 32000.0,
+            "financial_assets_fvoci": 33000.0,
+            "investment_in_joint_venture": 34000.0,
+            "investment_in_subsidiaries": 35000.0,
+            "investment_properties": 36000.0,
             "property_plant_and_equipment": 42452617000.0,
+            "property_plant_and_equipment_note": 37000.0,
             "right_of_use_assets": 1371319000.0,
-            "intangible_assets_and_goodwill": 1368080000.0,
-            "other_assets": 15467912000.0,
+            "right_of_use_assets_note": 38000.0,
+            "intangible_assets_and_goodwill": 39000.0,
+            "deferred_tax_assets": 40000.0,
+            "other_assets": 41000.0,
             "total_assets": 1197635228000.0,
-            "due_to_banks": 87212970000.0,
-            "securities_sold_under_repurchase_agreements": 17569394000.0,
+            "due_to_banks": 42000.0,
+            "securities_sold_under_repurchase_agreements": 43000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 835060146000.0,
+            "financial_liabilities_measured_at_amortised_cost_due_to_depositors_note": 44000.0,
             "dividends_payable": 1466959000.0,
-            "financial_liabilities_measured_at_amortised_cost_other_borrowings": 22604039000.0,
-            "debt_securities_issued": 2368986000.0,
-            "current_tax_liabilities": 5621389000.0,
-            "deferred_tax_liabilities": 7334048000.0,
-            "other_provisions": 4171801000.0,
-            "other_liabilities": 12495406000.0,
-            "subordinated_term_debts": 33345904000.0,
+            "dividends_payable_note": 45000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings": 22404039000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings_note": 46000.0,
+            "debt_securities_issued": 47000.0,
+            "current_tax_liabilities": 48000.0,
+            "deferred_tax_liabilities": 40000.0,
+            "insurance_provision_life_note": 49000.0,
+            "insurance_provision_non_life_note": 50000.0,
+            "other_liabilities": 51000.0,
+            "subordinated_term_debts": 52000.0,
             "total_liabilities": 1047164690000.0,
             "stated_capital": 33820905000.0,
-            "statutory_reserve_fund": 7060000000.0,
+            "stated_capital_note": 54000.0,
+            "statutory_reserve_fund": 7660000000.0,
+            "statutory_reserve_fund_note": 55000.0,
             "retained_earnings": 23072623000.0,
+            "retained_earnings_note": 56000.0,
             "other_reserves": 81554692000.0,
+            "other_reserves_note": 57000.0,
             "total_shareholders_equity": 145508220000.0,
+            "non_controlling_interests_note": 58000.0,
             "total_equity": 1197635228000.0,
             "contingent_liabilities_and_commitments": 673230813000.0,
-            "net_assets_value_per_ordinary_share_rs": 284210.0,
-            "reverse_repurchase_agreements": 2072482000.0,
-            "deferred_tax_assets": 1250755000.0,
+            "contingent_liabilities_and_commitments_note": 59000.0,
+            "net_assets_value_per_ordinary_share": 284210.0,
+            "net_assets_value_per_ordinary_share_note": 63000.0,
             "insurance_provision_life": 14468866000.0,
             "insurance_provision_non_life": 2871417000.0,
+            "other_provisions": 4171801000.0,
             "non_controlling_interests": 4962318000.0
           },
           "cash_flow": {
@@ -248,46 +109,62 @@
         "2020": {
           "income_statement": {},
           "balance_sheet": {
-            "cash_and_cash_equivalents": 34898957000.0,
-            "balances_with_central_bank": 7212395000.0,
-            "derivative_financial_instruments": 1032318000.0,
-            "financial_assets_fvtpl": 1094827000.0,
+            "cash_and_cash_equivalents": 25000.0,
+            "placements_with_banks": 26000.0,
+            "balances_with_central_bank": 27000.0,
+            "reverse_repurchase_agreements": 28000.0,
+            "derivative_financial_instruments": 29000.0,
+            "financial_assets_fvtpl": 30000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 800815971000.0,
+            "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers_note": 31000.0,
             "financial_assets_measured_at_amortised_cost_debt_and_other_instruments": 193349496000.0,
-            "financial_assets_fvoci": 256394644000.0,
-            "investment_in_joint_venture": 2521811000.0,
-            "investment_in_subsidiaries": 3017285000.0,
-            "investment_properties": 1028956000.0,
+            "financial_assets_measured_at_amortised_cost_debt_and_other_instruments_note": 32000.0,
+            "financial_assets_fvoci": 33000.0,
+            "investment_in_joint_venture": 34000.0,
+            "investment_in_subsidiaries": 35000.0,
+            "investment_properties": 36000.0,
             "property_plant_and_equipment": 41827384000.0,
+            "property_plant_and_equipment_note": 37000.0,
             "right_of_use_assets": 1827832000.0,
-            "intangible_assets_and_goodwill": 1749994000.0,
-            "deferred_tax_assets": 1728958000.0,
-            "other_assets": 11045479000.0,
+            "right_of_use_assets_note": 38000.0,
+            "intangible_assets_and_goodwill": 39000.0,
+            "deferred_tax_assets": 40000.0,
+            "other_assets": 41000.0,
             "total_assets": 1371482506000.0,
-            "due_to_banks": 89746709000.0,
-            "securities_sold_under_repurchase_agreements": 10361383000.0,
+            "due_to_banks": 42000.0,
+            "securities_sold_under_repurchase_agreements": 43000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 994948912000.0,
+            "financial_liabilities_measured_at_amortised_cost_due_to_depositors_note": 44000.0,
             "dividends_payable": 980507000.0,
+            "dividends_payable_note": 45000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": 30526261000.0,
-            "debt_securities_issued": 2411408000.0,
-            "current_tax_liabilities": 8093584000.0,
-            "other_provisions": 4266262000.0,
-            "other_liabilities": 15451997000.0,
-            "subordinated_term_debts": 28945457000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings_note": 46000.0,
+            "debt_securities_issued": 47000.0,
+            "current_tax_liabilities": 48000.0,
+            "deferred_tax_liabilities": 40000.0,
+            "insurance_provision_life_note": 49000.0,
+            "insurance_provision_non_life_note": 50000.0,
+            "other_liabilities": 51000.0,
+            "subordinated_term_debts": 52000.0,
             "total_liabilities": 1211823067000.0,
             "stated_capital": 35572329000.0,
+            "stated_capital_note": 54000.0,
             "statutory_reserve_fund": 7660000000.0,
+            "statutory_reserve_fund_note": 55000.0,
             "retained_earnings": 29361200000.0,
+            "retained_earnings_note": 56000.0,
             "other_reserves": 81655946000.0,
+            "other_reserves_note": 57000.0,
             "total_shareholders_equity": 154249475000.0,
+            "non_controlling_interests_note": 58000.0,
             "total_equity": 1371482506000.0,
             "contingent_liabilities_and_commitments": 631948229000.0,
-            "net_assets_value_per_ordinary_share_rs": 301280.0,
-            "placements_with_banks": 12126434000.0,
-            "reverse_repurchase_agreements": 2827050000.0,
-            "deferred_tax_liabilities": 5371390000.0,
+            "contingent_liabilities_and_commitments_note": 59000.0,
+            "net_assets_value_per_ordinary_share": 301280.0,
+            "net_assets_value_per_ordinary_share_note": 63000.0,
             "insurance_provision_life": 17073033000.0,
             "insurance_provision_non_life": 3309150000.0,
+            "other_provisions": 4266262000.0,
             "non_controlling_interests": 5409964000.0
           },
           "cash_flow": {
@@ -347,11 +224,11 @@
             "income_tax_expense": 2969222000.0,
             "net_profit": 20084362000.0,
             "profit_attributable_to_equity_holders": 19024882000.0,
-            "basic_earnings_per_ordinary_share": 35520.0,
-            "diluted_earnings_per_ordinary_share": 35520.0,
-            "dividend_per_share_gross": 9000.0,
+            "basic_earnings_per_ordinary_share_rs": 35520.0,
+            "diluted_earnings_per_ordinary_share_rs": 35520.0,
+            "dividend_per_share_gross_rs": 9000.0,
             "net_insurance_premium_income": 10641842000.0,
-            "net_gains_arising_on_de_recognition_of_financial_assets": 5874000.0,
+            "net_gains_arising_on_derecognition_of_financial_assets": 5874000.0,
             "benefits_claims_and_underwriting_expenditure": 8955217000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 292837000.0,
             "non_controlling_interests": 1059480000.0
@@ -446,9 +323,9 @@
             "income_tax_expense": -1327978000.0,
             "net_profit": 15748235000.0,
             "profit_attributable_to_equity_holders": 15328572000.0,
-            "basic_earnings_per_ordinary_share": 28620.0,
-            "diluted_earnings_per_ordinary_share": 28620.0,
-            "dividend_per_share_gross": 5.0,
+            "basic_earnings_per_ordinary_share_rs": 28620.0,
+            "diluted_earnings_per_ordinary_share_rs": 28620.0,
+            "dividend_per_share_gross_rs": 5.0,
             "net_insurance_premium_income": 12750482000.0,
             "benefits_claims_and_underwriting_expenditure": 11715338000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 331973000.0,
@@ -543,9 +420,9 @@
             "income_tax_expense": 13611684000.0,
             "net_profit": 23606491000.0,
             "profit_attributable_to_equity_holders": 22770791000.0,
-            "basic_earnings_per_ordinary_share_rs": 39820.0,
-            "diluted_earnings_per_ordinary_share_rs": 39820.0,
-            "dividend_per_share_gross_rs": 8000.0,
+            "basic_earnings_per_ordinary_share": 39820.0,
+            "diluted_earnings_per_ordinary_share": 39820.0,
+            "dividend_per_share_gross": 8000.0,
             "net_insurance_premium_income": 15249250000.0,
             "benefits_claims_and_underwriting_expenditure": 15218729000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 1140769000.0,
@@ -580,6 +457,7 @@
             "other_liabilities": 20696216000.0,
             "subordinated_term_debts": 22255164000.0,
             "total_liabilities": 1827483629000.0,
+            "unit": 0.0,
             "reverse_repurchase_agreements": 1830461000.0,
             "deferred_tax_liabilities": 6552515000.0,
             "insurance_provision_life": 30975260000.0,
@@ -596,12 +474,15 @@
             "operating_profit_before_changes_in_operating_assets_and_liabilities": 92211759000.0,
             "balances_with_central_bank": 20107587000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 1994876000.0,
+            "reverse_repurchase_agreements": -449882000.0,
             "other_assets": -2273981000.0,
+            "total_increase_decrease_in_operating_assets": 19378600000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 177265179000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": -5428327000.0,
             "securities_sold_under_repurchase_agreements": 55144079000.0,
             "other_liabilities": 3235465000.0,
-            "before_income_tax": 341806755000.0,
+            "total_increase_decrease_in_operating_liabilities": 230216396000.0,
+            "net_cash_generated_used_in_generated_from_operating_activities_before_income_tax": 341806755000.0,
             "income_tax_paid": -23549119000.0,
             "net_cash_used_in_generated_from_operating_activities": 318257636000.0,
             "purchase_of_property_plant_and_equipment": -2580384000.0,
@@ -610,8 +491,7 @@
             "net_purchase_intangible_assets": -812659000.0,
             "dividends_from_subsidiaries": 288473000.0,
             "dividends_from_other_investments": 43724000.0,
-            "net_cash_used_in_from_investing_activities": -314783125000.0,
-            "reverse_repurchase_agreements": -449882000.0
+            "net_cash_used_in_from_investing_activities": -314783125000.0
           },
           "extraction_confidence": 100.0
         },
@@ -639,9 +519,9 @@
             "income_tax_expense": 39259810000.0,
             "net_profit": 44839632000.0,
             "profit_attributable_to_equity_holders": 43538931000.0,
-            "basic_earnings_per_ordinary_share_rs": 76140.0,
-            "diluted_earnings_per_ordinary_share_rs": 76140.0,
-            "dividend_per_share_gross_rs": 15.0,
+            "basic_earnings_per_ordinary_share": 76140.0,
+            "diluted_earnings_per_ordinary_share": 76140.0,
+            "dividend_per_share_gross": 15.0,
             "net_insurance_premium_income": 17968647000.0,
             "benefits_claims_and_underwriting_expenditure": 17314118000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 1377926000.0,
@@ -675,6 +555,7 @@
             "other_liabilities": 21548786000.0,
             "subordinated_term_debts": 29967185000.0,
             "total_liabilities": 1939424227000.0,
+            "unit": 0.0,
             "reverse_repurchase_agreements": 5280692000.0,
             "debt_securities_issued": 448108000.0,
             "deferred_tax_liabilities": 6731283000.0,
@@ -693,11 +574,13 @@
             "balances_with_central_bank": 5320239000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": -123531526000.0,
             "other_assets": 1341578000.0,
+            "total_increase_decrease_in_operating_assets": -120319940000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 172499922000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": -7808132000.0,
             "securities_sold_under_repurchase_agreements": -35208798000.0,
             "other_liabilities": 928835000.0,
-            "before_income_tax": 52470131000.0,
+            "total_increase_decrease_in_operating_liabilities": 130411827000.0,
+            "net_cash_generated_used_in_generated_from_operating_activities_before_income_tax": 52470131000.0,
             "income_tax_paid": -25249820000.0,
             "net_cash_used_in_generated_from_operating_activities": 27220311000.0,
             "purchase_of_property_plant_and_equipment": -1993957000.0,
@@ -706,210 +589,71 @@
             "net_purchase_intangible_assets": -499081000.0,
             "dividends_from_subsidiaries": 893280000.0,
             "dividends_from_other_investments": 236831000.0,
-            "net_cash_used_in_from_investing_activities": -55125253000.0,
-            "reverse_repurchase_agreements": -3450231000.0
+            "net_cash_used_in_from_investing_activities": -55125253000.0
           },
           "extraction_confidence": 100.0
         }
       },
       "financial_graph": {
-        "2017": {
-          "income_statement": {},
-          "balance_sheet": {
-            "cash_and_cash_equivalents": 21924898000.0,
-            "placements_with_banks": 9670125000.0,
-            "balances_with_central_bank": 38610940000.0,
-            "reverse_repurchase_agreements": 772002000.0,
-            "derivative_financial_instruments": 1305900000.0,
-            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 266538000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": 655612938000.0,
-            "financial_investments_loans_and_receivables": 125031671000.0,
-            "financial_assets_fvoci": 101742985000.0,
-            "investment_in_joint_venture": 1689263000.0,
-            "investment_in_subsidiaries": 1146564000.0,
-            "investment_properties": 34635034000.0,
-            "property_plant_and_equipment": 1237829000.0,
-            "intangible_assets_and_goodwill": 13038222000.0,
-            "other_assets": 13038222000.0,
-            "total_assets": 1007559969000.0,
-            "due_to_banks": 62464391000.0,
-            "securities_sold_under_repurchase_agreements": 5064360000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 718770051000.0,
-            "dividends_payable": 986880000.0,
-            "financial_liabilities_at_amortised_cost_other_borrowings": 27258006000.0,
-            "debt_securities_issued": 5035958000.0,
-            "current_tax_liabilities": 4066087000.0,
-            "deferred_tax_liabilities": 7309283000.0,
-            "other_provisions": 3416332000.0,
-            "other_liabilities": 7359236000.0,
-            "subordinated_term_debts": 25564596000.0,
-            "total_liabilities": 881901846000.0,
-            "stated_capital": 31409119000.0,
-            "statutory_reserve_fund": 5460000000.0,
-            "retained_earnings": 18082284000.0,
-            "other_reserves": 67058017000.0,
-            "total_shareholders_equity": 122009420000.0,
-            "total_equity": 1007559969000.0,
-            "contingent_liabilities_and_commitments": 598364726000.0,
-            "net_assets_value_per_share_rs": 247790.0,
-            "financial_investments_held_to_maturity": 1565603000.0,
-            "insurance_provision_life": 10915858000.0,
-            "insurance_provision_general": 2384908000.0,
-            "non_controlling_interests": 3648703000.0
-          },
-          "cash_flow": {
-            "interest_receipts": 102642179000.0,
-            "interest_payments": -54672229000.0,
-            "net_commission_receipts": 8983610000.0,
-            "trading_income": 530850000.0,
-            "payments_to_employees": -10224168000.0,
-            "vat_and_nbt_on_financial_services": -5613721000.0,
-            "receipts_from_other_operating_activities": 5753404000.0,
-            "payments_on_other_operating_activities": -13473261000.0,
-            "operating_profit_before_change_in_operating_assets_and_liabilities": 33926664000.0,
-            "balances_with_central_bank": -4833326000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": -62659442000.0,
-            "reverse_repurchase_agreements": 4167210000.0,
-            "other_assets": -1765867000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 79519452000.0,
-            "financial_liabilities_at_amortised_cost_due_to_debt_securities_holders": -158720000.0,
-            "financial_liabilities_at_amortised_cost_due_to_other_borrowers": -7231063000.0,
-            "securities_sold_under_repurchase_agreements": -8106159000.0,
-            "other_liabilities": -66003000.0,
-            "net_cash_generated_from_operating_activities_before_income_tax": 32792746000.0,
-            "income_tax_paid": -6673342000.0,
-            "net_cash_from_operating_activities": 26119404000.0,
-            "purchase_of_property_plant_and_equipment": -1888965000.0,
-            "proceeds_from_the_sale_of_property_plant_and_equipment": 23801000.0,
-            "net_proceeds_from_sale_maturity_and_purchase_of_financial_investments": -25154184000.0,
-            "net_purchase_intangible_assets": -367328000.0,
-            "dividend_received_from_joint_venture": 33220000.0,
-            "dividends_from_subsidiaries": 1790871000.0,
-            "dividends_from_other_investments": 206706000.0,
-            "net_cash_used_in_investing_activities": -27069214000.0,
-            "improvements_to_investment_properties": -39942000.0,
-            "proceeds_from_deemed_disposal_of_subsidiary_company_by_joint_venture": 117478000.0
-          },
-          "extraction_confidence": 100.0
-        },
-        "2018": {
-          "income_statement": {},
-          "balance_sheet": {
-            "cash_and_cash_equivalents": 24966831000.0,
-            "placements_with_banks": 8506255000.0,
-            "balances_with_central_bank": 33907057000.0,
-            "reverse_repurchase_agreements": 1168764000.0,
-            "derivative_financial_instruments": 2519172000.0,
-            "financial_assets_recognised_through_profit_or_loss_measured_at_fair_value": 264420000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": 770263000000.0,
-            "financial_investments_loans_and_receivables": 165821983000.0,
-            "financial_assets_fvoci": 76005258000.0,
-            "investment_in_joint_venture": 2027201000.0,
-            "investment_in_subsidiaries": 1107472000.0,
-            "investment_properties": 42417126000.0,
-            "property_plant_and_equipment": 1377864000.0,
-            "intangible_assets_and_goodwill": 16273512000.0,
-            "other_assets": 16273512000.0,
-            "total_assets": 1148614319000.0,
-            "due_to_banks": 77976010000.0,
-            "securities_sold_under_repurchase_agreements": 16678946000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 818041962000.0,
-            "dividends_payable": 1009468000.0,
-            "financial_liabilities_at_amortised_cost_other_borrowings": 24894155000.0,
-            "debt_securities_issued": 4487763000.0,
-            "current_tax_liabilities": 9559852000.0,
-            "deferred_tax_liabilities": 5831673000.0,
-            "other_provisions": 4081659000.0,
-            "other_liabilities": 8944789000.0,
-            "subordinated_term_debts": 21930246000.0,
-            "total_liabilities": 1011279713000.0,
-            "stated_capital": 32338026000.0,
-            "statutory_reserve_fund": 6260000000.0,
-            "retained_earnings": 20181416000.0,
-            "other_reserves": 73881954000.0,
-            "total_shareholders_equity": 132661396000.0,
-            "total_equity": 1148614319000.0,
-            "contingent_liabilities_and_commitments": 763214236000.0,
-            "net_assets_value_per_share_rs": 269280.0,
-            "insurance_provision_life": 12256686000.0,
-            "insurance_provision_general": 2525095000.0,
-            "non_controlling_interests": 4673210000.0
-          },
-          "cash_flow": {
-            "interest_receipts": 114385642000.0,
-            "interest_payments": -64957879000.0,
-            "net_commission_receipts": 10087205000.0,
-            "trading_income": 2986670000.0,
-            "payments_to_employees": -11379438000.0,
-            "vat_and_nbt_on_financial_services": -6590515000.0,
-            "receipts_from_other_operating_activities": 9861573000.0,
-            "payments_on_other_operating_activities": -16567045000.0,
-            "operating_profit_before_change_in_operating_assets_and_liabilities": 37826213000.0,
-            "balances_with_central_bank": 4703883000.0,
-            "financial_assets_at_amortised_cost_loans_and_advances": -128173581000.0,
-            "reverse_repurchase_agreements": -396668000.0,
-            "other_assets": -4874360000.0,
-            "financial_liabilities_at_amortised_cost_due_to_depositors": 97766339000.0,
-            "financial_liabilities_at_amortised_cost_due_to_other_borrowers": 13552214000.0,
-            "securities_sold_under_repurchase_agreements": 11626013000.0,
-            "other_liabilities": 2529775000.0,
-            "net_cash_generated_from_operating_activities_before_income_tax": 34559828000.0,
-            "income_tax_paid": -4871157000.0,
-            "net_cash_from_operating_activities": 29688671000.0,
-            "purchase_of_property_plant_and_equipment": -1708263000.0,
-            "proceeds_from_the_sale_of_property_plant_and_equipment": 8171000.0,
-            "net_proceeds_from_sale_maturity_and_purchase_of_financial_investments": -18392639000.0,
-            "net_purchase_intangible_assets": -497025000.0,
-            "dividend_received_from_joint_venture": 33220000.0,
-            "dividends_from_subsidiaries": 221095000.0,
-            "dividends_from_other_investments": 192639000.0,
-            "net_cash_used_in_investing_activities": -20363897000.0
-          },
-          "extraction_confidence": 100.0
-        },
         "2019": {
           "income_statement": {},
           "balance_sheet": {
-            "cash_and_cash_equivalents": 30263654000.0,
-            "placements_with_banks": 15490267000.0,
-            "balances_with_central_bank": 22795332000.0,
-            "derivative_financial_instruments": 527193000.0,
-            "financial_assets_fvtpl": 1155339000.0,
+            "cash_and_cash_equivalents": 25000.0,
+            "placements_with_banks": 26000.0,
+            "balances_with_central_bank": 27000.0,
+            "reverse_repurchase_agreements": 28000.0,
+            "derivative_financial_instruments": 29000.0,
+            "financial_assets_fvtpl": 30000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 769392169000.0,
+            "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers_note": 31000.0,
             "financial_assets_measured_at_amortised_cost_debt_and_other_instruments": 156511277000.0,
-            "financial_assets_fvoci": 133953117000.0,
-            "investment_in_joint_venture": 2137665000.0,
-            "investment_in_subsidiaries": 3017285000.0,
-            "investment_properties": 1026050000.0,
+            "financial_assets_measured_at_amortised_cost_debt_and_other_instruments_note": 32000.0,
+            "financial_assets_fvoci": 33000.0,
+            "investment_in_joint_venture": 34000.0,
+            "investment_in_subsidiaries": 35000.0,
+            "investment_properties": 36000.0,
             "property_plant_and_equipment": 42452617000.0,
+            "property_plant_and_equipment_note": 37000.0,
             "right_of_use_assets": 1371319000.0,
-            "intangible_assets_and_goodwill": 1368080000.0,
-            "other_assets": 15467912000.0,
+            "right_of_use_assets_note": 38000.0,
+            "intangible_assets_and_goodwill": 39000.0,
+            "deferred_tax_assets": 40000.0,
+            "other_assets": 41000.0,
             "total_assets": 1197635228000.0,
-            "due_to_banks": 87212970000.0,
-            "securities_sold_under_repurchase_agreements": 17569394000.0,
+            "due_to_banks": 42000.0,
+            "securities_sold_under_repurchase_agreements": 43000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 835060146000.0,
+            "financial_liabilities_measured_at_amortised_cost_due_to_depositors_note": 44000.0,
             "dividends_payable": 1466959000.0,
-            "financial_liabilities_measured_at_amortised_cost_other_borrowings": 22604039000.0,
-            "debt_securities_issued": 2368986000.0,
-            "current_tax_liabilities": 5621389000.0,
-            "deferred_tax_liabilities": 7334048000.0,
-            "other_provisions": 4171801000.0,
-            "other_liabilities": 12495406000.0,
-            "subordinated_term_debts": 33345904000.0,
+            "dividends_payable_note": 45000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings": 22404039000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings_note": 46000.0,
+            "debt_securities_issued": 47000.0,
+            "current_tax_liabilities": 48000.0,
+            "deferred_tax_liabilities": 40000.0,
+            "insurance_provision_life_note": 49000.0,
+            "insurance_provision_non_life_note": 50000.0,
+            "other_liabilities": 51000.0,
+            "subordinated_term_debts": 52000.0,
             "total_liabilities": 1047164690000.0,
             "stated_capital": 33820905000.0,
-            "statutory_reserve_fund": 7060000000.0,
+            "stated_capital_note": 54000.0,
+            "statutory_reserve_fund": 7660000000.0,
+            "statutory_reserve_fund_note": 55000.0,
             "retained_earnings": 23072623000.0,
+            "retained_earnings_note": 56000.0,
             "other_reserves": 81554692000.0,
+            "other_reserves_note": 57000.0,
             "total_shareholders_equity": 145508220000.0,
+            "non_controlling_interests_note": 58000.0,
             "total_equity": 1197635228000.0,
             "contingent_liabilities_and_commitments": 673230813000.0,
-            "net_assets_value_per_ordinary_share_rs": 284210.0,
-            "reverse_repurchase_agreements": 2072482000.0,
-            "deferred_tax_assets": 1250755000.0,
+            "contingent_liabilities_and_commitments_note": 59000.0,
+            "net_assets_value_per_ordinary_share": 284210.0,
+            "net_assets_value_per_ordinary_share_note": 63000.0,
             "insurance_provision_life": 14468866000.0,
             "insurance_provision_non_life": 2871417000.0,
+            "other_provisions": 4171801000.0,
             "non_controlling_interests": 4962318000.0
           },
           "cash_flow": {
@@ -949,46 +693,62 @@
         "2020": {
           "income_statement": {},
           "balance_sheet": {
-            "cash_and_cash_equivalents": 34898957000.0,
-            "balances_with_central_bank": 7212395000.0,
-            "derivative_financial_instruments": 1032318000.0,
-            "financial_assets_fvtpl": 1094827000.0,
+            "cash_and_cash_equivalents": 25000.0,
+            "placements_with_banks": 26000.0,
+            "balances_with_central_bank": 27000.0,
+            "reverse_repurchase_agreements": 28000.0,
+            "derivative_financial_instruments": 29000.0,
+            "financial_assets_fvtpl": 30000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 800815971000.0,
+            "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers_note": 31000.0,
             "financial_assets_measured_at_amortised_cost_debt_and_other_instruments": 193349496000.0,
-            "financial_assets_fvoci": 256394644000.0,
-            "investment_in_joint_venture": 2521811000.0,
-            "investment_in_subsidiaries": 3017285000.0,
-            "investment_properties": 1028956000.0,
+            "financial_assets_measured_at_amortised_cost_debt_and_other_instruments_note": 32000.0,
+            "financial_assets_fvoci": 33000.0,
+            "investment_in_joint_venture": 34000.0,
+            "investment_in_subsidiaries": 35000.0,
+            "investment_properties": 36000.0,
             "property_plant_and_equipment": 41827384000.0,
+            "property_plant_and_equipment_note": 37000.0,
             "right_of_use_assets": 1827832000.0,
-            "intangible_assets_and_goodwill": 1749994000.0,
-            "deferred_tax_assets": 1728958000.0,
-            "other_assets": 11045479000.0,
+            "right_of_use_assets_note": 38000.0,
+            "intangible_assets_and_goodwill": 39000.0,
+            "deferred_tax_assets": 40000.0,
+            "other_assets": 41000.0,
             "total_assets": 1371482506000.0,
-            "due_to_banks": 89746709000.0,
-            "securities_sold_under_repurchase_agreements": 10361383000.0,
+            "due_to_banks": 42000.0,
+            "securities_sold_under_repurchase_agreements": 43000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 994948912000.0,
+            "financial_liabilities_measured_at_amortised_cost_due_to_depositors_note": 44000.0,
             "dividends_payable": 980507000.0,
+            "dividends_payable_note": 45000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": 30526261000.0,
-            "debt_securities_issued": 2411408000.0,
-            "current_tax_liabilities": 8093584000.0,
-            "other_provisions": 4266262000.0,
-            "other_liabilities": 15451997000.0,
-            "subordinated_term_debts": 28945457000.0,
+            "financial_liabilities_measured_at_amortised_cost_other_borrowings_note": 46000.0,
+            "debt_securities_issued": 47000.0,
+            "current_tax_liabilities": 48000.0,
+            "deferred_tax_liabilities": 40000.0,
+            "insurance_provision_life_note": 49000.0,
+            "insurance_provision_non_life_note": 50000.0,
+            "other_liabilities": 51000.0,
+            "subordinated_term_debts": 52000.0,
             "total_liabilities": 1211823067000.0,
             "stated_capital": 35572329000.0,
+            "stated_capital_note": 54000.0,
             "statutory_reserve_fund": 7660000000.0,
+            "statutory_reserve_fund_note": 55000.0,
             "retained_earnings": 29361200000.0,
+            "retained_earnings_note": 56000.0,
             "other_reserves": 81655946000.0,
+            "other_reserves_note": 57000.0,
             "total_shareholders_equity": 154249475000.0,
+            "non_controlling_interests_note": 58000.0,
             "total_equity": 1371482506000.0,
             "contingent_liabilities_and_commitments": 631948229000.0,
-            "net_assets_value_per_ordinary_share_rs": 301280.0,
-            "placements_with_banks": 12126434000.0,
-            "reverse_repurchase_agreements": 2827050000.0,
-            "deferred_tax_liabilities": 5371390000.0,
+            "contingent_liabilities_and_commitments_note": 59000.0,
+            "net_assets_value_per_ordinary_share": 301280.0,
+            "net_assets_value_per_ordinary_share_note": 63000.0,
             "insurance_provision_life": 17073033000.0,
             "insurance_provision_non_life": 3309150000.0,
+            "other_provisions": 4266262000.0,
             "non_controlling_interests": 5409964000.0
           },
           "cash_flow": {
@@ -1048,11 +808,11 @@
             "income_tax_expense": 2969222000.0,
             "net_profit": 20084362000.0,
             "profit_attributable_to_equity_holders": 19024882000.0,
-            "basic_earnings_per_ordinary_share": 35520.0,
-            "diluted_earnings_per_ordinary_share": 35520.0,
-            "dividend_per_share_gross": 9000.0,
+            "basic_earnings_per_ordinary_share_rs": 35520.0,
+            "diluted_earnings_per_ordinary_share_rs": 35520.0,
+            "dividend_per_share_gross_rs": 9000.0,
             "net_insurance_premium_income": 10641842000.0,
-            "net_gains_arising_on_de_recognition_of_financial_assets": 5874000.0,
+            "net_gains_arising_on_derecognition_of_financial_assets": 5874000.0,
             "benefits_claims_and_underwriting_expenditure": 8955217000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 292837000.0,
             "non_controlling_interests": 1059480000.0
@@ -1147,9 +907,9 @@
             "income_tax_expense": -1327978000.0,
             "net_profit": 15748235000.0,
             "profit_attributable_to_equity_holders": 15328572000.0,
-            "basic_earnings_per_ordinary_share": 28620.0,
-            "diluted_earnings_per_ordinary_share": 28620.0,
-            "dividend_per_share_gross": 5.0,
+            "basic_earnings_per_ordinary_share_rs": 28620.0,
+            "diluted_earnings_per_ordinary_share_rs": 28620.0,
+            "dividend_per_share_gross_rs": 5.0,
             "net_insurance_premium_income": 12750482000.0,
             "benefits_claims_and_underwriting_expenditure": 11715338000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 331973000.0,
@@ -1244,9 +1004,9 @@
             "income_tax_expense": 13611684000.0,
             "net_profit": 23606491000.0,
             "profit_attributable_to_equity_holders": 22770791000.0,
-            "basic_earnings_per_ordinary_share_rs": 39820.0,
-            "diluted_earnings_per_ordinary_share_rs": 39820.0,
-            "dividend_per_share_gross_rs": 8000.0,
+            "basic_earnings_per_ordinary_share": 39820.0,
+            "diluted_earnings_per_ordinary_share": 39820.0,
+            "dividend_per_share_gross": 8000.0,
             "net_insurance_premium_income": 15249250000.0,
             "benefits_claims_and_underwriting_expenditure": 15218729000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 1140769000.0,
@@ -1281,6 +1041,7 @@
             "other_liabilities": 20696216000.0,
             "subordinated_term_debts": 22255164000.0,
             "total_liabilities": 1827483629000.0,
+            "unit": 0.0,
             "reverse_repurchase_agreements": 1830461000.0,
             "deferred_tax_liabilities": 6552515000.0,
             "insurance_provision_life": 30975260000.0,
@@ -1297,12 +1058,15 @@
             "operating_profit_before_changes_in_operating_assets_and_liabilities": 92211759000.0,
             "balances_with_central_bank": 20107587000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": 1994876000.0,
+            "reverse_repurchase_agreements": -449882000.0,
             "other_assets": -2273981000.0,
+            "total_increase_decrease_in_operating_assets": 19378600000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 177265179000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": -5428327000.0,
             "securities_sold_under_repurchase_agreements": 55144079000.0,
             "other_liabilities": 3235465000.0,
-            "before_income_tax": 341806755000.0,
+            "total_increase_decrease_in_operating_liabilities": 230216396000.0,
+            "net_cash_generated_used_in_generated_from_operating_activities_before_income_tax": 341806755000.0,
             "income_tax_paid": -23549119000.0,
             "net_cash_used_in_generated_from_operating_activities": 318257636000.0,
             "purchase_of_property_plant_and_equipment": -2580384000.0,
@@ -1311,8 +1075,7 @@
             "net_purchase_intangible_assets": -812659000.0,
             "dividends_from_subsidiaries": 288473000.0,
             "dividends_from_other_investments": 43724000.0,
-            "net_cash_used_in_from_investing_activities": -314783125000.0,
-            "reverse_repurchase_agreements": -449882000.0
+            "net_cash_used_in_from_investing_activities": -314783125000.0
           },
           "extraction_confidence": 100.0
         },
@@ -1340,9 +1103,9 @@
             "income_tax_expense": 39259810000.0,
             "net_profit": 44839632000.0,
             "profit_attributable_to_equity_holders": 43538931000.0,
-            "basic_earnings_per_ordinary_share_rs": 76140.0,
-            "diluted_earnings_per_ordinary_share_rs": 76140.0,
-            "dividend_per_share_gross_rs": 15.0,
+            "basic_earnings_per_ordinary_share": 76140.0,
+            "diluted_earnings_per_ordinary_share": 76140.0,
+            "dividend_per_share_gross": 15.0,
             "net_insurance_premium_income": 17968647000.0,
             "benefits_claims_and_underwriting_expenditure": 17314118000.0,
             "share_of_profit_of_joint_venture_net_of_income_tax": 1377926000.0,
@@ -1376,6 +1139,7 @@
             "other_liabilities": 21548786000.0,
             "subordinated_term_debts": 29967185000.0,
             "total_liabilities": 1939424227000.0,
+            "unit": 0.0,
             "reverse_repurchase_agreements": 5280692000.0,
             "debt_securities_issued": 448108000.0,
             "deferred_tax_liabilities": 6731283000.0,
@@ -1394,11 +1158,13 @@
             "balances_with_central_bank": 5320239000.0,
             "financial_assets_measured_at_amortised_cost_loans_and_advances_to_customers": -123531526000.0,
             "other_assets": 1341578000.0,
+            "total_increase_decrease_in_operating_assets": -120319940000.0,
             "financial_liabilities_measured_at_amortised_cost_due_to_depositors": 172499922000.0,
             "financial_liabilities_measured_at_amortised_cost_other_borrowings": -7808132000.0,
             "securities_sold_under_repurchase_agreements": -35208798000.0,
             "other_liabilities": 928835000.0,
-            "before_income_tax": 52470131000.0,
+            "total_increase_decrease_in_operating_liabilities": 130411827000.0,
+            "net_cash_generated_used_in_generated_from_operating_activities_before_income_tax": 52470131000.0,
             "income_tax_paid": -25249820000.0,
             "net_cash_used_in_generated_from_operating_activities": 27220311000.0,
             "purchase_of_property_plant_and_equipment": -1993957000.0,
@@ -1407,8 +1173,7 @@
             "net_purchase_intangible_assets": -499081000.0,
             "dividends_from_subsidiaries": 893280000.0,
             "dividends_from_other_investments": 236831000.0,
-            "net_cash_used_in_from_investing_activities": -55125253000.0,
-            "reverse_repurchase_agreements": -3450231000.0
+            "net_cash_used_in_from_investing_activities": -55125253000.0
           },
           "extraction_confidence": 100.0
         }
@@ -1418,8 +1183,6 @@
         "confidence": {
           "overall": 100.0,
           "per_year": {
-            "2017": 100.0,
-            "2018": 100.0,
             "2019": 100.0,
             "2020": 100.0,
             "2021": 100.0,
@@ -1427,7 +1190,7 @@
             "2023": 100.0,
             "2024": 100.0
           },
-          "duplicate_year_merges": 4
+          "duplicate_year_merges": 3
         }
       },
       "extraction_confidence": 100
@@ -1435,8 +1198,6 @@
     "analysis": {
       "status": "COMPLETED",
       "valid_years": [
-        "2017",
-        "2018",
         "2019",
         "2020",
         "2021",
@@ -1445,334 +1206,6 @@
         "2024"
       ],
       "yearly_ratios": {
-        "2017": {
-          "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (None) / Revenue (47969950000.0)",
-            "inputs_used": [
-              "Gross Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (47969950000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (None) / Revenue (47969950000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "ROA": {
-            "value": null,
-            "equation": "Net Profit (None) / Avg Assets (1007559969000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Avg Assets"
-            ],
-            "confidence": 0.0
-          },
-          "ROE": {
-            "value": null,
-            "equation": "Net Profit (None) / Avg Equity (1007559969000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Avg Equity"
-            ],
-            "confidence": 0.0
-          },
-          "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (47969950000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "Current Assets",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "(Current Assets - Inventory)",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Cash Ratio": {
-            "value": null,
-            "equation": "Cash (21924898000.0) / Current Liabilities (None)",
-            "inputs_used": [
-              "Cash",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Debt to Equity": {
-            "value": 0.875285,
-            "equation": "Total Liabilities (881901846000.0) / Equity (1007559969000.0)",
-            "inputs_used": [
-              "Total Liabilities",
-              "Equity"
-            ],
-            "confidence": 1.0
-          },
-          "Debt Ratio": {
-            "value": 0.875285,
-            "equation": "Total Liabilities (881901846000.0) / Total Assets (1007559969000.0)",
-            "inputs_used": [
-              "Total Liabilities",
-              "Total Assets"
-            ],
-            "confidence": 1.0
-          },
-          "Interest Coverage": {
-            "value": null,
-            "equation": "Operating Profit (None) / Finance Cost (54672229000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Finance Cost"
-            ],
-            "confidence": 0.0
-          },
-          "Asset Turnover": {
-            "value": 0.04761,
-            "equation": "Revenue (47969950000.0) / Total Assets (1007559969000.0)",
-            "inputs_used": [
-              "Revenue",
-              "Total Assets"
-            ],
-            "confidence": 0.8
-          },
-          "Inventory Turnover": {
-            "value": null,
-            "equation": "Cost of Sales (None) / Inventory (None)",
-            "inputs_used": [
-              "Cost of Sales",
-              "Inventory"
-            ],
-            "confidence": 0.0
-          },
-          "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (47969950000.0) / Receivables (None)",
-            "inputs_used": [
-              "Revenue",
-              "Receivables"
-            ],
-            "confidence": 0.0
-          },
-          "OCF Ratio": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Cash Flow to Net Income": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "Net Profit"
-            ],
-            "confidence": 0.0
-          },
-          "Free Cash Flow": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) - CapEx (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "CapEx"
-            ],
-            "confidence": 0.0
-          }
-        },
-        "2018": {
-          "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (None) / Revenue (49427763000.0)",
-            "inputs_used": [
-              "Gross Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (49427763000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (None) / Revenue (49427763000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "ROA": {
-            "value": null,
-            "equation": "Net Profit (None) / Avg Assets (1078087144000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Avg Assets"
-            ],
-            "confidence": 0.0
-          },
-          "ROE": {
-            "value": null,
-            "equation": "Net Profit (None) / Avg Equity (1078087144000.0)",
-            "inputs_used": [
-              "Net Profit",
-              "Avg Equity"
-            ],
-            "confidence": 0.0
-          },
-          "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (49427763000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Revenue"
-            ],
-            "confidence": 0.0
-          },
-          "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "Current Assets",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "(Current Assets - Inventory)",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Cash Ratio": {
-            "value": null,
-            "equation": "Cash (24966831000.0) / Current Liabilities (None)",
-            "inputs_used": [
-              "Cash",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Debt to Equity": {
-            "value": 0.880435,
-            "equation": "Total Liabilities (1011279713000.0) / Equity (1148614319000.0)",
-            "inputs_used": [
-              "Total Liabilities",
-              "Equity"
-            ],
-            "confidence": 1.0
-          },
-          "Debt Ratio": {
-            "value": 0.880435,
-            "equation": "Total Liabilities (1011279713000.0) / Total Assets (1148614319000.0)",
-            "inputs_used": [
-              "Total Liabilities",
-              "Total Assets"
-            ],
-            "confidence": 1.0
-          },
-          "Interest Coverage": {
-            "value": null,
-            "equation": "Operating Profit (None) / Finance Cost (64957879000.0)",
-            "inputs_used": [
-              "Operating Profit",
-              "Finance Cost"
-            ],
-            "confidence": 0.0
-          },
-          "Asset Turnover": {
-            "value": 0.043033,
-            "equation": "Revenue (49427763000.0) / Total Assets (1148614319000.0)",
-            "inputs_used": [
-              "Revenue",
-              "Total Assets"
-            ],
-            "confidence": 0.8
-          },
-          "Inventory Turnover": {
-            "value": null,
-            "equation": "Cost of Sales (None) / Inventory (None)",
-            "inputs_used": [
-              "Cost of Sales",
-              "Inventory"
-            ],
-            "confidence": 0.0
-          },
-          "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (49427763000.0) / Receivables (None)",
-            "inputs_used": [
-              "Revenue",
-              "Receivables"
-            ],
-            "confidence": 0.0
-          },
-          "OCF Ratio": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "Current Liabilities"
-            ],
-            "confidence": 0.0
-          },
-          "Cash Flow to Net Income": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "Net Profit"
-            ],
-            "confidence": 0.0
-          },
-          "Free Cash Flow": {
-            "value": null,
-            "equation": "Operating Cash Flow (None) - CapEx (None)",
-            "inputs_used": [
-              "Operating Cash Flow",
-              "CapEx"
-            ],
-            "confidence": 0.0
-          }
-        },
         "2019": {
           "Gross Margin": {
             "value": null,
@@ -1803,7 +1236,7 @@
           },
           "ROA": {
             "value": null,
-            "equation": "Net Profit (None) / Avg Assets (1173124773500.0)",
+            "equation": "Net Profit (None) / Avg Assets (1197635228000.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
@@ -1812,7 +1245,7 @@
           },
           "ROE": {
             "value": null,
-            "equation": "Net Profit (None) / Avg Equity (1173124773500.0)",
+            "equation": "Net Profit (None) / Avg Equity (1197635228000.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
@@ -1848,7 +1281,7 @@
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (30263654000.0) / Current Liabilities (None)",
+            "equation": "Cash (25000.0) / Current Liabilities (None)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -2012,7 +1445,7 @@
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (34898957000.0) / Current Liabilities (None)",
+            "equation": "Cash (25000.0) / Current Liabilities (None)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -2759,19 +2192,7 @@
         }
       },
       "growth_metrics": {
-        "2017": {},
-        "2018": {
-          "Revenue Growth": 0.03039,
-          "Net Profit Growth": null,
-          "Asset Growth": 0.139996,
-          "Equity Growth": 0.139996
-        },
-        "2019": {
-          "Revenue Growth": 0.049007,
-          "Net Profit Growth": null,
-          "Asset Growth": 0.042678,
-          "Equity Growth": 0.042678
-        },
+        "2019": {},
         "2020": {
           "Revenue Growth": -0.042398,
           "Net Profit Growth": null,
@@ -2804,36 +2225,6 @@
         }
       },
       "validation_gates": {
-        "2017": {
-          "Balance Sheet Identity": {
-            "status": "fail",
-            "confidence_weight": 0.3,
-            "detail": "Assets=1007559969000.0, L+E=1889461815000.0, diff=0.8753"
-          },
-          "Cash Reconciliation": {
-            "status": "unknown",
-            "confidence_weight": 0.0
-          },
-          "Multi-Year Continuity": {
-            "status": "unknown",
-            "confidence_weight": 0.0
-          }
-        },
-        "2018": {
-          "Balance Sheet Identity": {
-            "status": "fail",
-            "confidence_weight": 0.3,
-            "detail": "Assets=1148614319000.0, L+E=2159894032000.0, diff=0.8804"
-          },
-          "Cash Reconciliation": {
-            "status": "unknown",
-            "confidence_weight": 0.0
-          },
-          "Multi-Year Continuity": {
-            "status": "pass",
-            "confidence_weight": 0.2
-          }
-        },
         "2019": {
           "Balance Sheet Identity": {
             "status": "fail",
@@ -2845,8 +2236,8 @@
             "confidence_weight": 0.0
           },
           "Multi-Year Continuity": {
-            "status": "pass",
-            "confidence_weight": 0.2
+            "status": "unknown",
+            "confidence_weight": 0.0
           }
         },
         "2020": {
@@ -2926,16 +2317,6 @@
         }
       },
       "sector_adjustments": {
-        "2017": {
-          "sector": "Banking/Finance",
-          "risk_adjustment": 0.0,
-          "weight_adjustment": 1.0
-        },
-        "2018": {
-          "sector": "Banking/Finance",
-          "risk_adjustment": 0.0,
-          "weight_adjustment": 1.0
-        },
         "2019": {
           "sector": "Banking/Finance",
           "risk_adjustment": 0.0,
@@ -2968,56 +2349,16 @@
         }
       },
       "evaluated_equations_by_year": {
-        "2017": {
-          "Gross Margin": "Gross Profit (None) / Revenue (47969950000.0)",
-          "Operating Margin": "Operating Profit (None) / Revenue (47969950000.0)",
-          "Net Profit Margin": "Net Profit (None) / Revenue (47969950000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1007559969000.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1007559969000.0)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (47969950000.0)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (21924898000.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (881901846000.0) / Equity (1007559969000.0)",
-          "Debt Ratio": "Total Liabilities (881901846000.0) / Total Assets (1007559969000.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (54672229000.0)",
-          "Asset Turnover": "Revenue (47969950000.0) / Total Assets (1007559969000.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (47969950000.0) / Receivables (None)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
-          "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
-        },
-        "2018": {
-          "Gross Margin": "Gross Profit (None) / Revenue (49427763000.0)",
-          "Operating Margin": "Operating Profit (None) / Revenue (49427763000.0)",
-          "Net Profit Margin": "Net Profit (None) / Revenue (49427763000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1078087144000.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1078087144000.0)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (49427763000.0)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (24966831000.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (1011279713000.0) / Equity (1148614319000.0)",
-          "Debt Ratio": "Total Liabilities (1011279713000.0) / Total Assets (1148614319000.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (64957879000.0)",
-          "Asset Turnover": "Revenue (49427763000.0) / Total Assets (1148614319000.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (49427763000.0) / Receivables (None)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
-          "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
-        },
         "2019": {
           "Gross Margin": "Gross Profit (None) / Revenue (51850070000.0)",
           "Operating Margin": "Operating Profit (None) / Revenue (51850070000.0)",
           "Net Profit Margin": "Net Profit (None) / Revenue (51850070000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1173124773500.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1173124773500.0)",
+          "ROA": "Net Profit (None) / Avg Assets (1197635228000.0)",
+          "ROE": "Net Profit (None) / Avg Equity (1197635228000.0)",
           "EBIT Margin": "Operating Profit (None) / Revenue (51850070000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (30263654000.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (25000.0) / Current Liabilities (None)",
           "Debt to Equity": "Total Liabilities (1047164690000.0) / Equity (1197635228000.0)",
           "Debt Ratio": "Total Liabilities (1047164690000.0) / Total Assets (1197635228000.0)",
           "Interest Coverage": "Operating Profit (None) / Finance Cost (69680466000.0)",
@@ -3037,7 +2378,7 @@
           "EBIT Margin": "Operating Profit (None) / Revenue (49651744000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (34898957000.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (25000.0) / Current Liabilities (None)",
           "Debt to Equity": "Total Liabilities (1211823067000.0) / Equity (1371482506000.0)",
           "Debt Ratio": "Total Liabilities (1211823067000.0) / Total Assets (1371482506000.0)",
           "Interest Coverage": "Operating Profit (None) / Finance Cost (63196160000.0)",
@@ -3130,11 +2471,11 @@
         }
       },
       "scores": {
-        "reliability_score": 62.0,
-        "risk_score": 38.0,
+        "reliability_score": 67.71,
+        "risk_score": 32.29,
         "confidence_score": 0.97,
-        "risk_level": "medium",
-        "reliability_band": "medium"
+        "risk_level": "low",
+        "reliability_band": "high"
       }
     },
     "report": {
@@ -3147,18 +2488,6 @@
             "Net Profit"
           ],
           "rows": [
-            [
-              "2017",
-              null,
-              null,
-              null
-            ],
-            [
-              "2018",
-              null,
-              null,
-              null
-            ],
             [
               "2019",
               null,
@@ -3206,18 +2535,6 @@
           ],
           "rows": [
             [
-              "2017",
-              1007559969000.0,
-              881901846000.0,
-              1007559969000.0
-            ],
-            [
-              "2018",
-              1148614319000.0,
-              1011279713000.0,
-              1148614319000.0
-            ],
-            [
               "2019",
               1197635228000.0,
               1047164690000.0,
@@ -3264,20 +2581,6 @@
             "Closing Cash"
           ],
           "rows": [
-            [
-              "2017",
-              null,
-              null,
-              null,
-              null
-            ],
-            [
-              "2018",
-              null,
-              null,
-              null,
-              null
-            ],
             [
               "2019",
               null,
@@ -3335,28 +2638,6 @@
             "Cash Ratio"
           ],
           "rows": [
-            [
-              "2017",
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null
-            ],
-            [
-              "2018",
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null,
-              null
-            ],
             [
               "2019",
               null,
@@ -3427,78 +2708,36 @@
         }
       },
       "key_findings": [
-        "Processed years available for reporting: 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024.",
+        "Processed years available for reporting: 2019, 2020, 2021, 2022, 2023, 2024.",
         "Latest year 2024 revenue was 228945309000.0 and net profit was 44839632000.0.",
-        "Overall analysis indicates moderate financial health with some caution flags (Risk: medium, Reliability: medium)."
+        "Overall analysis indicates strong financial health based on validated years (Risk: low, Reliability: high)."
       ],
       "anomalies": [],
       "validation_summary": [
-        "Processed years: 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024",
-        "Validation warnings for year 2017: Balance Sheet Identity failed",
-        "Validation warnings for year 2018: Balance Sheet Identity failed",
+        "Processed years: 2019, 2020, 2021, 2022, 2023, 2024",
         "Validation warnings for year 2019: Balance Sheet Identity failed",
         "Validation warnings for year 2020: Balance Sheet Identity failed"
       ],
-      "financial_health_score": 62.0,
-      "risk_score": 38.0,
+      "financial_health_score": 67.71,
+      "risk_score": 32.29,
       "scores": {
-        "reliability_score": 62.0,
-        "risk_score": 38.0,
+        "reliability_score": 67.71,
+        "risk_score": 32.29,
         "confidence_score": 0.97,
-        "risk_level": "medium",
-        "reliability_band": "medium"
+        "risk_level": "low",
+        "reliability_band": "high"
       },
       "evaluated_equations_by_year": {
-        "2017": {
-          "Gross Margin": "Gross Profit (None) / Revenue (47969950000.0)",
-          "Operating Margin": "Operating Profit (None) / Revenue (47969950000.0)",
-          "Net Profit Margin": "Net Profit (None) / Revenue (47969950000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1007559969000.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1007559969000.0)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (47969950000.0)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (21924898000.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (881901846000.0) / Equity (1007559969000.0)",
-          "Debt Ratio": "Total Liabilities (881901846000.0) / Total Assets (1007559969000.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (54672229000.0)",
-          "Asset Turnover": "Revenue (47969950000.0) / Total Assets (1007559969000.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (47969950000.0) / Receivables (None)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
-          "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
-        },
-        "2018": {
-          "Gross Margin": "Gross Profit (None) / Revenue (49427763000.0)",
-          "Operating Margin": "Operating Profit (None) / Revenue (49427763000.0)",
-          "Net Profit Margin": "Net Profit (None) / Revenue (49427763000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1078087144000.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1078087144000.0)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (49427763000.0)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (24966831000.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (1011279713000.0) / Equity (1148614319000.0)",
-          "Debt Ratio": "Total Liabilities (1011279713000.0) / Total Assets (1148614319000.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (64957879000.0)",
-          "Asset Turnover": "Revenue (49427763000.0) / Total Assets (1148614319000.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (49427763000.0) / Receivables (None)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (None)",
-          "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
-        },
         "2019": {
           "Gross Margin": "Gross Profit (None) / Revenue (51850070000.0)",
           "Operating Margin": "Operating Profit (None) / Revenue (51850070000.0)",
           "Net Profit Margin": "Net Profit (None) / Revenue (51850070000.0)",
-          "ROA": "Net Profit (None) / Avg Assets (1173124773500.0)",
-          "ROE": "Net Profit (None) / Avg Equity (1173124773500.0)",
+          "ROA": "Net Profit (None) / Avg Assets (1197635228000.0)",
+          "ROE": "Net Profit (None) / Avg Equity (1197635228000.0)",
           "EBIT Margin": "Operating Profit (None) / Revenue (51850070000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (30263654000.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (25000.0) / Current Liabilities (None)",
           "Debt to Equity": "Total Liabilities (1047164690000.0) / Equity (1197635228000.0)",
           "Debt Ratio": "Total Liabilities (1047164690000.0) / Total Assets (1197635228000.0)",
           "Interest Coverage": "Operating Profit (None) / Finance Cost (69680466000.0)",
@@ -3518,7 +2757,7 @@
           "EBIT Margin": "Operating Profit (None) / Revenue (49651744000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (34898957000.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (25000.0) / Current Liabilities (None)",
           "Debt to Equity": "Total Liabilities (1211823067000.0) / Equity (1371482506000.0)",
           "Debt Ratio": "Total Liabilities (1211823067000.0) / Total Assets (1371482506000.0)",
           "Interest Coverage": "Operating Profit (None) / Finance Cost (63196160000.0)",
@@ -3614,26 +2853,26 @@
     "stages": {
       "extraction": {
         "status": "completed",
-        "start_time": "2026-06-04T12:02:54.373814",
-        "end_time": "2026-06-04T12:02:54.373814"
+        "start_time": "2026-06-05T00:42:48.657274",
+        "end_time": "2026-06-05T00:42:48.657274"
       },
       "analysis": {
         "status": "completed",
-        "start_time": "2026-06-04T12:02:54.373814",
-        "end_time": "2026-06-04T12:02:54.373814"
+        "start_time": "2026-06-05T00:42:48.658274",
+        "end_time": "2026-06-05T00:42:48.658274"
       },
       "report": {
         "status": "completed",
-        "start_time": "2026-06-04T12:02:54.373814",
-        "end_time": "2026-06-04T12:02:54.373814"
+        "start_time": "2026-06-05T00:42:48.659273",
+        "end_time": "2026-06-05T00:42:48.659273"
       }
     },
     "logs": [
-      "[2026-06-04T12:02:54] Strict extraction built: 8 years detected",
-      "[2026-06-04T12:02:54] Running strict analysis",
-      "[2026-06-04T12:02:54] Analysis complete. Valid years: ['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024']",
-      "[2026-06-04T12:02:54] Generating strict report",
-      "[2026-06-04T12:02:54] Report generation complete"
+      "[2026-06-05T00:42:48] Strict extraction built: 6 years detected",
+      "[2026-06-05T00:42:48] Running strict analysis",
+      "[2026-06-05T00:42:48] Analysis complete. Valid years: ['2019', '2020', '2021', '2022', '2023', '2024']",
+      "[2026-06-05T00:42:48] Generating strict report",
+      "[2026-06-05T00:42:48] Report generation complete"
     ]
   }
 }
