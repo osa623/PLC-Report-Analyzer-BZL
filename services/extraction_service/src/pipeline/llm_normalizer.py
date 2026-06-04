@@ -235,9 +235,9 @@ ONLY VALID JSON.
             self.model = None
         else:
             genai.configure(api_key=gemini_key)
-            # Use gemini-2.0-flash as it's the stable standard for these extractions
-            self.model = genai.GenerativeModel('gemini-2.0-flash', system_instruction=self.SYSTEM_PROMPT)
-            logger.info("LLMNormalizer initialized with gemini-2.0-flash")
+            # Use gemini-2.5-flash as it's the stable standard for these extractions
+            self.model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=self.SYSTEM_PROMPT)
+            logger.info("LLMNormalizer initialized with gemini-2.5-flash")
 
     def normalize(self, raw_data: Dict[str, Any], company_name: str, source_pdf: str) -> Dict[str, Any]:
         """

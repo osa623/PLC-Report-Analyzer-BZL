@@ -514,6 +514,7 @@ def build_strict_analysis_result(extraction_dataset: dict[str, Any]) -> dict[str
 
     return {
         "status": "COMPLETED",
+        "valid_years": ordered,
         "yearly_ratios": yearly_ratios,
         "growth_metrics": growth_metrics,
         "validation_gates": validation_gates,

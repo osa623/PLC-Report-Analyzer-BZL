@@ -133,7 +133,7 @@ def _section_rows(statement_payload: Any) -> list[dict[str, Any]]:
     if not isinstance(statement_payload, dict):
         return []
 
-    for key in ("financial_data", "rows", "table", "data_rows"):
+    for key in ("financial_data", "rows", "table", "data_rows", "data"):
         rows = statement_payload.get(key)
         if isinstance(rows, list) and rows:
             return [row for row in rows if isinstance(row, dict)]
@@ -206,8 +206,8 @@ def _detect_master_years(rows: list[dict[str, Any]]) -> list[str]:
                 years_set.add(match.group("year"))
                 
     if not years_set:
-        logging.error("Zero financial years detected in statement columns.")
-        raise ValueError("Zero financial years detected in statement columns.")
+        logging.warning("Zero financial years detected in statement columns.")
+        return []
         
     sorted_years = sorted(list(years_set), reverse=True)
     
@@ -384,7 +384,108 @@ def _field_count(year_payload: dict[str, Any]) -> int:
     return count
 
 
+def _build_from_financials_format(
+    financials: dict[str, Any],
+    company_name: str | None,
+) -> dict[str, Any]:
+    """
+    Directly build strict extraction dataset from the structured financials format.
+    """
+    by_year: dict[str, dict[str, Any]] = {}
+    master_years = []
+    
+    for k in financials.keys():
+        if isinstance(k, str) and re.match(r"^\d{4}$", k):
+            master_years.append(k)
+            
+    master_years = sorted(master_years, key=int)
+    
+    for year in master_years:
+        by_year[year] = {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {}
+        }
+        
+        entities_data = financials[year]
+        if not isinstance(entities_data, dict):
+            continue
+            
+        lowercase_keys = {k.lower(): k for k in entities_data.keys()}
+        entity_priorities = ["standalone", "parent", "entity", "company", "bank", "consolidated", "group"]
+        other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
+        ordered_keys_to_process = other_keys + entity_priorities
+        
+        for k_lower in ordered_keys_to_process:
+            if k_lower not in lowercase_keys:
+                continue
+            original_key = lowercase_keys[k_lower]
+            entity_payload = entities_data[original_key]
+            if not isinstance(entity_payload, dict):
+                continue
+                
+            for statement_key in ("income_statement", "balance_sheet", "cash_flow"):
+                statement_data = entity_payload.get(statement_key)
+                if not isinstance(statement_data, dict):
+                    # Check aliases
+                    for possible_key, val in entity_payload.items():
+                        if _SECTION_ALIASES.get(possible_key) == statement_key or possible_key == statement_key:
+                            statement_data = val
+                            break
+                            
+                if not isinstance(statement_data, dict):
+                    continue
+                    
+                for raw_field, raw_val in statement_data.items():
+                    parsed_val = _parse_number(raw_val)
+                    if parsed_val is not None:
+                        # Normalize key name using _field_map
+                        cleaned_label = raw_field.replace("_", " ").strip()
+                        canonical_field = _field_map(statement_key, cleaned_label)
+                        if not canonical_field:
+                            canonical_field = _field_map(statement_key, raw_field)
+                        if not canonical_field:
+                            canonical_field = raw_field
+                            
+                        by_year[year][statement_key][canonical_field] = round(parsed_val, 3)
+
+    confidence_by_year = {
+        year: round(min(100.0, max(0.0, 20.0 + 5.0 * _field_count(payload))), 2)
+        for year, payload in by_year.items()
+    }
+    for year, payload in by_year.items():
+        payload["extraction_confidence"] = confidence_by_year.get(year, 0.0)
+
+    normalized_company = _slugify_company_name(str(company_name) if company_name else None)
+    financial_graph = {year: by_year[year] for year in master_years}
+
+    return {
+        "company_name": normalized_company,
+        "company": normalized_company,
+        "currency": "LKR_millions",
+        "years": financial_graph,
+        "financial_graph": financial_graph,
+        "metadata": {
+            "unit_scale": "LKR_millions",
+            "confidence": {
+                "overall": round(sum(confidence_by_year.values()) / float(len(confidence_by_year)) if confidence_by_year else 0.0, 2),
+                "per_year": confidence_by_year,
+                "duplicate_year_merges": 0,
+            },
+        },
+        "extraction_confidence": 100 if financial_graph else 0,
+    }
+
+
 def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) -> dict[str, Any]:
+
+    print("\n===== STRICT INPUT =====")
+    print(extraction_outputs[0].keys())
+
+    import json
+    print(json.dumps(extraction_outputs[0], indent=2)[:2000])
+    print("========================\n")
+
     records = [item for item in extraction_outputs if isinstance(item, dict)]
     if not records:
         return {
@@ -400,11 +501,30 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
             "extraction_confidence": 0,
         }
 
+    # Structured format detection and routing
+    for record in records:
+        financials = None
+        statements = record.get("statements")
+        if isinstance(statements, dict):
+            if "financials" in statements:
+                financials = statements["financials"]
+            elif any(isinstance(k, str) and re.match(r"^\d{4}$", k) for k in statements):
+                financials = statements
+        if financials is None and "financials" in record:
+            financials = record["financials"]
+            
+        if isinstance(financials, dict) and any(isinstance(k, str) and re.match(r"^\d{4}$", k) for k in financials):
+            company_name = (
+                record.get("company_name")
+                or record.get("company")
+                or record.get("pdf_name")
+                or record.get("document_name")
+                or (statements.get("company") if isinstance(statements, dict) else None)
+            )
+            return _build_from_financials_format(financials, company_name)
+
     all_rows = _collect_all_rows(records)
-    try:
-        master_years = _detect_master_years(all_rows)
-    except ValueError:
-        raise
+    master_years = _detect_master_years(all_rows)
         
     by_year: dict[str, dict[str, Any]] = {
         year: {"income_statement": {}, "balance_sheet": {}, "cash_flow": {}} 

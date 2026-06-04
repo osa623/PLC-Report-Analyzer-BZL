@@ -169,3 +169,56 @@ def build_strict_report(extraction_dataset: dict[str, Any], analysis_result: dic
         "scores": scores,
         "evaluated_equations_by_year": analysis_result.get("evaluated_equations_by_year", {})
     }
+
+
+def build_report_from_analytics(analytics: dict[str, Any]) -> dict[str, Any]:
+    """Build a report using analytics.json as the only input artifact."""
+    ratios = analytics.get("ratios") if isinstance(analytics.get("ratios"), dict) else {}
+    patterns = analytics.get("patterns") if isinstance(analytics.get("patterns"), list) else []
+    confidence = analytics.get("confidence") if isinstance(analytics.get("confidence"), dict) else {}
+    risk = analytics.get("risk") if isinstance(analytics.get("risk"), dict) else {}
+
+    by_year = ratios.get("by_year") if isinstance(ratios.get("by_year"), dict) else {}
+    valid_years = sorted([year for year in by_year if isinstance(year, str) and year.isdigit()], key=int)
+    ratio_rows: list[list[Any]] = []
+    for year in valid_years:
+        row = by_year.get(year) if isinstance(by_year.get(year), dict) else {}
+        ratio_rows.append([
+            year,
+            _fmt_metric(row.get("return_on_equity")),
+            _fmt_metric(row.get("return_on_assets")),
+            _fmt_metric(row.get("current_ratio")),
+            _fmt_metric(row.get("debt_to_equity")),
+            _fmt_metric(row.get("net_profit_margin")),
+            _fmt_metric(row.get("gross_profit_margin")),
+            _fmt_metric(row.get("operating_cash_flow_margin")),
+        ])
+
+    latest_year = valid_years[-1] if valid_years else ratios.get("latest_year")
+    key_findings = []
+    if latest_year:
+        key_findings.append(f"Latest analytics period: {latest_year}.")
+    if confidence:
+        key_findings.append(f"Confidence band: {confidence.get('band', 'n/a')} with score {_fmt_metric(confidence.get('score'))}.")
+    if risk:
+        key_findings.append(f"Risk level: {risk.get('overall_risk_level', risk.get('status', 'n/a'))}.")
+    key_findings.extend(str(pattern) for pattern in patterns[:5])
+
+    return {
+        "source": "analytics.json",
+        "tables": {
+            "ratios": _table(
+                ["Year", "ROE", "ROA", "Current Ratio", "Debt/Equity", "Net Margin", "Gross Margin", "OCF Margin"],
+                ratio_rows,
+            )
+        },
+        "key_findings": key_findings,
+        "anomalies": risk.get("risk_flags", []) if isinstance(risk.get("risk_flags"), list) else [],
+        "validation_summary": patterns,
+        "financial_health_score": confidence.get("overall_data_quality_score", confidence.get("score", 0.0)),
+        "risk_score": risk.get("overall_risk_score", 0.0),
+        "scores": {
+            "confidence": confidence,
+            "risk": risk,
+        },
+    }

@@ -9,12 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from platform_core.shared_infra.job_status import init_pipeline_stages, update_pipeline_stage
-from platform_core.shared_infra.redis_client import get_redis_client, set_json
+from platform_core.shared_infra.redis_client import get_json, get_redis_client, set_json
 
+from services.analysis_service.normalized_results_adapter import load_canonical_analysis_dataset
 from services.analysis_service.strict_pipeline import build_strict_analysis_result
+from services.extraction_service.canonical_results import (
+    CANONICAL_MISSING_ERROR,
+    persist_normalized_results,
+)
 from services.extraction_service.src.pipeline.pdf_image_orchestrator import process_annual_reports
-from services.extraction_service.strict_pipeline import build_strict_extraction_dataset
-from services.reporting_service.strict_pipeline import build_strict_report
+from services.reporting_service.strict_pipeline import build_report_from_analytics
 
 from pipeline_orchestrator.redis_artifacts import (
     save_extraction_artifacts,
@@ -94,34 +98,35 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
 
     raw_results = process_annual_reports([pdf_path.read_bytes()])
     raw_result = raw_results[0] if raw_results else {"pdf_name": pdf_path.name, "error": "No extraction result returned"}
+    normalized_records = persist_normalized_results([raw_result], [pdf_path.name])
 
-    strict_extraction = build_strict_extraction_dataset([raw_result])
-    company_name = str(strict_extraction.get("company_name") or pdf_path.stem)
+    analysis_dataset = load_canonical_analysis_dataset()
+    company_name = str(analysis_dataset.get("company_name") or pdf_path.stem)
     log_dir = _prepare_log_dir(company_name, pdf_path)
     log_file = log_dir / "pipeline.log"
 
     _append_log(log_file, f"Upload received: {pdf_path.name}")
     _append_log(log_file, "Locating statement pages")
     _append_log(log_file, "Extracting financial statements")
-    _write_json(log_dir / "extraction.json", strict_extraction)
+    _write_json(log_dir / "normalized_results.json", normalized_records)
 
     # ── Save extraction artifacts to Redis ──
-    save_extraction_artifacts(redis_client, report_id, strict_extraction, PIPELINE_TTL_SECONDS)
+    save_extraction_artifacts(redis_client, report_id, analysis_dataset, PIPELINE_TTL_SECONDS)
 
     # ── Persist to MongoDB for long-term storage ──
     try:
         from platform_core.company_repository import upsert_company_financials
-        years_data = strict_extraction.get("years") or strict_extraction.get("financial_graph") or {}
+        years_data = analysis_dataset.get("years") or analysis_dataset.get("financial_graph") or {}
         if years_data:
             upsert_company_financials(company_name, "General", years_data)
     except Exception as mongo_err:
         import logging
         logging.getLogger(__name__).warning("MongoDB persistence failed (non-fatal): %s", mongo_err)
 
-    extraction_status = "completed" if strict_extraction.get("years") else "failed"
+    extraction_status = "completed" if analysis_dataset.get("years") else "failed"
     update_pipeline_stage(
         redis_client, report_id, "EXTRACTION", extraction_status, PIPELINE_TTL_SECONDS,
-        {"pdf_name": pdf_path.name, "company_name": company_name, "artifacts": ["extraction.json"]},
+        {"pdf_name": pdf_path.name, "company_name": company_name, "artifacts": ["normalized_results.json"]},
     )
     _append_log(log_file, f"Extraction {extraction_status}")
 
@@ -133,6 +138,7 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
             "error": "No financial years extracted from document",
         }
         set_json(redis_client, f"report:{report_id}:extraction_failure", failure_info, PIPELINE_TTL_SECONDS)
+        raise RuntimeError(CANONICAL_MISSING_ERROR)
 
     # ── STAGE 2: ANALYSIS ────────────────────────────────────────────────
     update_document_status(redis_client, report_id, pdf_path.name, "running", "ANALYSIS", PIPELINE_TTL_SECONDS)
@@ -152,11 +158,11 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     )
     _append_log(log_file, "Running financial analysis")
 
-    analysis_result = build_strict_analysis_result(strict_extraction)
-    _write_json(log_dir / "analysis.json", analysis_result)
+    analysis_result = build_strict_analysis_result(analysis_dataset)
+    _write_json(log_dir / "analytics.json", analysis_result)
 
     # ── Save analysis artifacts to Redis ──
-    save_analysis_artifacts(redis_client, report_id, strict_extraction, analysis_result, PIPELINE_TTL_SECONDS)
+    save_analysis_artifacts(redis_client, report_id, analysis_dataset, analysis_result, PIPELINE_TTL_SECONDS)
 
     # ── Persist analysis to MongoDB ──
     try:
@@ -175,7 +181,7 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
         {
             "pdf_name": pdf_path.name, 
             "company_name": company_name, 
-            "artifacts": ["analysis.json"],
+            "artifacts": ["analytics.json"],
             "analysis_start_time": analysis_start_time,
             "analysis_end_time": datetime.now().isoformat(),
             "calculation_progress": "completed",
@@ -192,8 +198,11 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     )
     _append_log(log_file, "Generating final report")
 
-    report_result = build_strict_report(strict_extraction, analysis_result)
-    _write_json(log_dir / "report.json", report_result)
+    analytics_payload = get_json(redis_client, f"report:{report_id}:analytics", default={})
+    if not isinstance(analytics_payload, dict) or not analytics_payload:
+        raise RuntimeError("analytics.json not found")
+    report_result = build_report_from_analytics(analytics_payload)
+    _write_json(log_dir / "final_report.json", report_result)
 
     # ── Save report artifacts to Redis ──
     save_report_artifacts(redis_client, report_id, report_result, PIPELINE_TTL_SECONDS)
@@ -201,7 +210,7 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
     reporting_status = "completed" if isinstance(report_result, dict) else "failed"
     update_pipeline_stage(
         redis_client, report_id, "REPORTING", reporting_status, PIPELINE_TTL_SECONDS,
-        {"pdf_name": pdf_path.name, "company_name": company_name, "artifacts": ["report.json"]},
+        {"pdf_name": pdf_path.name, "company_name": company_name, "artifacts": ["final_report.json"]},
     )
     _append_log(log_file, "Completed")
 
@@ -212,7 +221,7 @@ def _process_pdf(pdf_path: Path, report_id: str, redis_client) -> dict[str, Any]
         "pdf_name": pdf_path.name,
         "company_name": company_name,
         "log_dir": str(log_dir),
-        "extraction": strict_extraction,
+        "normalized_results": "normalized_results.json",
         "analysis": analysis_result,
         "report": report_result,
     }
@@ -252,9 +261,9 @@ def run_full_pipeline(pdf_paths_or_folder: list[str] | str, report_id: str | Non
 
             failure_log_dir = _prepare_log_dir(pdf_path.stem, pdf_path)
             _append_log(failure_log_dir / "pipeline.log", f"FAILED: {exc}")
-            _write_json(failure_log_dir / "extraction.json", {"pdf_name": pdf_path.name, "error": str(exc)})
-            _write_json(failure_log_dir / "analysis.json", {"pdf_name": pdf_path.name, "error": str(exc)})
-            _write_json(failure_log_dir / "report.json", {"pdf_name": pdf_path.name, "error": str(exc)})
+            _write_json(failure_log_dir / "normalized_results.json", {"pdf_name": pdf_path.name, "error": str(exc)})
+            _write_json(failure_log_dir / "analytics.json", {"pdf_name": pdf_path.name, "error": str(exc)})
+            _write_json(failure_log_dir / "final_report.json", {"pdf_name": pdf_path.name, "error": str(exc)})
             update_pipeline_stage(
                 redis_client, report_id, "EXTRACTION", "failed", PIPELINE_TTL_SECONDS,
                 {"pdf_name": pdf_path.name, "error": str(exc)},

@@ -34,7 +34,12 @@ logging.basicConfig(
 # CONFIGURATION: Add your PDF paths here
 # -------------------------------------------------------------------
 PDF_PATHS = [
-   EXTRACTION_SERVICE_DIR / "data" / "raw" / "ndb" / "NDB_Banking_2024.pdf"
+
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2020.pdf",
+
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2022.pdf",
+
+   EXTRACTION_SERVICE_DIR / "data" / "raw" / "union" / "2024.pdf",
 ]
 
 def main():

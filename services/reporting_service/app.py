@@ -12,8 +12,8 @@ from .report_builder.dashboard_dto_builder import build_dashboard_dto
 from .report_builder.chart_data_builder import build_chart_data
 from .report_builder.narrative_generator import generate_narrative
 from .report_builder.section_composer import compose_sections
-from .strict_pipeline import build_strict_report
-from .storage.final_report_repository import save_final_report
+from .strict_pipeline import build_report_from_analytics
+from .storage.final_report_repository import final_report_path, save_final_report
 from .workflow.job_status_tracker import mark_failed, mark_running, mark_success
 from platform_core.contracts import AnalysisResultModel, FinancialStatementModel
 from platform_core.shared_infra.redis_client import get_json, set_json
@@ -481,7 +481,7 @@ async def healthz():
 
 @app.get("/report/latest")
 async def report_latest():
-    report_file = EVAL_DIR / "final_report.json"
+    report_file = final_report_path()
     if not report_file.exists():
         raise HTTPException(status_code=404, detail="final_report.json not found")
     data = json.loads(report_file.read_text(encoding="utf-8"))
@@ -518,31 +518,23 @@ async def generate_report(request: GenerateReportRequest):
     try:
         mark_running(redis, report_id)
 
-        strict_extraction = get_json(redis, f"report:{report_id}:strict_extraction", default={})
-        strict_analysis = get_json(redis, f"report:{report_id}:strict_analysis", default={})
-        if not isinstance(strict_extraction, dict) or not isinstance(strict_extraction.get("years"), dict):
-            raise HTTPException(status_code=404, detail="strict_extraction not found")
-        if not isinstance(strict_analysis, dict):
-            raise HTTPException(status_code=404, detail="strict_analysis not found")
-        if strict_analysis.get("status") == "VALIDATION_FAILED":
-            raise HTTPException(
-                status_code=409,
-                detail="Report generation requires at least one validated year after analysis",
-            )
+        analytics = get_json(redis, f"report:{report_id}:analytics", default={})
+        if not isinstance(analytics, dict) or not analytics:
+            raise HTTPException(status_code=404, detail="analytics.json not found")
 
-        strict_report = build_strict_report(strict_extraction, strict_analysis)
-        validated = get_json(redis, f"report:{report_id}:canonical_validated", default={})
-        ratios = get_json(redis, f"report:{report_id}:ratios", default={})
-        patterns = get_json(redis, f"report:{report_id}:patterns", default=[])
-        confidence = get_json(redis, f"report:{report_id}:confidence", default={})
-        sector = get_json(redis, f"report:{report_id}:sector_comparison", default={})
-        risk = get_json(redis, f"report:{report_id}:risk", default={})
+        strict_report = build_report_from_analytics(analytics)
+        validated = {}
+        ratios = analytics.get("ratios") if isinstance(analytics.get("ratios"), dict) else {}
+        patterns = analytics.get("patterns") if isinstance(analytics.get("patterns"), list) else []
+        confidence = analytics.get("confidence") if isinstance(analytics.get("confidence"), dict) else {}
+        sector = analytics.get("sector_comparison") if isinstance(analytics.get("sector_comparison"), dict) else {}
+        risk = analytics.get("risk") if isinstance(analytics.get("risk"), dict) else {}
         analysis_coverage = get_json(redis, f"report:{report_id}:analysis_coverage", default={})
 
         report_payload = _build_report_payload(
             report_id,
             strict_report,
-            strict_analysis,
+            {"valid_years": ratios.get("detected_years", []), "validation_flags": []},
             validated if isinstance(validated, dict) else {},
             ratios if isinstance(ratios, dict) else {},
             patterns if isinstance(patterns, list) else [],
