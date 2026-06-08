@@ -559,8 +559,8 @@ def _detect_scale_multiplier(page_text: str) -> int:
         return 1_000
     return 1
 
-def _apply_multiplier(data: dict, multiplier: int) -> dict:
-    if multiplier == 1 or not isinstance(data, dict):
+def _apply_multiplier(data: Any, multiplier: int) -> Any:
+    if multiplier == 1:
         return data
         
     def multiply_value(val):
@@ -587,19 +587,30 @@ def _apply_multiplier(data: dict, multiplier: int) -> dict:
                     pass
         return val
 
-    for k, v in data.items():
-        if isinstance(v, dict):
-            data[k] = _apply_multiplier(v.copy(), multiplier)
-        elif isinstance(v, list):
-            new_list = []
-            for item in v:
-                if isinstance(item, dict):
-                    new_list.append(_apply_multiplier(item.copy(), multiplier))
-                else:
-                    new_list.append(multiply_value(item))
-            data[k] = new_list
-        else:
-            data[k] = multiply_value(v)
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if isinstance(v, dict):
+                data[k] = _apply_multiplier(v.copy(), multiplier)
+            elif isinstance(v, list):
+                new_list = []
+                for item in v:
+                    if isinstance(item, dict):
+                        new_list.append(_apply_multiplier(item.copy(), multiplier))
+                    else:
+                        new_list.append(multiply_value(item))
+                data[k] = new_list
+            else:
+                data[k] = multiply_value(v)
+    elif isinstance(data, list):
+        new_list = []
+        for item in data:
+            if isinstance(item, dict):
+                new_list.append(_apply_multiplier(item.copy(), multiplier))
+            elif isinstance(item, list):
+                new_list.append(_apply_multiplier(item, multiplier))
+            else:
+                new_list.append(multiply_value(item))
+        return new_list
             
     return data
 

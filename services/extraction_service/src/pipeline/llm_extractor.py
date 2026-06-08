@@ -417,20 +417,41 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
                 logger.error(f"Gemini Call Failed: {str(e)}")
                 raise e
 
-    def _clean_and_parse_json(self, text: str, context_id: str = "unknown") -> Dict[str, Any]:
+    def _clean_and_parse_json(self, text: str, context_id: str = "unknown") -> Any:
         """Clean markdown fences and parse JSON. Attempts repairs and saves debug logs on failure."""
         try:
             # 1. Try to find JSON within code blocks first
-            match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+            match = re.search(r"```json\s*(\[.*?\])\s*```", text, re.DOTALL)
+            if not match:
+                match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
+            if not match:
+                match = re.search(r"```\s*(\[.*?\])\s*```", text, re.DOTALL)
             if not match:
                 match = re.search(r"```\s*(\{.*?\})\s*```", text, re.DOTALL)
             
             if match:
                 clean_text = match.group(1)
             else:
-                # 2. If no code blocks, look for the first { and last }
-                start = text.find('{')
-                end = text.rfind('}')
+                # 2. If no code blocks, look for the first { or [ and last } or ]
+                start_brace = text.find('{')
+                start_bracket = text.find('[')
+                
+                if start_brace != -1 and start_bracket != -1:
+                    start = min(start_brace, start_bracket)
+                elif start_brace != -1:
+                    start = start_brace
+                else:
+                    start = start_bracket
+                    
+                end_brace = text.rfind('}')
+                end_bracket = text.rfind(']')
+                
+                if end_brace != -1 and end_bracket != -1:
+                    end = max(end_brace, end_bracket)
+                elif end_brace != -1:
+                    end = end_brace
+                else:
+                    end = end_bracket
                 
                 if start != -1 and end != -1:
                     clean_text = text[start:end+1]

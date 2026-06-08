@@ -156,6 +156,15 @@ def _section_rows(statement_payload: Any) -> list[dict[str, Any]]:
         rows = statement_payload.get(key)
         if isinstance(rows, list) and rows:
             return [row for row in rows if isinstance(row, dict)]
+        if isinstance(rows, dict) and rows:
+            # If the rows object is a dictionary, it might group rows under sections
+            # (e.g., {"Assets": [...], "Liabilities": [...]}). Traverse it.
+            nested_list_rows = []
+            for val in rows.values():
+                if isinstance(val, list):
+                    nested_list_rows.extend(row for row in val if isinstance(row, dict))
+            if nested_list_rows:
+                return nested_list_rows
 
     segments = statement_payload.get("segments")
     if isinstance(segments, list):
@@ -196,6 +205,11 @@ def _section_rows(statement_payload: Any) -> list[dict[str, Any]]:
     for value in statement_payload.values():
         if isinstance(value, list):
             nested_rows.extend(row for row in value if isinstance(row, dict))
+        elif isinstance(value, dict):
+            # Check if this sub-dict contains list of dicts (e.g. data: {"Assets": [...]})
+            for sub_val in value.values():
+                if isinstance(sub_val, list):
+                    nested_rows.extend(row for row in sub_val if isinstance(row, dict))
     if nested_rows:
         return nested_rows
 
