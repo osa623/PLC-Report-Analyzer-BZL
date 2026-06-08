@@ -55,7 +55,7 @@ class MLFinancialExtractor:
         self.statement_keywords = {
             "Income_Statement": [
                 "income statement", "statement of comprehensive income",
-                "statement of profit or loss", "profit and loss", 
+                "statement of profit or loss", "profit and loss", "profit or loss",
                 "income statement note"
             ],
             "Financial Position Statement": [

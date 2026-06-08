@@ -55,9 +55,16 @@ class TOCDetector:
             r'(\d{3})\s+Income\s+Statement',  # "295 Income Statement"
             r'Income\s+Statement\s+(\d{3})',  # "Income Statement 295"
             r'(\d{3})\s+Statement\s+of\s+Profit',  # "225 Statement of Profit"
-            r'Statement\s+of\s+Profit\s+(?:or\s+Loss|and\s+Loss).*?(\d{3})',  # "Statement of Profit or Loss 225"
-            r'(\d{3})\s+Statement\s+of\s+Comprehensive\s+Income',  # "225 Statement of Comprehensive Income"
-            r'Statement\s+of\s+Comprehensive\s+Income\s+(\d{3})',  # "Statement of Comprehensive Income 225"
+            r'Statement\s+of\s+Profit\s+or\s+Loss\s+(\d{3})',
+            r'(\d{3})\s+Statement\s+of\s+Profit\s+or\s+Loss',
+            r'(\d{3})\s+Profit\s+or\s+Loss\s+Account',  # "225 Profit or Loss Account"
+            r'Profit\s+or\s+Loss\s+Account\s+(\d{3})',
+            r'(\d{3})\s+Statement\s+of\s+Comprehensive\s+Income',
+            r'Statement\s+of\s+Comprehensive\s+Income\s+(\d{3})',
+            r'(\d{3})\s+Profit\s+and\s+Loss',
+            r'Profit\s+and\s+Loss\s+(\d{3})',
+            r'(\d{3})\s+Profit\s+or\s+Loss',
+            r'Profit\s+or\s+Loss\s+(\d{3})',
         ]
         
         for pattern in income_patterns:

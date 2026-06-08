@@ -30,6 +30,7 @@ class HeadingScanner:
                 'statement of profit or loss',
                 'statement of comprehensive income',
                 'profit and loss',
+                'profit or loss',
                 'statement of income'
             ],
             'Financial Position Statement': [
@@ -89,6 +90,8 @@ class HeadingScanner:
             'income statement',
             'statement of profit',
             'statement of comprehensive income',
+            'profit or loss',
+            'profit and loss',
             'statement of financial position',
             'statement of cash flow',
             'cash flow statement'

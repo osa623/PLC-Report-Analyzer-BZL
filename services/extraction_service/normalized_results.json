@@ -417,7 +417,7 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-08T10:07:08.574755"
+      "normalized_at": "2026-06-08T11:11:33.195509"
     }
   },
   {
@@ -682,7 +682,7 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-08T10:07:32.354955"
+      "normalized_at": "2026-06-08T11:11:58.728354"
     }
   },
   {
@@ -969,7 +969,7 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-08T10:07:47.428527"
+      "normalized_at": "2026-06-08T11:12:13.929565"
     }
   },
   {
@@ -977,14 +977,33 @@
     "source_pdf": "AMANA_Banking_2024.pdf",
     "financials": {
       "2024": {
-        "consolidated": {
-          "income_statement": {
-            "statement_of_profit_or_loss": {
-              "value": 46489
-            }
-          }
-        },
         "company": {
+          "income_statement": {
+            "financing_income": 15399562261,
+            "financing_expenses": -8525272891,
+            "net_financing_income": 6874289370,
+            "net_fee_and_commission_income": 1077337861,
+            "net_trading_income": 693112850,
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": 38985111,
+            "net_gains_losses_from_derecognition_of_financial_assets": -69917,
+            "net_other_operating_income": 5989723,
+            "total_operating_income": 8689644998,
+            "impairment_on_financial_assets": -289612927,
+            "net_operating_income": 8400032071,
+            "personnel_expenses": 2274493660,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 256903664,
+            "amortisation_of_intangible_assets": 64936795,
+            "other_operating_expenses": 2012679625,
+            "total_operating_expenses": 4609013744,
+            "operating_profit_before_vat_on_financial_services_social_security_contribution_levy": 3791018327,
+            "vat_on_financial_services": -886820214,
+            "social_security_contribution_levy": -117354789,
+            "profit_before_tax": 2786843324,
+            "tax_expense": -1012177592,
+            "profit_for_the_year": 1774665732,
+            "earnings_per_share_basic": 3.22,
+            "earnings_per_share_diluted": 3.22
+          },
           "balance_sheet": {
             "cash_and_cash_equivalents": 17070764566,
             "balance_with_central_bank_of_sri_lanka": 7078039326,
@@ -1147,14 +1166,33 @@
         }
       },
       "2023": {
-        "consolidated": {
-          "income_statement": {
-            "statement_of_profit_or_loss": {
-              "value": 10535606
-            }
-          }
-        },
         "company": {
+          "income_statement": {
+            "financing_income": 17238372606,
+            "financing_expenses": -10743449941,
+            "net_financing_income": 6494922665,
+            "net_fee_and_commission_income": 931310583,
+            "net_trading_income": 1765213774,
+            "net_gains_losses_from_financial_assets_at_fair_value_through_profit_or_loss": 15112806,
+            "net_gains_losses_from_derecognition_of_financial_assets": 982956,
+            "net_other_operating_income": 2982534,
+            "total_operating_income": 9210525318,
+            "impairment_on_financial_assets": -2120743289,
+            "net_operating_income": 7089782029,
+            "personnel_expenses": 1975989769,
+            "depreciation_of_property_plant_equipment_and_right_of_use_assets": 249465480,
+            "amortisation_of_intangible_assets": 58137560,
+            "other_operating_expenses": 1587478916,
+            "total_operating_expenses": 3871071725,
+            "operating_profit_before_vat_on_financial_services_social_security_contribution_levy": 3218710304,
+            "vat_on_financial_services": -797380931,
+            "social_security_contribution_levy": -109138773,
+            "profit_before_tax": 2312190600,
+            "tax_expense": -925414505,
+            "profit_for_the_year": 1386776095,
+            "earnings_per_share_basic": 2.52,
+            "earnings_per_share_diluted": 2.52
+          },
           "balance_sheet": {
             "cash_and_cash_equivalents": 11100863400,
             "balance_with_central_bank_of_sri_lanka": 9446862668,
@@ -1337,7 +1375,7 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-08T10:08:06.317474"
+      "normalized_at": "2026-06-08T11:12:29.618645"
     }
   }
 ]

@@ -6,6 +6,7 @@ INCOME_STATEMENT_KEYWORDS = [
     "statement of profit or loss",
     "statement of comprehensive income",
     "profit and loss",
+    "profit or loss",
     "p&l statement",
     "statement of income",
     "consolidated income statement",

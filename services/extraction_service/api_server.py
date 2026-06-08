@@ -745,15 +745,20 @@ def extract_data_from_pages(pdf_id):
                 year = "Unknown"
 
             # Apply LLM Normalization before MongoDB insertion
-            normalized_db_payload = llm_normalizer.normalize(
-                raw_data=extracted_data['statements'],
-                company_name=company,
-                source_pdf=filename
-            )
+            from canonical_results import persist_normalized_results
+            raw_result = {
+                "pdf_name": filename,
+                "statements": extracted_data['statements'],
+                "company_name": company
+            }
+            # This generates/updates normalized_results.json and throws RuntimeError on failure
+            normalized_records = persist_normalized_results([raw_result], [filename])
+            normalized_db_payload = normalized_records[0]
             
             save_to_db(normalized_db_payload)
         except Exception as e:
-            logger.error(f"Error preparing DB payload during extraction: {e}")
+            logger.error(f"Error preparing DB payload during extraction or writing canonical normalized results: {e}")
+            raise e
         
         # Count total items extracted
         total_items = 0

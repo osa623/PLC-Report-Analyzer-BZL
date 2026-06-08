@@ -17,6 +17,8 @@ _SECTION_ALIASES = {
     "cashflow": "cash_flow",
     "income": "income_statement",
     "statement_of_income": "income_statement",
+    "profit_or_loss": "income_statement",
+    "profit_and_loss": "income_statement",
     "statement_of_profit_or_loss": "income_statement",
     "statement_of_profit_and_loss": "income_statement",
     "statement_of_profit_or_loss_and_other_comprehensive_income": "income_statement",

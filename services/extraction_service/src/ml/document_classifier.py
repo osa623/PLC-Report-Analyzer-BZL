@@ -16,7 +16,8 @@ class DocumentClassifier:
         "Income_Statement": {
             "primary_keywords": [
                 "income statement", "statement of comprehensive income", 
-                "profit and loss", "statement of income", "statement of profit"
+                "profit and loss", "statement of income", "statement of profit",
+                "statement of profit or loss", "profit or loss"
             ],
             "secondary_keywords": [
                 "gross income", "interest income", "net interest income",
