@@ -7,18 +7,21 @@ TERM_MAPPING = {
     ],
     "Interest income": [
         "interest income",
+        "financing income",
         "interest revenue",
         "total interest income"
     ],
     "Interest expenses": [
         "interest expenses",
         "interest expense",
+        "financing expenses",
         "interest paid",
         "cost of funds"
     ],
     "Net interest income": [
         "net interest income",
         "nii",
+        "net financing income",
         "interest income net",
         "net interest revenue"
     ],
