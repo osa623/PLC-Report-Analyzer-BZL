@@ -13,6 +13,7 @@ import logging
 import os
 import re
 import sys
+import uuid as _uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -121,6 +122,20 @@ for _lbl, _fld in _CASH_LABELS.items():
     _LABEL_MAP[_lbl] = ("cash_flow", _fld)
 
 _YEAR_RE = re.compile(r"(20\d{2})")
+_DEFAULT_NORMALIZED_RESULTS_PATH = _REPO_ROOT / "services" / "extraction_service" / "normalized_results.json"
+_OUTPUTS_ROOT = _REPO_ROOT / "outputs"
+
+
+def generate_batch_id() -> str:
+    """Generate a unique batch identifier."""
+    return _uuid.uuid4().hex[:12]
+
+
+def get_batch_output_dir(batch_id: str) -> Path:
+    """Return (and create) the output directory for a given batch."""
+    batch_dir = _OUTPUTS_ROOT / batch_id
+    batch_dir.mkdir(parents=True, exist_ok=True)
+    return batch_dir
 
 
 def _parse_number(value: Any) -> float | None:
@@ -283,6 +298,9 @@ def convert_gemini_to_strict(gemini_result: dict, filename: str = "") -> dict[st
 def _run_strict_pipeline(
     strict_extraction: dict[str, Any],
     progress_callback=None,
+    normalized_result: list[dict[str, Any]] | dict[str, Any] | None = None,
+    normalized_results_path: str | Path | None = None,
+    batch_id: str | None = None,
 ) -> dict[str, Any]:
     """Run analysis and reporting for an already-built strict dataset."""
     stages: dict[str, dict[str, Any]] = {
@@ -290,7 +308,15 @@ def _run_strict_pipeline(
         "analysis": {"status": "pending"},
         "report": {"status": "pending"},
     }
+    # ── Batch isolation ──
+    if batch_id is None:
+        batch_id = generate_batch_id()
+    batch_dir = get_batch_output_dir(batch_id)
+    _log_init_msg = f"Pipeline batch {batch_id} → {batch_dir}"
+
     logs: list[str] = []
+    logs.append(f"[{datetime.now().isoformat(timespec='seconds')}] {_log_init_msg}")
+    logger.info(_log_init_msg)
 
     def _log(msg: str):
         ts = datetime.now().isoformat(timespec="seconds")
@@ -330,7 +356,7 @@ def _run_strict_pipeline(
     stages["analysis"]["start_time"] = datetime.now().isoformat()
 
     try:
-        analysis_result = build_strict_analysis_result(strict_extraction)
+        analysis_result = build_strict_analysis_result(analysis_input)
     except Exception as exc:
         _log(f"Analysis failed: {exc}")
         analysis_result = build_validation_failed_diagnostic(strict_extraction, [str(exc)])
@@ -357,13 +383,45 @@ def _run_strict_pipeline(
     stages["report"]["end_time"] = datetime.now().isoformat()
     _log("Report generation complete")
 
-    return {
+    pipeline_output = {
+        "batch_id": batch_id,
+        "batch_dir": str(batch_dir),
         "extraction": strict_extraction,
+        "extraction_metadata": {
+            "source": strict_extraction.get("source", "legacy_extraction_conversion"),
+            "normalized_results_consumed": normalized_results is not None,
+            "normalized_record_count": len(normalized_results or []),
+        },
+        "normalized_dataset_metadata": analysis_result.get("normalized_dataset_metadata", {}),
+        "completeness_metrics": analysis_result.get("completeness_metrics", {}),
+        "sector_classification": analysis_result.get("sector_classification", {}),
+        "bank_analysis": analysis_result.get("bank_analysis", {}),
+        "group_analysis": analysis_result.get("group_analysis", {}),
+        "ratio_analysis": analysis_result.get("ratio_analysis", {}),
+        "growth_analysis": analysis_result.get("growth_analysis", {}),
+        "validation_results": analysis_result.get("validation_results", {}),
+        "confidence_scores": analysis_result.get("confidence_scores", {}),
+        "reliability_scores": analysis_result.get("reliability_scores", {}),
+        "risk_scores": analysis_result.get("risk_scores", {}),
+        "diagnostics": analysis_result.get("diagnostics", []),
         "analysis": analysis_result,
         "report": report_result,
         "stages": stages,
         "logs": logs,
     }
+
+    # Persist full results into the batch directory
+    try:
+        results_path = batch_dir / "full_pipeline_test_results.json"
+        results_path.write_text(
+            json.dumps(pipeline_output, indent=2, ensure_ascii=False, default=str),
+            encoding="utf-8",
+        )
+        _log(f"Batch results saved to {results_path}")
+    except Exception as err:
+        _log(f"Warning: Could not write batch results: {err}")
+
+    return pipeline_output
 
 
 def run_pipeline_for_extraction_records(

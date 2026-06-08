@@ -711,17 +711,38 @@ def _build_from_financials_records(records: list[dict[str, Any]]) -> dict[str, A
 
 
 def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Supports BOTH:
+    1. Legacy row-column extraction format
+    2. New structured yearly JSON format
+
+    New structured format example:
+    {
+        "2024": {
+            "bank": {
+                "income_statement": {...},
+                "balance_sheet": {...}
+            },
+            "group": {...}
+        }
+    }
+    """
+
     records = [item for item in extraction_outputs if isinstance(item, dict)]
+
     if not records:
         return {
             "company_name": "Unknown Company",
             "company": "Unknown Company",
-            "currency": "LKR_millions",
+            "currency": "LKR_absolute",
             "years": {},
             "financial_graph": {},
             "metadata": {
-                "unit_scale": "LKR_millions",
-                "confidence": {"overall": 0.0, "per_year": {}},
+                "unit_scale": "LKR_absolute",
+                "confidence": {
+                    "overall": 0.0,
+                    "per_year": {}
+                },
             },
             "extraction_confidence": 0,
         }
@@ -751,14 +772,19 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
     master_years = _detect_master_years(all_rows)
         
     by_year: dict[str, dict[str, Any]] = {
-        year: {"income_statement": {}, "balance_sheet": {}, "cash_flow": {}} 
+        year: {
+            "income_statement": {},
+            "balance_sheet": {},
+            "cash_flow": {},
+        }
         for year in master_years
     }
-    
+
     company_name = None
-    duplicate_year_merges = 0 
-    
+    duplicate_year_merges = 0
+
     for record in records:
+
         if not company_name:
             company_name = (
                 record.get("company_name")
@@ -773,48 +799,88 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
             payload = _find_statement_payload(statements, statement_key)
             if not payload:
                 continue
-                
-            currency_hint = _currency_hint(payload if isinstance(payload, dict) else {})
+
+            currency_hint = _currency_hint(
+                payload if isinstance(payload, dict) else {}
+            )
+
             rows = _section_rows(payload)
-            
+
             for row in rows:
+
                 label = _row_label(row)
+
                 if not label:
                     continue
+
                 field_name = _field_map(statement_key, label)
+
                 if not field_name:
                     continue
-                    
+
                 for year in master_years:
-                    val = _get_year_value(row, year, currency_hint)
+
+                    val = _get_year_value(
+                        row,
+                        year,
+                        currency_hint
+                    )
+
                     if val is not None:
+
                         if by_year[year][statement_key].get(field_name) is None:
                             by_year[year][statement_key][field_name] = round(val, 3)
 
     ordered_years = sorted(master_years, key=int)
-    
+
     confidence_by_year = {
-        year: round(min(100.0, max(0.0, 20.0 + 5.0 * _field_count(payload))), 2)
+        year: round(
+            min(
+                100.0,
+                max(0.0, 20.0 + 5.0 * _field_count(payload))
+            ),
+            2
+        )
         for year, payload in by_year.items()
     }
-    for year, payload in by_year.items():
-        payload["extraction_confidence"] = confidence_by_year.get(year, 0.0)
 
-    normalized_company = _slugify_company_name(str(company_name) if company_name else None)
-    financial_graph = {year: by_year[year] for year in ordered_years}
+    for year, payload in by_year.items():
+        payload["extraction_confidence"] = (
+            confidence_by_year.get(year, 0.0)
+        )
+
+    normalized_company = _slugify_company_name(
+        str(company_name) if company_name else None
+    )
+
+    financial_graph = {
+        year: by_year[year]
+        for year in ordered_years
+    }
+
+    logging.info(
+        "Legacy extraction built: %d years detected",
+        len(master_years)
+    )
 
     return {
         "company_name": normalized_company,
         "company": normalized_company,
-        "currency": "LKR_millions",
+        "currency": "LKR_absolute",
         "years": financial_graph,
         "financial_graph": financial_graph,
         "metadata": {
-            "unit_scale": "LKR_millions",
+            "unit_scale": "LKR_absolute",
             "confidence": {
-                "overall": round(sum(confidence_by_year.values()) / float(len(confidence_by_year)) if confidence_by_year else 0.0, 2),
+                "overall": round(
+                    sum(confidence_by_year.values()) / float(len(confidence_by_year))
+                    if confidence_by_year
+                    else 0.0,
+                    2
+                ),
                 "per_year": confidence_by_year,
                 "duplicate_year_merges": duplicate_year_merges,
+                "mode": "legacy_row_parser",
             },
         },
         "extraction_confidence": 100 if financial_graph else 0,

@@ -156,7 +156,7 @@ def _compute_growth_rates(yearly_values: dict[str, float]) -> float | None:
 
 
 METRIC_ALIASES: dict[str, list[str]] = {
-    "revenue": ["revenue", "turnover", "gross income", "total revenue", "sales", "interest income"],
+    "revenue": ["gross income"],
     "net_profit": ["profit after tax", "net income", "net profit", "profit for the year", "profit attributable"],
     "operating_profit": ["operating profit", "operating income", "ebit"],
     "operating_expenses": ["operating expenses", "operating expense", "total operating expenses"],

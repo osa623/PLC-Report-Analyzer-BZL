@@ -1,0 +1,12 @@
+{
+  "dataset_name": "ci-smoke-golden-set",
+  "dataset_version": "1.0.0",
+  "tolerance_pct": 0.01,
+  "cases": [
+    {
+      "case_id": "ci_smoke_sample",
+      "expected_path": "data/eval/cases/ci_smoke_sample_expected.json",
+      "predicted_path": "data/eval/cases/ci_smoke_sample_predicted.json"
+    }
+  ]
+}

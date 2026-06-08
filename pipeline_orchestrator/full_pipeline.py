@@ -70,6 +70,18 @@ def _write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
 
 
+def _normalized_results_path() -> Path:
+    return _workspace_root() / "services" / "extraction_service" / "normalized_results.json"
+
+
+def _load_normalized_results() -> list[dict[str, Any]] | None:
+    path = _normalized_results_path()
+    if not path.exists():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, list) else [data]
+
+
 def _append_log(log_file: Path, message: str) -> None:
     log_file.parent.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().isoformat(timespec="seconds")

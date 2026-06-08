@@ -1,0 +1,180 @@
+Loaded 1 document pipeline runs.
+
+=================== Document: NDB_Banking_2024.pdf ===================
+
+--- Validation Gates ---
+  Entity: bank
+    Year 2016: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2015: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2014: PASSED: ['balance_sheet_identity', 'numeric_integrity'] | FAILED: ['cash_flow_reconciliation', 'completeness_validation']
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+      * completeness_validation: {'status': 'FAILED', 'completeness_score': 54.55, 'present_statements': ['balance_sheet', 'equity'], 'missing_statements': ['income_statement', 'cash_flow', 'comprehensive_income'], 'missing_fields': ['revenue', 'net_profit']}
+    Year 2020: PASSED: ['balance_sheet_identity', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: ['cash_flow_reconciliation']
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+    Year 2019: PASSED: ['balance_sheet_identity', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: ['cash_flow_reconciliation']
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+    Year 2018: PASSED: ['multi_year_continuity', 'numeric_integrity'] | FAILED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'completeness_validation']
+      * balance_sheet_identity: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets', 'total_liabilities']}
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+      * completeness_validation: {'status': 'FAILED', 'completeness_score': 18.18, 'present_statements': ['equity'], 'missing_statements': ['income_statement', 'balance_sheet', 'cash_flow', 'comprehensive_income'], 'missing_fields': ['revenue', 'net_profit', 'total_assets', 'total_liabilities', 'cash']}
+    Year 2022: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2021: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2024: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2023: PASSED: ['cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: ['balance_sheet_identity']
+      * balance_sheet_identity: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets']}
+  Entity: group
+    Year 2016: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2015: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2020: PASSED: ['balance_sheet_identity', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: ['cash_flow_reconciliation']
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+    Year 2019: PASSED: ['balance_sheet_identity', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: ['cash_flow_reconciliation']
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+    Year 2018: PASSED: ['multi_year_continuity', 'numeric_integrity'] | FAILED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'completeness_validation']
+      * balance_sheet_identity: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets', 'total_liabilities']}
+      * cash_flow_reconciliation: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['opening_cash', 'net_cash_flow', 'closing_cash']}
+      * completeness_validation: {'status': 'FAILED', 'completeness_score': 18.18, 'present_statements': ['equity'], 'missing_statements': ['income_statement', 'balance_sheet', 'cash_flow', 'comprehensive_income'], 'missing_fields': ['revenue', 'net_profit', 'total_assets', 'total_liabilities', 'cash']}
+    Year 2022: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2021: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2024: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+    Year 2023: PASSED: ['balance_sheet_identity', 'cash_flow_reconciliation', 'multi_year_continuity', 'completeness_validation', 'numeric_integrity'] | FAILED: []
+
+--- Ratio Failures ---
+  Entity: bank
+    Year 2014: 7 ratios failed
+      * ROA: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'total_assets']}
+      * ROE: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'equity']}
+      * Net Profit Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit', 'revenue'], 'source_fields': ['net_profit', 'revenue']}
+      * Operating Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_profit', 'revenue'], 'source_fields': ['operating_profit', 'revenue']}
+      * Asset Turnover: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['revenue'], 'source_fields': ['revenue', 'total_assets']}
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'net_profit'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+    Year 2020: 3 ratios failed
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2019: 3 ratios failed
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2018: 14 ratios failed
+      * ROA: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit', 'total_assets'], 'source_fields': ['net_profit', 'total_assets']}
+      * ROE: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'equity']}
+      * Debt To Equity: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_liabilities'], 'source_fields': ['total_liabilities', 'equity']}
+      * Debt Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_liabilities', 'total_assets'], 'source_fields': ['total_liabilities', 'total_assets']}
+      * Net Profit Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit', 'revenue'], 'source_fields': ['net_profit', 'revenue']}
+      * Operating Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_profit', 'revenue'], 'source_fields': ['operating_profit', 'revenue']}
+      * Gross Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['gross_profit', 'revenue'], 'source_fields': ['gross_profit', 'revenue']}
+      * Current Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['current_assets', 'current_liabilities'], 'source_fields': ['current_assets', 'current_liabilities']}
+      * Quick Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['current_assets', 'inventory'], 'source_fields': ['current_assets', 'inventory', 'current_liabilities']}
+      * Cash Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['cash', 'current_liabilities'], 'source_fields': ['cash', 'current_liabilities']}
+      * Asset Turnover: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['revenue', 'total_assets'], 'source_fields': ['revenue', 'total_assets']}
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'net_profit'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * OCF Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'current_liabilities'], 'source_fields': ['operating_cash_flow', 'current_liabilities']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+    Year 2022: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2021: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2024: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2023: 4 ratios failed
+      * ROA: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets'], 'source_fields': ['net_profit', 'total_assets']}
+      * Debt Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets'], 'source_fields': ['total_liabilities', 'total_assets']}
+      * Asset Turnover: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_assets'], 'source_fields': ['revenue', 'total_assets']}
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+  Entity: group
+    Year 2020: 3 ratios failed
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2019: 3 ratios failed
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2018: 14 ratios failed
+      * ROA: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit', 'total_assets'], 'source_fields': ['net_profit', 'total_assets']}
+      * ROE: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'equity']}
+      * Debt To Equity: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_liabilities'], 'source_fields': ['total_liabilities', 'equity']}
+      * Debt Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['total_liabilities', 'total_assets'], 'source_fields': ['total_liabilities', 'total_assets']}
+      * Net Profit Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['net_profit', 'revenue'], 'source_fields': ['net_profit', 'revenue']}
+      * Operating Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_profit', 'revenue'], 'source_fields': ['operating_profit', 'revenue']}
+      * Gross Margin: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['gross_profit', 'revenue'], 'source_fields': ['gross_profit', 'revenue']}
+      * Current Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['current_assets', 'current_liabilities'], 'source_fields': ['current_assets', 'current_liabilities']}
+      * Quick Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['current_assets', 'inventory'], 'source_fields': ['current_assets', 'inventory', 'current_liabilities']}
+      * Cash Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['cash', 'current_liabilities'], 'source_fields': ['cash', 'current_liabilities']}
+      * Asset Turnover: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['revenue', 'total_assets'], 'source_fields': ['revenue', 'total_assets']}
+      * Cash Flow to Net Income: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'net_profit'], 'source_fields': ['operating_cash_flow', 'net_profit']}
+      * OCF Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'current_liabilities'], 'source_fields': ['operating_cash_flow', 'current_liabilities']}
+      * Free Cash Flow: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['operating_cash_flow', 'capex'], 'source_fields': ['operating_cash_flow', 'capex']}
+    Year 2022: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2021: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2024: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+    Year 2023: 1 ratios failed
+      * Loan To Deposit Ratio: {'status': 'FAILED', 'reason': 'Required field missing after mapping', 'missing_fields': ['deposits'], 'source_fields': ['loans', 'deposits']}
+
+--- Growth Failures ---
+  Entity: bank
+    Year 2015: 2 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+    Year 2014: 4 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+      * Equity Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_equity'], 'source_fields': ['equity', 'previous_equity']}
+    Year 2019: 3 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+    Year 2018: 3 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+    Year 2024: 1 growths failed
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+    Year 2023: 1 growths failed
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+  Entity: group
+    Year 2015: 4 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+      * Equity Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_equity'], 'source_fields': ['equity', 'previous_equity']}
+    Year 2019: 3 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Previous period is unavailable', 'missing_fields': ['previous_total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+    Year 2018: 3 growths failed
+      * Revenue Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['revenue'], 'source_fields': ['revenue', 'previous_revenue']}
+      * Net Profit Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['net_profit'], 'source_fields': ['net_profit', 'previous_net_profit']}
+      * Asset Growth: {'status': 'FAILED', 'reason': 'Current period is unavailable', 'missing_fields': ['total_assets'], 'source_fields': ['total_assets', 'previous_total_assets']}
+
+--- Completeness Metrics ---
+  Entity: bank
+    Year 2016: score = 100.0%
+    Year 2015: score = 100.0%
+    Year 2014: score = 54.55%
+      Missing fields: ['revenue', 'net_profit']
+    Year 2020: score = 81.82%
+    Year 2019: score = 90.91%
+    Year 2018: score = 18.18%
+      Missing fields: ['revenue', 'net_profit', 'total_assets', 'total_liabilities', 'cash']
+    Year 2022: score = 100.0%
+    Year 2021: score = 100.0%
+    Year 2024: score = 100.0%
+    Year 2023: score = 90.91%
+      Missing fields: ['total_assets']
+  Entity: group
+    Year 2016: score = 100.0%
+    Year 2015: score = 100.0%
+    Year 2020: score = 81.82%
+    Year 2019: score = 90.91%
+    Year 2018: score = 18.18%
+      Missing fields: ['revenue', 'net_profit', 'total_assets', 'total_liabilities', 'cash']
+    Year 2022: score = 100.0%
+    Year 2021: score = 100.0%
+    Year 2024: score = 90.91%
+    Year 2023: score = 90.91%
