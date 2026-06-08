@@ -6,10 +6,12 @@ Main orchestrator combining Stage A (Page Location) and Stage B (Structured Extr
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 import json
+import re
 import pdfplumber
 from datetime import datetime
 
 from src.locator.page_locator import PageLocator, PageLocationResult
+from src.locator.heading_scanner import HeadingScanner
 from src.extractor.numeric_normalizer import NumericNormalizer
 from src.extractor.column_interpreter import ColumnInterpreter
 from src.extractor.table_detector import TableDetector
@@ -83,9 +85,318 @@ class TwoStagePipeline:
             output_base_dir=self.config.get('image_output_dir', 'app/statement_images')
         )
         
+        # Heading scanner for robust statement-boundary detection
+        self.heading_scanner = HeadingScanner()
+        
         logger.info("="*80)
         logger.info("🚀 TWO-STAGE EXTRACTION PIPELINE INITIALIZED")
         logger.info("="*80)
+
+    # ── Header noise patterns used to filter continuation-page headers ──
+    _HEADER_NOISE_RE = re.compile(
+        r'^(particulars|description|note|group|bank|company|entity|'
+        r'consolidated|standalone|parent|year|rs|lkr|page|for the)'
+        , re.IGNORECASE
+    )
+
+    # Statement-title keywords that indicate a *new* statement starts on a page
+    _STATEMENT_TITLE_KEYWORDS = [
+        'income statement', 'statement of profit', 'profit or loss',
+        'profit and loss', 'comprehensive income',
+        'balance sheet', 'statement of financial position',
+        'cash flow', 'cashflow', 'statement of cash flows',
+        'statement of changes in equity',
+    ]
+
+    # ------------------------------------------------------------------ #
+    #  Multi-page continuation helpers
+    # ------------------------------------------------------------------ #
+
+    def _page_starts_new_statement(
+        self,
+        pdf,
+        page_num: int,
+        current_statement_type: str,
+    ) -> bool:
+        """
+        Return True if *page_num* contains a heading / title that belongs
+        to a **different** financial statement, meaning we should stop
+        scanning for continuations.
+
+        Uses the HeadingScanner for primary detection (structural heuristics
+        like position, casing, word-count) and falls back to keyword
+        matching constrained to the first 10 lines for safety.
+        """
+        if page_num >= len(pdf.pages):
+            return True  # beyond PDF → stop
+
+        page = pdf.pages[page_num]
+
+        # ── Primary: heading scanner ──────────────────────────────────
+        headings = self.heading_scanner.extract_headings_from_page(page, page_num)
+        if headings:
+            matched = self.heading_scanner.match_headings_to_statements(headings)
+            for stmt_type, matched_headings in matched.items():
+                for h in matched_headings:
+                    if h.match_score < 0.5:
+                        continue  # ignore low-confidence hits
+                    # A high-confidence heading for a *different* statement
+                    if stmt_type.lower() != current_statement_type.lower():
+                        logger.debug(
+                            f"   HeadingScanner: page {page_num + 1} has heading "
+                            f"'{h.heading_text}' → {stmt_type} (score={h.match_score:.2f})"
+                        )
+                        return True
+            # Scanner found headings that all belong to the current statement
+            # → not a new statement.
+            return False
+
+        # ── Fallback: keyword matching on first 10 lines only ─────────
+        page_text = page.extract_text() or ''
+        lines = page_text.split('\n')[:10]
+        for line in lines:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            line_lower = stripped.lower()
+            for kw in self._STATEMENT_TITLE_KEYWORDS:
+                if kw not in line_lower:
+                    continue
+                # Only trust the keyword if the line is short (heading-like)
+                # or fully uppercase.
+                if len(stripped) > len(kw) + 15 and not stripped.isupper():
+                    continue  # line too long to be a real heading
+                if self._keyword_matches_statement(kw, current_statement_type):
+                    continue  # same statement header repeated (sub-header)
+                return True
+        return False
+
+    @staticmethod
+    def _keyword_matches_statement(keyword: str, statement_type: str) -> bool:
+        """Check whether a detected heading keyword belongs to the same statement type."""
+        st = statement_type.lower()
+        kw = keyword.lower()
+        if 'income' in st or 'profit' in st:
+            return any(t in kw for t in ['income', 'profit'])
+        if 'balance' in st or 'financial position' in st:
+            return any(t in kw for t in ['balance', 'financial position'])
+        if 'cash' in st:
+            return 'cash' in kw
+        return False
+
+    def _verify_continuation_qualifies(
+        self,
+        pdf,
+        main_table: Dict[str, Any],
+        candidate: Dict[str, Any],
+        next_page_num: int,
+        statement_type: str,
+    ) -> bool:
+        """
+        Verify if a candidate table on next_page_num qualifies as a continuation of main_table.
+        """
+        if next_page_num >= len(pdf.pages):
+            return False
+
+        # Bail out if the page starts a completely different statement
+        if self._page_starts_new_statement(pdf, next_page_num, statement_type):
+            logger.info(f"   ⛔ Page {next_page_num + 1} starts a new statement – stop scanning")
+            return False
+
+        main_col_count = len(main_table['rows'][0]) if main_table['rows'] else 0
+        cand_col_count = len(candidate['rows'][0]) if candidate['rows'] else 0
+
+        # Column-count must be within ±1 of the main table
+        if abs(main_col_count - cand_col_count) > 1:
+            logger.info(
+                f"   ⛔ Page {next_page_num + 1}: column count mismatch "
+                f"({cand_col_count} vs {main_col_count})"
+            )
+            return False
+
+        # Try to map a few row labels to the target statement's fields.
+        # If at least 1 data row maps, the table belongs to the same statement.
+        data_rows = candidate['rows'][1:]  # skip possible header row
+        mapped_count = 0
+        for row in data_rows[:8]:  # check up to 8 rows
+            label = str(row[0]).strip() if row and row[0] else ''
+            if not label or len(label) < 3:
+                continue
+            result = self.mapping_engine.map_label(label, statement_type)
+            if result and result.confidence >= 0.5:
+                mapped_count += 1
+
+        if mapped_count < 1:
+            logger.info(
+                f"   ⛔ Page {next_page_num + 1}: no mappable rows found – not a continuation"
+            )
+            return False
+
+        logger.info(
+            f"   ✅ Page {next_page_num + 1} is a continuation "
+            f"({mapped_count} rows mapped)"
+        )
+        return True
+
+    def _is_table_continuation(
+        self,
+        pdf,
+        main_table: Dict[str, Any],
+        next_page_num: int,
+        statement_type: str,
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Determine if the table on *next_page_num* is a continuation of
+        *main_table*.  Returns the continuation table dict (with filtered
+        rows) if yes, else ``None``.
+        """
+        if next_page_num >= len(pdf.pages):
+            return None
+
+        # Detect tables on the next page alone
+        next_tables = self.table_detector.detect_tables(
+            pdf, [next_page_num, next_page_num]
+        )
+        if not next_tables:
+            return None
+
+        candidate = next_tables[0]  # largest table on that page
+        
+        if self._verify_continuation_qualifies(pdf, main_table, candidate, next_page_num, statement_type):
+            return candidate
+            
+        return None
+
+    def _filter_continuation_rows(
+        self,
+        rows: List[List[str]],
+    ) -> List[List[str]]:
+        """
+        Remove header / structural noise rows from a continuation table,
+        keeping only genuine data rows.
+        """
+        filtered = []
+        for row in rows:
+            if not row:
+                continue
+            label = str(row[0]).strip() if row[0] else ''
+            # Skip empty-label rows and header-noise rows
+            if not label or self._HEADER_NOISE_RE.match(label):
+                continue
+            # Skip rows that are purely year numbers (e.g., "2024" or "2024 2023")
+            if re.match(r'^[\d\s/]+$', label):
+                continue
+            # Keep rows that contain at least one numeric-looking value
+            has_numeric = any(
+                cell and re.search(r'\d', str(cell))
+                for cell in row[1:]
+            )
+            if has_numeric or len(label) > 3:
+                filtered.append(row)
+        return filtered
+
+    # ------------------------------------------------------------------ #
+    #  Core extraction (updated for multi-page merging)
+    # ------------------------------------------------------------------ #
+
+    def _extract_statement(
+        self,
+        pdf,
+        statement_type: str,
+        page_range: List[int]
+    ) -> Dict[str, Any]:
+        """Extract a single statement from specified pages."""
+        
+        # Step 1: Detect tables
+        logger.info("   📊 Detecting tables...")
+        tables = self.table_detector.detect_tables(pdf, page_range)
+        
+        if not tables:
+            logger.warning(f"   ⚠️  No tables found")
+            return {'rows': [], 'column_info': {}, 'table_count': 0}
+        
+        logger.info(f"   ✓ Found {len(tables)} table(s)")
+        
+        # Step 2: Process the largest/main table (usually the first one)
+        main_table = tables[0] if tables else None
+        if not main_table:
+            return {'rows': [], 'column_info': {}, 'table_count': 0}
+        
+        main_table_page = main_table.get('page_num', page_range[0])
+        
+        # ── Step 2b: Scan subsequent pages for continuation tables ──
+        # Group remaining tables by page for quick lookup
+        initial_tables_by_page = {}
+        for t in tables[1:]:
+            p = t.get('page_num')
+            if p is not None:
+                initial_tables_by_page.setdefault(p, []).append(t)
+
+        current_page = main_table_page + 1
+        max_scan_ahead = 3  # look at most 3 pages beyond the limit page
+        limit_page = max(page_range[1], main_table_page)
+        merged_page_end = main_table_page
+
+        while current_page <= limit_page + max_scan_ahead:
+            continuation = None
+            if current_page in initial_tables_by_page:
+                candidates = initial_tables_by_page[current_page]
+                if candidates:
+                    cand = candidates[0]  # take the largest/first table on that page
+                    if self._verify_continuation_qualifies(pdf, main_table, cand, current_page, statement_type):
+                        continuation = cand
+            else:
+                continuation = self._is_table_continuation(
+                    pdf, main_table, current_page, statement_type
+                )
+                
+            if continuation is None:
+                break  # stop on first non-continuation
+
+            # Filter noise rows and append to main_table
+            extra_rows = self._filter_continuation_rows(continuation['rows'])
+            if extra_rows:
+                main_table['rows'].extend(extra_rows)
+                main_table['row_count'] = len(main_table['rows'])
+                merged_page_end = current_page
+                logger.info(
+                    f"   📎 Merged {len(extra_rows)} continuation rows "
+                    f"from page {current_page + 1}"
+                )
+
+            # If we successfully merged a page beyond our limit_page, advance the limit_page
+            if current_page > limit_page:
+                limit_page = current_page
+
+            current_page += 1
+
+        # Update page range to reflect merged pages
+        effective_page_range = [page_range[0], merged_page_end]
+
+        # Step 3: Interpret columns (Bank/Group and Year1/Year2)
+        logger.info("   🔍 Interpreting columns...")
+        column_info = self.column_interpreter.interpret_columns(main_table['rows'])
+        
+        entity_count = len(column_info.get('entity_cols', {}))
+        year_count = len(column_info.get('year_cols', {}))
+        logger.info(f"   ✓ Found {entity_count} entity columns, {year_count} year columns")
+        
+        # Step 4: Extract rows with label mapping and value normalization
+        logger.info("   📝 Extracting rows...")
+        extracted_rows = self.row_extractor.extract_rows(
+            main_table,
+            column_info,
+            statement_type
+        )
+        
+        logger.info(f"   ✓ Extracted {len(extracted_rows)} rows")
+        
+        return {
+            'rows': extracted_rows,
+            'column_info': column_info,
+            'table_count': len(tables),
+            'page_range': effective_page_range
+        }
     
     def extract(
         self,
@@ -251,53 +562,7 @@ class TwoStagePipeline:
         
         return results
     
-    def _extract_statement(
-        self,
-        pdf,
-        statement_type: str,
-        page_range: List[int]
-    ) -> Dict[str, Any]:
-        """Extract a single statement from specified pages."""
-        
-        # Step 1: Detect tables
-        logger.info("   📊 Detecting tables...")
-        tables = self.table_detector.detect_tables(pdf, page_range)
-        
-        if not tables:
-            logger.warning(f"   ⚠️  No tables found")
-            return {'rows': [], 'column_info': {}, 'table_count': 0}
-        
-        logger.info(f"   ✓ Found {len(tables)} table(s)")
-        
-        # Step 2: Process the largest/main table (usually the first one)
-        main_table = tables[0] if tables else None
-        if not main_table:
-            return {'rows': [], 'column_info': {}, 'table_count': 0}
-        
-        # Step 3: Interpret columns (Bank/Group and Year1/Year2)
-        logger.info("   🔍 Interpreting columns...")
-        column_info = self.column_interpreter.interpret_columns(main_table['rows'])
-        
-        entity_count = len(column_info.get('entity_cols', {}))
-        year_count = len(column_info.get('year_cols', {}))
-        logger.info(f"   ✓ Found {entity_count} entity columns, {year_count} year columns")
-        
-        # Step 4: Extract rows with label mapping and value normalization
-        logger.info("   📝 Extracting rows...")
-        extracted_rows = self.row_extractor.extract_rows(
-            main_table,
-            column_info,
-            statement_type
-        )
-        
-        logger.info(f"   ✓ Extracted {len(extracted_rows)} rows")
-        
-        return {
-            'rows': extracted_rows,
-            'column_info': column_info,
-            'table_count': len(tables),
-            'page_range': page_range
-        }
+
     
     def _validate_extraction(
         self,

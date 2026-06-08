@@ -18,10 +18,39 @@ class ColumnType(Enum):
     DESCRIPTION = "description"  # Row labels
     NOTE = "note"  # Note references
     BANK_YEAR1 = "bank_year1"
+    BANK_YEAR2 = "bank_year2"
     GROUP_YEAR1 = "group_year1"
     GROUP_YEAR2 = "group_year2"
     PAGE = "page"  # Page number
     UNKNOWN = "unknown"
+
+
+class ColumnInterpretationResult(dict):
+    """
+    Custom dictionary subclass to support both the legacy dict[int, ColumnInfo] API
+    and the new dict API with 'columns', 'column_info', 'entity_cols', and 'year_cols'.
+    """
+    def __init__(self, column_info_dict, columns_list, entity_cols, year_cols):
+        super().__init__(column_info_dict)
+        self.columns = columns_list
+        self.column_info = column_info_dict
+        self.entity_cols = entity_cols
+        self.year_cols = year_cols
+
+    def get(self, key, default=None):
+        if key in ('columns', 'column_info', 'entity_cols', 'year_cols'):
+            return getattr(self, key)
+        return super().get(key, default)
+
+    def __getitem__(self, key):
+        if key in ('columns', 'column_info', 'entity_cols', 'year_cols'):
+            return getattr(self, key)
+        return super().__getitem__(key)
+
+    def __contains__(self, key):
+        if key in ('columns', 'column_info', 'entity_cols', 'year_cols'):
+            return True
+        return super().__contains__(key)
 
 
 @dataclass
@@ -89,10 +118,10 @@ class ColumnInterpreter:
             data_sample: Optional sample data rows
         
         Returns:
-            Dict with 'columns' list containing ColumnInfo objects
+            Dict-like ColumnInterpretationResult
         """
-        if not table_rows or len(table_rows) < 2:
-            return {'columns': []}
+        if not table_rows:
+            return ColumnInterpretationResult({}, [], {}, {})
         
         # Use first few rows as headers (financial statements often have multi-line headers)
         header_rows = table_rows[:min(3, len(table_rows))]
@@ -129,6 +158,39 @@ class ColumnInterpreter:
         # Post-process: resolve ambiguities and assign Year1/Year2
         column_info = self._resolve_year_ordering(column_info)
         
+        # Calculate year1 and year2 for default years
+        years_found = set()
+        for info in column_info.values():
+            if info.year:
+                years_found.add(info.year)
+        if len(years_found) >= 2:
+            years_sorted = sorted(years_found, reverse=True)
+            year1, year2 = years_sorted[0], years_sorted[1]
+        elif len(years_found) == 1:
+            year1 = list(years_found)[0]
+            year2 = year1 - 1
+        else:
+            year1, year2 = None, None
+
+        # Build entity_cols and year_cols
+        entity_cols = {}
+        year_cols = {}
+        for col_idx, info in column_info.items():
+            if info.column_type in [
+                ColumnType.BANK_YEAR1, ColumnType.BANK_YEAR2,
+                ColumnType.GROUP_YEAR1, ColumnType.GROUP_YEAR2
+            ]:
+                entity_cols[col_idx] = info.entity or ('Bank' if 'bank' in info.column_type.value else 'Group')
+                
+                # Assign resolved year
+                resolved_year = info.year
+                if not resolved_year:
+                    if 'year1' in info.column_type.value:
+                        resolved_year = year1 or 'Year1'
+                    else:
+                        resolved_year = year2 or 'Year2'
+                year_cols[col_idx] = resolved_year
+        
         # Convert to list format for API response
         columns_list = [
             {
@@ -142,10 +204,7 @@ class ColumnInterpreter:
             for info in column_info.values()
         ]
         
-        return {
-            'columns': columns_list,
-            'column_info': column_info  # Keep original for internal use
-        }
+        return ColumnInterpretationResult(column_info, columns_list, entity_cols, year_cols)
     
     def _interpret_single_column(
         self,

@@ -38,7 +38,7 @@ _INCOME_FALLBACK_SECTION_KEYS = (
     "other_comprehensive_income",
 )
 
-_ENTITY_PRIORITY = ("Group", "Bank", "Company", "Entity", "Parent", "Standalone")
+_ENTITY_PRIORITY = ("Group", "Consolidated", "Bank", "Company", "Entity", "Parent", "Standalone")
 
 _DIRECT_FIELD_ALIASES = {
     "balance_sheet": {
@@ -513,6 +513,8 @@ def _build_from_financials_format(
             continue
             
         lowercase_keys = {k.lower(): k for k in entities_data.keys()}
+        # Process standalone/parent/entity first, then group/consolidated last
+        # so group-level values overwrite standalone (last-write-wins).
         entity_priorities = ["standalone", "parent", "entity", "company", "bank", "consolidated", "group"]
         other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
         ordered_keys_to_process = other_keys + entity_priorities

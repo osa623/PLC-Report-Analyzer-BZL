@@ -8,7 +8,7 @@ import base64
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import requests
 import time
 import random
@@ -84,35 +84,174 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
         """
         Extract financial data from a single image file.
         """
+        return self.extract_from_images([image_path])
+
+    def extract_from_images(self, image_paths: List[str]) -> Dict[str, Any]:
+        """
+        Extract financial data from multiple image files representing a single statement.
+        """
         # Acquire semaphore to prevent concurrent API calls
         with self._concurrency_limit:
             try:
-                image_path = Path(image_path)
-                if not image_path.exists():
-                    raise FileNotFoundError(f"Image not found: {image_path}")
-
-                # 1. Encode image
-                base64_image = self._encode_image(image_path)
+                base64_images = []
+                for path_str in image_paths:
+                    image_path = Path(path_str)
+                    if not image_path.exists():
+                        raise FileNotFoundError(f"Image not found: {image_path}")
+                    # Encode image
+                    base64_image = self._encode_image(image_path)
+                    base64_images.append(base64_image)
                 
-                # 2. Call LLM
+                # Call LLM
                 if self.provider == "openai":
-                    response_text = self._call_openai(base64_image)
+                    response_text = self._call_openai_multiple(base64_images)
                 elif self.provider == "gemini":
-                    response_text = self._call_gemini(base64_image)
+                    response_text = self._call_gemini_multiple(base64_images)
                 else:
                     # Mock response for testing if no key provided
                     logger.warning("Using MOCK extraction (no API key configured)")
-                    return self._mock_response(image_path.name)
+                    return self._mock_response(Path(image_paths[0]).name)
 
-                # 3. Clean and Parse JSON
-                return self._clean_and_parse_json(response_text, image_path.name)
+                # Clean and Parse JSON
+                return self._clean_and_parse_json(response_text, Path(image_paths[0]).name)
 
             except Exception as e:
-                logger.error(f"LLM Extraction failed for {image_path}: {str(e)}")
+                logger.error(f"LLM Extraction failed for images {image_paths}: {str(e)}")
                 return {
                     "error": str(e),
                     "extraction_success": False
                 }
+
+    def _call_openai_multiple(self, base64_images: List[str]) -> str:
+        """Call OpenAI GPT-4o API with multiple images."""
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}"
+        }
+        
+        user_content = [
+            {
+                "type": "text",
+                "text": f"Extract the financial statement from these {len(base64_images)} sequential pages."
+            }
+        ]
+        for base64_image in base64_images:
+            user_content.append({
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_image}"
+                }
+            })
+            
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": self.SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": user_content
+                }
+            ],
+            "temperature": 0.0,
+            "max_tokens": 16384
+        }
+        
+        max_retries = 5
+        base_delay = 2
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+                if response.status_code == 429:
+                    if attempt < max_retries - 1:
+                        jitter = random.uniform(0.5, 2.0)
+                        sleep_time = (base_delay * (2 ** attempt)) + jitter 
+                        logger.warning(f"OpenAI 429 Rate Limit. Retrying in {sleep_time:.2f}s (Attempt {attempt+1}/{max_retries})")
+                        time.sleep(sleep_time)
+                        continue
+                    else:
+                        response.raise_for_status()
+                response.raise_for_status()
+                result = response.json()
+                return result['choices'][0]['message']['content']
+            except requests.exceptions.RequestException as e:
+                raise e
+
+    def _call_gemini_multiple(self, base64_images: List[str]) -> str:
+        """Call Google Gemini Flash API (Latest) with multiple images."""
+        clean_key = self.api_key.strip() if self.api_key else ""
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={clean_key}"
+        
+        parts = [{"text": self.SYSTEM_PROMPT}]
+        for base64_image in base64_images:
+            parts.append({
+                "inline_data": {
+                    "mime_type": "image/jpeg",
+                    "data": base64_image
+                }
+            })
+            
+        payload = {
+            "contents": [{
+                "parts": parts
+            }],
+            "generationConfig": {
+                "temperature": 0.0,
+                "maxOutputTokens": 16384,
+                "responseMimeType": "application/json"
+            },
+            "safetySettings": [
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
+        }
+        
+        max_retries = 5
+        base_delay = 2
+
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(url, json=payload, headers={'Content-Type': 'application/json'})
+                if response.status_code in [429, 503]:
+                    if attempt < max_retries - 1:
+                        jitter = random.uniform(0.5, 2.0)
+                        sleep_time = (base_delay * (2 ** attempt)) + jitter
+                        logger.warning(f"Gemini {response.status_code} Error. Retrying in {sleep_time:.2f}s...")
+                        time.sleep(sleep_time)
+                        continue
+                    else:
+                        response.raise_for_status()
+
+                if response.status_code != 200:
+                    logger.error(f"Gemini API Error {response.status_code}: {response.text}")
+                    response.raise_for_status()
+                
+                result = response.json()
+                candidates = result.get('candidates', [])
+                if not candidates:
+                     raise ValueError(f"Gemini returned no candidates. Full response: {result}")
+                
+                content = candidates[0].get('content', {})
+                parts_resp = content.get('parts', [])
+                
+                if not parts_resp:
+                    raise ValueError(f"Gemini returned no content parts. Full response: {result}")
+                    
+                return parts_resp[0]['text']
+                
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                raise e
+            except Exception as e:
+                logger.error(f"Gemini Call Failed: {str(e)}")
+                raise e
 
     def _encode_image(self, image_path: Path) -> str:
         """Read, resize if needed, and encode image to base64."""

@@ -48,25 +48,34 @@ _TOC_LINE_REJECT = ["usd", "us$", "$", "USD"]
 _EXTRACTOR = LLMFinancialExtractor()
 
 
+def extract_statement_from_images(images_list: List[bytes]) -> dict:
+    """
+    Call the LLM extractor with multiple page images.
+    """
+    if not images_list:
+        raise ValueError("images_list is empty")
+
+    tmp_paths = []
+    try:
+        for image_bytes in images_list:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
+                tmp_file.write(image_bytes)
+                tmp_paths.append(tmp_file.name)
+        return _EXTRACTOR.extract_from_images(tmp_paths)
+    finally:
+        for tmp_path in tmp_paths:
+            if tmp_path and os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    logger.warning("Failed to remove temp image: %s", tmp_path)
+
+
 def extract_statement_from_image(image_bytes: bytes) -> dict:
     """
-    Reuse the existing image extractor exactly as-is by calling it with a temp file.
+    Wrapper around extract_statement_from_images for compatibility.
     """
-    if not image_bytes:
-        raise ValueError("image_bytes is empty")
-
-    tmp_path = None
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
-            tmp_file.write(image_bytes)
-            tmp_path = tmp_file.name
-        return _EXTRACTOR.extract_from_image(tmp_path)
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except OSError:
-                logger.warning("Failed to remove temp image: %s", tmp_path)
+    return extract_statement_from_images([image_bytes])
 
 
 def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
@@ -125,9 +134,12 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
         )
 
         statement_texts: Dict[str, str] = {}
-        for key, page_idx in statement_pages.items():
-            if page_idx and 1 <= page_idx <= total_pages:
-                statement_texts[key] = pdf.pages[page_idx - 1].extract_text() or ""
+        for key, page_indices in statement_pages.items():
+            combined_text = ""
+            for page_idx in page_indices:
+                if page_idx and 1 <= page_idx <= total_pages:
+                    combined_text += f"\n--- Page {page_idx} ---\n" + (pdf.pages[page_idx - 1].extract_text() or "")
+            statement_texts[key] = combined_text
 
     statement_images = _render_statement_images(pdf_bytes, statement_pages, pdf_name)
     extracted = _extract_statements_parallel(statement_images, statement_texts, pdf_name)
@@ -286,6 +298,73 @@ def _extract_toc_line_page_number(line: str) -> Optional[int]:
     return None
 
 
+def _is_next_page_continuation(
+    pdf: pdfplumber.PDF,
+    current_page_idx: int, # 1-based index
+    next_page_idx: int,    # 1-based index
+    statement_key: str,
+) -> bool:
+    """
+    Determine if next_page_idx is a continuation of the statement starting/continuing on current_page_idx.
+    """
+    if next_page_idx > len(pdf.pages):
+        return False
+        
+    next_page = pdf.pages[next_page_idx - 1]
+    next_text = (next_page.extract_text() or "")
+    next_text_lower = next_text.lower()
+    
+    # 1. If the next page contains a header/title for a DIFFERENT statement, it is NOT a continuation.
+    for key, keywords in _STATEMENT_KEYWORDS.items():
+        if key == statement_key:
+            continue
+        for kw in keywords:
+            if kw in next_text_lower[:500]:
+                lines = [l.strip() for l in next_text[:500].splitlines() if l.strip()]
+                for line in lines[:10]:
+                    if kw in line.lower() and (len(line) < len(kw) + 15 or line.isupper()):
+                        logger.info(f"Page {next_page_idx} starts a different statement: '{line}'")
+                        return False
+                        
+    # 2. Check for note section headers
+    note_headers = [
+        "notes to the financial statements",
+        "notes to the accounts",
+        "accounting policies"
+    ]
+    if any(h in next_text_lower[:400] for h in note_headers):
+        return False
+        
+    # 3. Check table/numeric characteristics
+    numbers = re.findall(r'[\d,]{3,}', next_text)
+    if len(numbers) < 5:
+        return False
+        
+    # 4. Check for key statement components
+    statement_context_words = {
+        "income_statement": ["revenue", "profit", "loss", "expense", "tax", "earnings", "operating", "finance"],
+        "balance_sheet": ["liabilities", "equity", "assets", "payable", "borrowings", "capital", "reserves", "provisions"],
+        "cash_flow": ["cash", "flow", "operating", "investing", "financing", "activities", "interest", "receipts"],
+        "equity": ["equity", "stated capital", "reserves", "retained earnings", "balance", "changes"],
+        "comprehensive_income": ["comprehensive", "income", "profit", "loss", "foci", "other comprehensive"]
+    }
+    
+    context_words = statement_context_words.get(statement_key, [])
+    matches = sum(1 for w in context_words if w in next_text_lower)
+    if matches < 1:
+        return False
+        
+    # 5. Check if it repeats the column headers or contains table structures
+    has_headers = any(w in next_text_lower[:500] for w in ["consolidated", "company", "bank", "group"])
+    has_currency = any(w in next_text_lower[:500] for w in ["rs.", "lkr", "usd", "rs '000", "rs. '000"])
+    
+    if not (has_headers or has_currency):
+        return False
+        
+    logger.info(f"Page {next_page_idx} identified as continuation of {statement_key}")
+    return True
+
+
 def _resolve_statement_pages(
     pdf: pdfplumber.PDF,
     toc_index: int,
@@ -293,13 +372,13 @@ def _resolve_statement_pages(
     references: Dict[str, int],
     total_pages: int,
     pdf_name: str,
-) -> Dict[str, Optional[int]]:
-    resolved: Dict[str, Optional[int]] = {
-        "income_statement": None,
-        "balance_sheet": None,
-        "cash_flow": None,
-        "equity": None,
-        "comprehensive_income": None,
+) -> Dict[str, List[int]]:
+    resolved: Dict[str, List[int]] = {
+        "income_statement": [],
+        "balance_sheet": [],
+        "cash_flow": [],
+        "equity": [],
+        "comprehensive_income": [],
     }
 
     for statement_key in resolved.keys():
@@ -326,7 +405,19 @@ def _resolve_statement_pages(
             else:
                 logger.error("PDF %s completely failed to find %s", pdf_name, statement_key)
                 
-        resolved[statement_key] = resolved_page
+        if resolved_page:
+            resolved[statement_key].append(resolved_page)
+            
+            # Scan ahead for continuation pages
+            current_page = resolved_page
+            max_scan = 3
+            for offset in range(1, max_scan + 1):
+                next_page = current_page + offset
+                if _is_next_page_continuation(pdf, current_page, next_page, statement_key):
+                    resolved[statement_key].append(next_page)
+                    current_page = next_page
+                else:
+                    break
 
     return resolved
 
@@ -390,35 +481,51 @@ def _page_has_keywords(pdf: pdfplumber.PDF, page_index: int, keywords: List[str]
 
 def _render_statement_images(
     pdf_bytes: bytes,
-    statement_pages: Dict[str, Optional[int]],
+    statement_pages: Dict[str, List[int]],
     pdf_name: str,
-) -> Dict[str, bytes]:
+) -> Dict[str, List[bytes]]:
     poppler_path = _get_poppler_path()
-    rendered: Dict[str, bytes] = {}
+    rendered: Dict[str, List[bytes]] = {}
 
-    targets = {k: v for k, v in statement_pages.items() if v is not None}
-    if not targets:
+    # Gather all tasks to render pages in parallel
+    render_tasks = []
+    for key, pages in statement_pages.items():
+        for page_index in pages:
+            render_tasks.append((key, page_index))
+
+    if not render_tasks:
         return rendered
 
-    max_workers = min(4, len(targets))
+    max_workers = min(8, len(render_tasks))
+    temp_rendered = {} # (key, page_index) -> bytes
+    
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_map = {
             executor.submit(_render_page_png, pdf_bytes, page_index, poppler_path): (key, page_index)
-            for key, page_index in targets.items()
+            for key, page_index in render_tasks
         }
         for future in as_completed(future_map):
-            statement_key, page_index = future_map[future]
+            key, page_index = future_map[future]
             try:
-                rendered[statement_key] = future.result()
-                logger.info("PDF %s screenshot success for %s page %s", pdf_name, statement_key, page_index)
+                temp_rendered[(key, page_index)] = future.result()
+                logger.info("PDF %s screenshot success for %s page %s", pdf_name, key, page_index)
             except Exception as exc:
                 logger.error(
                     "PDF %s screenshot failed for %s page %s: %s",
                     pdf_name,
-                    statement_key,
+                    key,
                     page_index,
                     exc,
                 )
+
+    # Reconstruct the list of images per statement key in the correct order
+    for key, pages in statement_pages.items():
+        images_list = []
+        for page_index in pages:
+            if (key, page_index) in temp_rendered:
+                images_list.append(temp_rendered[(key, page_index)])
+        if images_list:
+            rendered[key] = images_list
 
     return rendered
 
@@ -498,7 +605,7 @@ def _apply_multiplier(data: dict, multiplier: int) -> dict:
 
 
 def _extract_statements_parallel(
-    statement_images: Dict[str, bytes],
+    statement_images: Dict[str, List[bytes]],
     statement_texts: Dict[str, str],
     pdf_name: str
 ) -> Dict[str, Optional[dict]]:
@@ -516,8 +623,8 @@ def _extract_statements_parallel(
     max_workers = min(4, len(statement_images))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         future_map = {
-            executor.submit(extract_statement_from_image, image_bytes): statement_key
-            for statement_key, image_bytes in statement_images.items()
+            executor.submit(extract_statement_from_images, images_list): statement_key
+            for statement_key, images_list in statement_images.items()
         }
         for future in as_completed(future_map):
             statement_key = future_map[future]
