@@ -1116,6 +1116,13 @@ router.get('/pipeline/:reportId/analytics', async (req, res, next) => {
       confidence: confidencePayload,
       analysis_coverage: parseJson(analysisCoverageRaw, {}),
       yearly_audit: strictAnalysis?.yearly_audit || {},
+      calculation_details: strictAnalysis ? {
+        yearly_ratios: strictAnalysis.yearly_ratios || {},
+        growth_metrics: strictAnalysis.growth_metrics || {},
+        validation_gates: strictAnalysis.validation_gates || {},
+        evaluated_equations_by_year: strictAnalysis.evaluated_equations_by_year || {},
+        scores: strictAnalysis.scores || {},
+      } : null,
       sections: finalReport?.sections || {},
       transparency: finalReport?.transparency || {},
     });

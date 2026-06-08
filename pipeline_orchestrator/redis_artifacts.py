@@ -298,8 +298,19 @@ def _growth_or_none(cur: float | None, prev: float | None) -> float | None:
 def _build_ratios(strict_extraction: dict[str, Any], strict_analysis: dict[str, Any], confidence: dict[str, Any]) -> dict[str, Any]:
     years = strict_extraction.get("years") if isinstance(strict_extraction.get("years"), dict) else {}
     valid = sorted([y for y in (strict_analysis.get("valid_years") or []) if isinstance(y, str) and y in years], key=int)
-    financial_ratios = strict_analysis.get("financial_ratios") if isinstance(strict_analysis.get("financial_ratios"), dict) else {}
+    financial_ratios = strict_analysis.get("yearly_ratios") if isinstance(strict_analysis.get("yearly_ratios"), dict) else {}
+    if not financial_ratios:
+        financial_ratios = strict_analysis.get("financial_ratios") if isinstance(strict_analysis.get("financial_ratios"), dict) else {}
     by_year: dict[str, dict[str, Any]] = {}
+
+    def _ratio_value(ratio_map: dict[str, Any], *names: str) -> float | None:
+        for name in names:
+            item = ratio_map.get(name)
+            if isinstance(item, dict) and _is_number(item.get("value")):
+                return float(item["value"])
+            if _is_number(item):
+                return float(item)
+        return None
 
     for idx, year in enumerate(valid):
         p = years.get(year) if isinstance(years.get(year), dict) else {}
@@ -327,13 +338,23 @@ def _build_ratios(strict_extraction: dict[str, Any], strict_analysis: dict[str, 
         by_year[year] = {
             "revenue": rev,
             "net_income": np_,
-            "gross_profit_margin": _growth_or_none(_strict_metric(inc, "gross_profit"), rev) if _strict_metric(inc, "gross_profit") is not None else None,
-            "net_profit_margin": ratios.get("Net Margin"),
-            "return_on_equity": ratios.get("ROE"),
-            "return_on_assets": ratios.get("ROA"),
-            "current_ratio": ratios.get("Current Ratio"),
-            "debt_to_equity": ratios.get("Debt to Equity"),
-            "asset_turnover": ratios.get("Asset Turnover"),
+            "gross_profit_margin": _ratio_value(ratios, "Gross Margin"),
+            "operating_margin": _ratio_value(ratios, "Operating Margin", "EBIT Margin"),
+            "net_profit_margin": _ratio_value(ratios, "Net Profit Margin", "Net Margin"),
+            "return_on_equity": _ratio_value(ratios, "ROE", "Return on Equity (ROE)"),
+            "return_on_assets": _ratio_value(ratios, "ROA", "Return on Assets (ROA)"),
+            "current_ratio": _ratio_value(ratios, "Current Ratio"),
+            "quick_ratio": _ratio_value(ratios, "Quick Ratio"),
+            "cash_ratio": _ratio_value(ratios, "Cash Ratio"),
+            "debt_to_equity": _ratio_value(ratios, "Debt to Equity"),
+            "debt_ratio": _ratio_value(ratios, "Debt Ratio"),
+            "interest_coverage": _ratio_value(ratios, "Interest Coverage"),
+            "asset_turnover": _ratio_value(ratios, "Asset Turnover"),
+            "inventory_turnover": _ratio_value(ratios, "Inventory Turnover"),
+            "receivables_turnover": _ratio_value(ratios, "Receivables Turnover"),
+            "ocf_ratio": _ratio_value(ratios, "OCF Ratio"),
+            "cash_flow_to_net_income": _ratio_value(ratios, "Cash Flow to Net Income"),
+            "free_cash_flow": _ratio_value(ratios, "Free Cash Flow"),
             "revenue_growth_yoy": _growth_or_none(rev, _strict_metric(prev_inc, "revenue")),
             "net_profit_growth_yoy": _growth_or_none(np_, _strict_metric(prev_inc, "net_profit")),
             "operating_cash_flow": ocf,
@@ -366,6 +387,13 @@ def _build_ratios(strict_extraction: dict[str, Any], strict_analysis: dict[str, 
         "data_reliability_report": {
             "score": round(float(confidence.get("score", 0.0) or 0.0) * 100.0, 2),
             "band": confidence.get("band"),
+        },
+        "strict_calculations": {
+            "yearly_ratios": strict_analysis.get("yearly_ratios", {}),
+            "growth_metrics": strict_analysis.get("growth_metrics", {}),
+            "validation_gates": strict_analysis.get("validation_gates", {}),
+            "evaluated_equations_by_year": strict_analysis.get("evaluated_equations_by_year", {}),
+            "scores": strict_analysis.get("scores", {}),
         },
     }
 

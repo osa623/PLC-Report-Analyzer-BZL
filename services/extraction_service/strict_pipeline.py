@@ -16,8 +16,22 @@ _SECTION_ALIASES = {
     "cash_flow_statement": "cash_flow",
     "cashflow": "cash_flow",
     "income": "income_statement",
+    "statement_of_income": "income_statement",
     "balance": "balance_sheet",
 }
+
+_INCOME_FALLBACK_SECTION_KEYS = (
+    "profit_or_loss",
+    "statement_of_profit_or_loss",
+    "statement_of_profit_and_loss",
+    "statement_of_profit_or_loss_and_other_comprehensive_income",
+    "statement_of_profit_loss_and_other_comprehensive_income",
+    "statement_of_profit_and_loss_and_other_comprehensive_income",
+    "statement_of_comprehensive_income",
+    "statement_of_other_comprehensive_income",
+    "comprehensive_income",
+    "other_comprehensive_income",
+)
 
 _ENTITY_PRIORITY = ("Group", "Bank", "Company", "Entity", "Parent", "Standalone")
 
@@ -173,23 +187,100 @@ def _section_rows(statement_payload: Any) -> list[dict[str, Any]]:
                 rows.extend(row for row in section_rows if isinstance(row, dict))
         return rows
 
+    nested_rows: list[dict[str, Any]] = []
+    for value in statement_payload.values():
+        if isinstance(value, list):
+            nested_rows.extend(row for row in value if isinstance(row, dict))
+    if nested_rows:
+        return nested_rows
+
     return []
+
+
+def _normalize_section_key(key: Any) -> str:
+    text = str(key or "").strip().lower()
+    text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return _SECTION_ALIASES.get(text, text)
+
+
+def _is_income_fallback_key(key: Any) -> bool:
+    normalized_key = _normalize_section_key(key)
+    if normalized_key in _INCOME_FALLBACK_SECTION_KEYS:
+        return True
+
+    text = re.sub(r"\s+", " ", str(key or "").lower()).strip()
+    if not text:
+        return False
+
+    has_statement = "statement" in text
+    has_profit_loss = "profit or loss" in text or "profit and loss" in text
+    has_comprehensive_income = (
+        "comprehensive income" in text
+        or "comprohensive income" in text
+        or "other comprehensive income" in text
+        or "other comprohensive income" in text
+    )
+    return has_statement and (has_profit_loss or has_comprehensive_income)
+
+
+def _section_has_data(payload: Any) -> bool:
+    if isinstance(payload, list):
+        return any(isinstance(row, dict) and row for row in payload)
+    if not isinstance(payload, dict):
+        return False
+    if _section_rows(payload):
+        return True
+    return any(_parse_number(value) is not None for value in payload.values())
+
+
+def _find_statement_payload(container: dict[str, Any], statement_key: str) -> Any:
+    direct = container.get(statement_key)
+    if _section_has_data(direct):
+        return direct
+
+    for possible_key, value in container.items():
+        if _normalize_section_key(possible_key) == statement_key and _section_has_data(value):
+            return value
+
+    if statement_key != "income_statement":
+        return direct
+
+    for possible_key, value in container.items():
+        if _is_income_fallback_key(possible_key) and _section_has_data(value):
+            logging.info(
+                "Using %s as income_statement fallback because income_statement was empty.",
+                possible_key,
+            )
+            return value
+
+    return direct
 
 
 def _collect_all_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     all_rows = []
+    accepted_sections = {
+        "income_statement",
+        "balance_sheet",
+        "cash_flow",
+        "comprehensive_income",
+        *_INCOME_FALLBACK_SECTION_KEYS,
+    }
     for record in records:
         statements = record.get("statements")
         if isinstance(statements, dict):
-            for statement_key in ("income_statement", "balance_sheet", "cash_flow", "comprehensive_income"):
-                payload = statements.get(statement_key)
+            for statement_key, payload in statements.items():
+                normalized_key = _normalize_section_key(statement_key)
+                if normalized_key not in accepted_sections and not _is_income_fallback_key(statement_key):
+                    continue
                 if payload:
                     all_rows.extend(_section_rows(payload))
         
         strict = record.get("strict_statements")
         if isinstance(strict, dict):
-            for statement_key in ("income_statement", "balance_sheet", "cash_flow", "comprehensive_income"):
-                payload = strict.get(statement_key)
+            for statement_key, payload in strict.items():
+                normalized_key = _normalize_section_key(statement_key)
+                if normalized_key not in accepted_sections and not _is_income_fallback_key(statement_key):
+                    continue
                 if payload:
                     all_rows.extend(_section_rows(payload))
     return all_rows
@@ -427,13 +518,7 @@ def _build_from_financials_format(
                 continue
                 
             for statement_key in ("income_statement", "balance_sheet", "cash_flow"):
-                statement_data = entity_payload.get(statement_key)
-                if not isinstance(statement_data, dict):
-                    # Check aliases
-                    for possible_key, val in entity_payload.items():
-                        if _SECTION_ALIASES.get(possible_key) == statement_key or possible_key == statement_key:
-                            statement_data = val
-                            break
+                statement_data = _find_statement_payload(entity_payload, statement_key)
                             
                 if not isinstance(statement_data, dict):
                     continue
@@ -661,7 +746,7 @@ def build_strict_extraction_dataset(extraction_outputs: list[dict[str, Any]]) ->
         statements = record.get("statements") if isinstance(record.get("statements"), dict) else {}
         
         for statement_key in ("income_statement", "balance_sheet", "cash_flow"):
-            payload = statements.get(statement_key)
+            payload = _find_statement_payload(statements, statement_key)
             if not payload:
                 continue
                 

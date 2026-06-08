@@ -1,14 +1,12 @@
 import React, { Fragment } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  HomeIcon,
   Cog6ToothIcon,
   XMarkIcon,
   BoltIcon,
 } from '@heroicons/react/24/outline';
 
 const navItems = [
-  { label: 'Home', path: '/home', icon: HomeIcon },
   { label: 'Pipeline', path: '/pipeline', icon: BoltIcon },
   { label: 'Engineering', path: '/engineering', icon: BoltIcon },
   { label: 'Pricing', path: '/pricing', icon: BoltIcon },

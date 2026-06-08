@@ -6,7 +6,6 @@ import DashboardLayout from './layouts/DashboardLayout';
 
 // Pages
 import Landing from './pages/Landing';
-import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import Login from './pages/Login';
 import Registration from './pages/Registration';
@@ -42,7 +41,7 @@ function App() {
             <Route path="/verify-mfa" element={<MFAverifyForm />} />
 
             {/* ─── App Routes (with layout, accessible by all users) ─── */}
-            <Route path="/home" element={<WithLayout><Home /></WithLayout>} />
+            <Route path="/home" element={<Navigate to="/pipeline" replace />} />
             <Route path="/pricing" element={<WithLayout><Pricing /></WithLayout>} />
             <Route path="/settings" element={<WithLayout><Settings /></WithLayout>} />
             <Route path="/profile/:userId" element={<WithLayout><Profile /></WithLayout>} />

@@ -1,0 +1,140 @@
+{
+  "report_id": "adf54e5b-3581-4388-9135-265633d3c466",
+  "status": "completed",
+  "strict_report": {
+    "source": "analytics.json",
+    "tables": {
+      "ratios": {
+        "columns": [
+          "Year",
+          "ROE",
+          "ROA",
+          "Current Ratio",
+          "Debt/Equity",
+          "Net Margin",
+          "Gross Margin",
+          "OCF Margin"
+        ],
+        "rows": [
+          [
+            "2017",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2018",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2019",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2020",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2021",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2022",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2023",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          [
+            "2024",
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    "key_findings": [
+      "Latest analytics period: 2024.",
+      "Confidence band: high with score 1.0.",
+      "Risk level: high.",
+      "Consistent multi-year validation coverage available"
+    ],
+    "anomalies": [],
+    "validation_summary": [
+      "Consistent multi-year validation coverage available"
+    ],
+    "financial_health_score": 1.0,
+    "risk_score": 100.0,
+    "scores": {
+      "confidence": {
+        "score": 1.0,
+        "raw_score": 1.0,
+        "overall_data_quality_score": 1.0,
+        "band": "high",
+        "valid_years": [
+          "2017",
+          "2018",
+          "2019",
+          "2020",
+          "2021",
+          "2022",
+          "2023",
+          "2024"
+        ],
+        "rejected_years": []
+      },
+      "risk": {
+        "overall_risk_score": 100.0,
+        "overall_risk_level": "high",
+        "risk_flags": [],
+        "final_financial_health_score": 0.0
+      }
+    }
+  }
+}

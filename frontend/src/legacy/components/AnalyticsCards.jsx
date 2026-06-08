@@ -711,11 +711,304 @@ function CashQualityPanel({ cashFlowToIncome }) {
   );
 }
 
+function getCalculationDetails(analytics) {
+  const direct = analytics?.calculation_details;
+  if (direct && typeof direct === 'object') return direct;
+  const embedded = analytics?.ratios?.strict_calculations;
+  if (embedded && typeof embedded === 'object') return embedded;
+  return null;
+}
+
+function extractCalculationWorkbook(analytics, currency = 'LKR') {
+  const details = getCalculationDetails(analytics);
+  const yearlyRatios = details?.yearly_ratios && typeof details.yearly_ratios === 'object' ? details.yearly_ratios : {};
+  const growthMetrics = details?.growth_metrics && typeof details.growth_metrics === 'object' ? details.growth_metrics : {};
+  const validationGates = details?.validation_gates && typeof details.validation_gates === 'object' ? details.validation_gates : {};
+  const equations = details?.evaluated_equations_by_year && typeof details.evaluated_equations_by_year === 'object'
+    ? details.evaluated_equations_by_year
+    : {};
+
+  const years = Array.from(
+    new Set([
+      ...Object.keys(yearlyRatios),
+      ...Object.keys(growthMetrics),
+      ...Object.keys(validationGates),
+      ...Object.keys(equations),
+    ].filter((year) => /^\d{4}$/.test(year)))
+  ).sort((a, b) => Number(a) - Number(b));
+
+  const ratioNames = Array.from(
+    new Set(
+      years.flatMap((year) => Object.keys(yearlyRatios[year] || {}))
+    )
+  );
+
+  const formulaRows = years.flatMap((year) =>
+    Object.entries(yearlyRatios[year] || {}).map(([name, payload]) => {
+      const value = typeof payload?.value === 'number' && Number.isFinite(payload.value) ? payload.value : null;
+      const confidence = typeof payload?.confidence === 'number' && Number.isFinite(payload.confidence) ? payload.confidence : null;
+      return {
+        year,
+        name,
+        value,
+        display: formatMetricByKey(name, value, currency),
+        equation: payload?.equation || equations?.[year]?.[name] || '-',
+        confidence,
+        inputs: Array.isArray(payload?.inputs_used) ? payload.inputs_used.join(', ') : '',
+      };
+    })
+  );
+
+  const latestYear = years[years.length - 1] || null;
+  const latestRows = latestYear ? formulaRows.filter((row) => row.year === latestYear) : [];
+  const latestNumeric = latestRows.filter((row) => typeof row.value === 'number' && Number.isFinite(row.value));
+
+  const confidenceBuckets = [
+    { key: 'high', label: 'High', color: '#16a34a', count: formulaRows.filter((row) => (row.confidence || 0) >= 0.8).length },
+    { key: 'moderate', label: 'Moderate', color: '#f59e0b', count: formulaRows.filter((row) => (row.confidence || 0) >= 0.5 && (row.confidence || 0) < 0.8).length },
+    { key: 'low', label: 'Low', color: '#ef4444', count: formulaRows.filter((row) => row.confidence != null && row.confidence < 0.5).length },
+    { key: 'missing', label: 'No Value', color: '#94a3b8', count: formulaRows.filter((row) => row.value == null).length },
+  ];
+
+  const yearlyMatrix = ratioNames.map((name) => ({
+    name,
+    values: years.map((year) => {
+      const payload = yearlyRatios?.[year]?.[name];
+      const value = typeof payload?.value === 'number' && Number.isFinite(payload.value) ? payload.value : null;
+      return {
+        year,
+        value,
+        display: formatMetricByKey(name, value, currency),
+      };
+    }),
+  }));
+
+  const growthRows = years.flatMap((year) =>
+    Object.entries(growthMetrics[year] || {})
+      .filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
+      .map(([name, value]) => ({
+        year,
+        name,
+        value,
+        display: formatPercent(value),
+      }))
+  );
+
+  const gateRows = years.flatMap((year) =>
+    Object.entries(validationGates[year] || {}).map(([name, payload]) => ({
+      year,
+      name,
+      status: String(payload?.status || 'unknown'),
+      detail: payload?.detail || '',
+    }))
+  );
+
+  return {
+    years,
+    latestYear,
+    formulaRows,
+    latestRows,
+    latestNumeric,
+    confidenceBuckets,
+    yearlyMatrix,
+    growthRows,
+    gateRows,
+  };
+}
+
+function CalculationBarChart({ rows }) {
+  const displayRows = rows
+    .filter((row) => typeof row.value === 'number' && Number.isFinite(row.value))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
+    .slice(0, 8);
+  const maxAbs = Math.max(1, ...displayRows.map((row) => Math.abs(row.value)));
+
+  return (
+    <div className="metric-card" style={{ padding: 14 }}>
+      <div className="metric-card-label">Latest Year Calculation Bars</div>
+      <div className="mt-3 space-y-2.5">
+        {displayRows.length === 0 && <div className="text-[12px] text-slate-500">No numeric calculation values available.</div>}
+        {displayRows.map((row) => (
+          <div key={`${row.year}-${row.name}`}>
+            <div className="flex justify-between gap-3 text-[11px] text-slate-600 mb-1">
+              <span className="truncate">{row.name}</span>
+              <span className="font-semibold text-slate-800">{row.display}</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-slate-900"
+                style={{ width: `${Math.max(5, (Math.abs(row.value) / maxAbs) * 100)}%` }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CalculationConfidencePie({ buckets }) {
+  const total = buckets.reduce((sum, bucket) => sum + bucket.count, 0);
+  let cursor = 0;
+  const gradient = total > 0
+    ? buckets.map((bucket) => {
+      const start = cursor;
+      const span = (bucket.count / total) * 360;
+      cursor += span;
+      return `${bucket.color} ${start}deg ${cursor}deg`;
+    }).join(', ')
+    : '#e2e8f0 0deg 360deg';
+
+  return (
+    <div className="metric-card" style={{ padding: 14 }}>
+      <div className="metric-card-label">Formula Confidence Pie Chart</div>
+      <div className="mt-3 flex items-center gap-4">
+        <div
+          className="relative w-[108px] h-[108px] rounded-full shrink-0"
+          style={{ background: `conic-gradient(${gradient})` }}
+        >
+          <div className="absolute inset-[24px] rounded-full bg-white border border-slate-200 grid place-items-center">
+            <span className="text-[13px] font-bold text-slate-900">{total}</span>
+          </div>
+        </div>
+        <div className="space-y-1.5 flex-1">
+          {buckets.map((bucket) => (
+            <div key={bucket.key} className="flex items-center justify-between text-[11px]">
+              <span className="inline-flex items-center gap-2 text-slate-600">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: bucket.color }} />
+                {bucket.label}
+              </span>
+              <span className="font-semibold text-slate-800">{bucket.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalculationWorkbook({ workbook, currency = 'LKR' }) {
+  if (!workbook || workbook.formulaRows.length === 0) return null;
+
+  return (
+    <section>
+      <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-2">
+        Strict Pipeline Calculations and Formulas
+      </div>
+      <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
+        <CalculationBarChart rows={workbook.latestRows} />
+        <CalculationConfidencePie buckets={workbook.confidenceBuckets} />
+      </div>
+
+      {workbook.yearlyMatrix.length > 0 && (
+        <div className="metric-card mb-3" style={{ padding: 14 }}>
+          <div className="metric-card-label">Formula Values by Year ({currency})</div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="data-table min-w-[780px]">
+              <thead>
+                <tr>
+                  <th>Calculation</th>
+                  {workbook.years.map((year) => (
+                    <th key={year} className="text-right">{year}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {workbook.yearlyMatrix.map((row) => (
+                  <tr key={row.name}>
+                    <td className="font-semibold text-slate-700">{row.name}</td>
+                    {row.values.map((entry) => (
+                      <td key={`${row.name}-${entry.year}`} className="text-right font-semibold text-slate-800">
+                        {entry.display}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="metric-card mb-3" style={{ padding: 14 }}>
+        <div className="metric-card-label">Equations Used by Backend Engine</div>
+        <div className="mt-3 overflow-x-auto">
+          <table className="data-table min-w-[900px]">
+            <thead>
+              <tr>
+                <th>Year</th>
+                <th>Formula</th>
+                <th className="text-right">Value</th>
+                <th>Equation</th>
+                <th className="text-right">Confidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workbook.formulaRows.map((row) => (
+                <tr key={`${row.year}-${row.name}`}>
+                  <td className="font-semibold text-slate-700">{row.year}</td>
+                  <td className="font-semibold text-slate-800">{row.name}</td>
+                  <td className="text-right font-semibold text-slate-800">{row.display}</td>
+                  <td className="text-[11px] text-slate-500">{row.equation}</td>
+                  <td className="text-right font-semibold text-slate-800">
+                    {typeof row.confidence === 'number' ? `${Math.round(row.confidence * 100)}%` : '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {(workbook.growthRows.length > 0 || workbook.gateRows.length > 0) && (
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))' }}>
+          <div className="metric-card" style={{ padding: 14 }}>
+            <div className="metric-card-label">Growth Metrics</div>
+            <div className="mt-2 space-y-1.5">
+              {workbook.growthRows.length === 0 && <div className="text-[12px] text-slate-500">No growth metrics available.</div>}
+              {workbook.growthRows.slice(0, 12).map((row) => (
+                <div key={`${row.year}-${row.name}`} className="flex items-center justify-between text-[12px]">
+                  <span className="text-slate-500">{row.year} {row.name}</span>
+                  <span className="font-semibold text-slate-800">{row.display}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="metric-card" style={{ padding: 14 }}>
+            <div className="metric-card-label">Validation Gates</div>
+            <div className="mt-2 space-y-1.5">
+              {workbook.gateRows.slice(0, 12).map((row) => {
+                const ok = row.status === 'pass' || row.status === 'completed';
+                return (
+                  <div key={`${row.year}-${row.name}`} className="flex items-center justify-between gap-3 text-[12px]">
+                    <span className="text-slate-500 truncate">{row.year} {row.name}</span>
+                    <span
+                      className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full"
+                      style={{
+                        background: ok ? '#ecfdf5' : row.status === 'fail' ? '#fef2f2' : '#f8fafc',
+                        color: ok ? '#166534' : row.status === 'fail' ? '#991b1b' : '#334155',
+                      }}
+                    >
+                      {row.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AnalyticsCards({ analytics, currency = 'LKR' }) {
   const { latestYear, latest, years, byYear } = useMemo(() => extractLatestMetrics(analytics), [analytics]);
   const numeric = useMemo(() => extractAllNumericMetrics(analytics, currency), [analytics, currency]);
   const growthItems = useMemo(() => extractGrowthSnapshot(analytics), [analytics]);
   const riskSignals = useMemo(() => extractRiskSignals(analytics), [analytics]);
+  const workbook = useMemo(() => extractCalculationWorkbook(analytics, currency), [analytics, currency]);
 
   const metricCards = useMemo(() => buildMetricCards(latest, currency), [latest, currency]);
   const executiveSummary = useMemo(
@@ -804,6 +1097,8 @@ export default function AnalyticsCards({ analytics, currency = 'LKR' }) {
             <CashQualityPanel cashFlowToIncome={latest.cash_flow_to_net_income} />
           </div>
         </section>
+
+        <CalculationWorkbook workbook={workbook} currency={currency} />
 
         <section>
           <div className="text-[11px] font-semibold tracking-wider uppercase text-slate-500 mb-2">Pattern Detector Matrix</div>
