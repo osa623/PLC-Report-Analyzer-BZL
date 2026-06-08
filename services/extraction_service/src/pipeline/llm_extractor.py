@@ -200,7 +200,7 @@ If you are uncertain about any row label or a value, keep it as best-effort but 
         # Clean the API key in case of whitespace
         clean_key = self.api_key.strip() if self.api_key else ""
         # Use Gemini 2.0 Flash (Stable)
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={clean_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key={clean_key}"
         
         payload = {
             "contents": [{

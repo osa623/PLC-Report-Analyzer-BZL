@@ -1,5 +1,5 @@
 {
-  "report_id": "adf54e5b-3581-4388-9135-265633d3c466",
+  "report_id": "13ebc067-14a2-429e-a17d-0f73da59bbe9",
   "status": "completed",
   "strict_report": {
     "source": "analytics.json",
@@ -17,7 +17,17 @@
         ],
         "rows": [
           [
-            "2017",
+            "2015",
+            0.027718,
+            null,
+            1.0,
+            null,
+            0.076739,
+            null,
+            null
+          ],
+          [
+            "2016",
             null,
             null,
             null,
@@ -27,12 +37,22 @@
             null
           ],
           [
+            "2017",
+            0.044444,
+            null,
+            1.0,
+            null,
+            0.148418,
+            null,
+            null
+          ],
+          [
             "2018",
+            0.048496,
             null,
+            1.0,
             null,
-            null,
-            null,
-            null,
+            0.135565,
             null,
             null
           ],
@@ -60,9 +80,9 @@
             "2021",
             null,
             null,
+            1.125967,
             null,
-            null,
-            null,
+            0.171848,
             null,
             null
           ],
@@ -70,9 +90,9 @@
             "2022",
             null,
             null,
+            1.112792,
             null,
-            null,
-            null,
+            0.123816,
             null,
             null
           ],
@@ -80,7 +100,7 @@
             "2023",
             null,
             null,
-            null,
+            1.157501,
             null,
             null,
             null,
@@ -90,7 +110,7 @@
             "2024",
             null,
             null,
-            null,
+            1.143214,
             null,
             null,
             null,
@@ -101,7 +121,7 @@
     },
     "key_findings": [
       "Latest analytics period: 2024.",
-      "Confidence band: high with score 1.0.",
+      "Confidence band: high with score 0.986.",
       "Risk level: high.",
       "Consistent multi-year validation coverage available"
     ],
@@ -109,15 +129,17 @@
     "validation_summary": [
       "Consistent multi-year validation coverage available"
     ],
-    "financial_health_score": 1.0,
+    "financial_health_score": 0.986,
     "risk_score": 100.0,
     "scores": {
       "confidence": {
-        "score": 1.0,
-        "raw_score": 1.0,
-        "overall_data_quality_score": 1.0,
+        "score": 0.986,
+        "raw_score": 0.986,
+        "overall_data_quality_score": 0.986,
         "band": "high",
         "valid_years": [
+          "2015",
+          "2016",
           "2017",
           "2018",
           "2019",

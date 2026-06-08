@@ -17,6 +17,9 @@ _SECTION_ALIASES = {
     "cashflow": "cash_flow",
     "income": "income_statement",
     "statement_of_income": "income_statement",
+    "statement_of_profit_or_loss": "income_statement",
+    "statement_of_profit_and_loss": "income_statement",
+    "statement_of_profit_or_loss_and_other_comprehensive_income": "income_statement",
     "balance": "balance_sheet",
 }
 
@@ -260,6 +263,7 @@ def _collect_all_rows(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     all_rows = []
     accepted_sections = {
         "income_statement",
+        "profit_or_loss",
         "balance_sheet",
         "cash_flow",
         "comprehensive_income",
@@ -346,6 +350,8 @@ def _field_map(statement_key: str, label: str) -> str | None:
     if statement_key == "income_statement":
         mapping = [
             ("gross income", "revenue"),
+            ("financing income", "revenue"),
+            ("financing expenses", "interest_expense"),
             ("interest income", "interest_income"),
             ("net interest income", "net_interest_income"),
             ("less: interest expenses", "interest_expense"),

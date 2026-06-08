@@ -36,6 +36,6 @@ def load_config(service_name: str, default_port: int) -> ServiceConfig:
         redis_ttl_seconds=int(os.getenv("REDIS_TTL_SECONDS", "86400")),
         database_url=os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/plc"),
         log_level=os.getenv("LOG_LEVEL", "INFO"),
-        llm_model=os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+        llm_model=os.getenv("LLM_MODEL", "gemini-2.5-flash-lite"),
         llm_api_key=os.getenv("GOOGLE_API_KEY", ""),
     )
