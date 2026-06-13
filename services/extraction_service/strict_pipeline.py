@@ -7,7 +7,7 @@ from typing import Any
 
 
 _YEAR_ENTITY_RE = re.compile(
-    r"^(?P<year>\d{4})\s*\((?P<entity>Group|Bank|Company|Entity|Parent|Standalone)\)$",
+    r"^(?P<year>\d{4})\s*\((?P<entity>Group|Consolidated|Bank|Company|Entity|Parent|Standalone)\)$",
     re.IGNORECASE,
 )
 
@@ -39,6 +39,7 @@ _INCOME_FALLBACK_SECTION_KEYS = (
 )
 
 _ENTITY_PRIORITY = ("Group", "Consolidated", "Bank", "Company", "Entity", "Parent", "Standalone")
+_GROUP_ENTITY_KEYS = ("group", "consolidated")
 
 _DIRECT_FIELD_ALIASES = {
     "balance_sheet": {
@@ -538,11 +539,15 @@ def _build_from_financials_format(
             continue
             
         lowercase_keys = {k.lower(): k for k in entities_data.keys()}
-        # Process standalone/parent/entity first, then group/consolidated last
-        # so group-level values overwrite standalone (last-write-wins).
-        entity_priorities = ["standalone", "parent", "entity", "company", "bank", "consolidated", "group"]
-        other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
-        ordered_keys_to_process = other_keys + entity_priorities
+        group_keys = [key for key in _GROUP_ENTITY_KEYS if key in lowercase_keys]
+        # If group/consolidated data is present for a year, use only that
+        # entity set. Do not fill missing fields from bank/company/standalone.
+        if group_keys:
+            ordered_keys_to_process = [key for key in ("consolidated", "group") if key in lowercase_keys]
+        else:
+            entity_priorities = ["standalone", "parent", "entity", "company", "bank"]
+            other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
+            ordered_keys_to_process = other_keys + entity_priorities
         
         for k_lower in ordered_keys_to_process:
             if k_lower not in lowercase_keys:

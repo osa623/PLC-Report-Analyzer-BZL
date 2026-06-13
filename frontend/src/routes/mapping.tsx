@@ -1,9 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
-import { detectManualStatements, getCurrentReportId, getDocumentStatuses, listManualPdfs, retryDocumentExtraction, type ManualPdf, type ManualStatement, type PipelineDocument } from "@/lib/api";
+import { detectManualStatements, getCurrentReportId, getDocumentExtractedData, getDocumentStatuses, listManualPdfs, retryDocumentExtraction, type ManualPdf, type ManualStatement, type PipelineDocument } from "@/lib/api";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, RefreshCw, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+
+function cleanImageUrl(url = "") {
+  if (url.includes("localhost:5000")) {
+    return url.replace(/https?:\/\/localhost:5000/, "/annual-api");
+  }
+  return url;
+}
 
 export const Route = createFileRoute("/mapping")({
   head: () => ({ meta: [{ title: "Statement Mapping - FDI" }, { name: "description", content: "Map failed financial statement extraction to PDF pages." }] }),
@@ -19,6 +26,7 @@ const STATEMENT_LABELS: Record<string, string> = {
   cash_flow: "Cash Flow Statement",
   equity: "Statement of Changes in Equity",
   comprehensive_income: "Comprehensive Income",
+  toc: "Table of Contents",
 };
 
 const REQUIRED_MAPPING_STATEMENTS = [
@@ -34,6 +42,10 @@ function requestedPdfName() {
   return new URLSearchParams(window.location.search).get("pdf") || "";
 }
 
+function docName(doc: PipelineDocument) {
+  return doc.pdf_name || doc.filename || doc.name || "Annual report";
+}
+
 function findManualPdf(pdfs: ManualPdf[], name: string) {
   const clean = name.toLowerCase();
   return (
@@ -47,6 +59,13 @@ function pagesFromText(text = "") {
   return Array.from(text.matchAll(/\d+/g)).map((match) => Number(match[0])).filter((page) => Number.isFinite(page) && page > 0);
 }
 
+function tocImageLabel(image: { kind?: string; page?: number; source_toc_page?: number }, index: number) {
+  if (image.kind === "next_page_after_toc") {
+    return `Next page after TOC ${image.source_toc_page || ""}`.trim();
+  }
+  return `Detected TOC page ${image.page || index + 1}`;
+}
+
 function MappingPage() {
   const navigate = useNavigate();
   const [manualPdfs, setManualPdfs] = useState<ManualPdf[]>([]);
@@ -57,13 +76,41 @@ function MappingPage() {
   const [statements, setStatements] = useState<ManualStatement[]>([]);
   const [values, setValues] = useState<Record<string, string>>({ income: "", balance: "", cashflow: "", equity: "", comprehensive_income: "" });
   const [imageIndex, setImageIndex] = useState(0);
+  const [tocIndex, setTocIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [selectedFullscreenImage, setSelectedFullscreenImage] = useState<{ url: string; page?: number; filename?: string; statement?: string; kind?: string; source_toc_page?: number } | null>(null);
+
+  const groupedImages = useMemo(() => {
+    const groups: Record<string, Array<{ url: string; page?: number; filename?: string; kind?: string; source_toc_page?: number }>> = {};
+    if (pipelineDoc?.statement_images) {
+      Object.entries(pipelineDoc.statement_images).forEach(([key, imgs]) => {
+        if (key === "toc") return;
+        if (imgs && imgs.length) {
+          groups[STATEMENT_LABELS[key] || key.replace(/_/g, " ")] = imgs;
+        }
+      });
+    }
+    if (Object.keys(groups).length === 0 && statements.length) {
+      statements.forEach((stmt) => {
+        if (stmt.images && stmt.images.length) {
+          groups[stmt.title] = stmt.images;
+        }
+      });
+    }
+    return groups;
+  }, [pipelineDoc, statements]);
+
+  const tocImages = useMemo(
+    () => (pipelineDoc?.statement_images?.toc || []).map((image) => ({ ...image, statement: "Table of Contents" })),
+    [pipelineDoc],
+  );
 
   const images = useMemo(() => {
     const pipelineImages = Object.entries(pipelineDoc?.statement_images || {}).flatMap(([statement, statementImages]) =>
+      statement === "toc" ? [] :
       (statementImages || []).map((image) => ({ ...image, statement: STATEMENT_LABELS[statement] || statement.replace(/_/g, " ") })),
     );
     if (pipelineImages.length) return pipelineImages;
@@ -87,10 +134,23 @@ function MappingPage() {
           return docName === name || docName.toLowerCase() === name.toLowerCase();
         });
         if (matchedDoc) {
-          setPipelineDoc(matchedDoc);
+          let hydratedDoc = matchedDoc;
+          try {
+            const data = await getDocumentExtractedData(currentReportId, docName(matchedDoc));
+            hydratedDoc = {
+              ...matchedDoc,
+              statement_images: data.statement_images || matchedDoc.statement_images,
+              statement_pages: data.statement_pages || matchedDoc.statement_pages,
+              statement_refs: data.statement_refs || matchedDoc.statement_refs,
+              page_mappings: data.page_mappings || matchedDoc.page_mappings,
+            };
+          } catch {
+            hydratedDoc = matchedDoc;
+          }
+          setPipelineDoc(hydratedDoc);
           const nextValues: Record<string, string> = {};
           Object.entries({ income_statement: "income", balance_sheet: "balance", cash_flow: "cashflow", equity: "equity", comprehensive_income: "comprehensive_income" }).forEach(([backendKey, uiKey]) => {
-            const pages = matchedDoc.statement_pages?.[backendKey] || [];
+            const pages = hydratedDoc.statement_pages?.[backendKey] || [];
             if (pages.length) nextValues[uiKey] = pages.join(", ");
           });
           setValues((current) => ({ ...current, ...nextValues }));
@@ -182,6 +242,7 @@ function MappingPage() {
 
   const activeImage = images[imageIndex];
   const statementRefs = pipelineDoc?.statement_refs || {};
+  const pageMappings = pipelineDoc?.page_mappings || {};
 
   return (
     <Page>
@@ -223,26 +284,108 @@ function MappingPage() {
       {error && <div className="mt-5 rounded-xl border border-[color:var(--error)]/20 bg-[color:var(--error)]/8 px-4 py-3 text-[13px] text-[color:var(--error)]">{error}</div>}
       {message && <div className="mt-5 rounded-xl border border-[color:var(--success)]/20 bg-[color:var(--success)]/8 px-4 py-3 text-[13px] text-[color:var(--success)]">{message}</div>}
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3">
+      {tocImages.length > 0 && (
+        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated mt-8 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5 bg-white">
             <div>
-              <div className="text-[13px] font-medium">Statement Page Screenshot</div>
-              <div className="text-[11.5px] text-muted-foreground">
-                {activeImage ? `${activeImage.statement} · page ${activeImage.page || imageIndex + 1}` : "No screenshots returned"}
-              </div>
+              <div className="text-[14px] font-semibold">Table of Contents Screenshots</div>
+              <div className="mt-0.5 text-[12px] text-muted-foreground">Detected TOC pages plus the immediate next page for context.</div>
             </div>
-            <div className="flex items-center gap-1">
-              <button onClick={() => setImageIndex((p) => Math.max(0, p - 1))} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-[var(--hover)]"><ChevronLeft className="h-4 w-4" /></button>
-              <button onClick={() => setImageIndex((p) => Math.min(Math.max(0, images.length - 1), p + 1))} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-[var(--hover)]"><ChevronRight className="h-4 w-4" /></button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTocIndex((current) => Math.max(0, current - 1))}
+                disabled={tocIndex === 0}
+                className="grid h-9 w-9 place-items-center rounded-full border border-border bg-white hover:bg-[var(--hover)] disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="min-w-20 text-center text-[12px] tabular-nums text-muted-foreground">{tocIndex + 1} / {tocImages.length}</span>
+              <button
+                type="button"
+                onClick={() => setTocIndex((current) => Math.min(tocImages.length - 1, current + 1))}
+                disabled={tocIndex >= tocImages.length - 1}
+                className="grid h-9 w-9 place-items-center rounded-full border border-border bg-white hover:bg-[var(--hover)] disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           </div>
-          <div className="bg-[var(--surface)] p-4">
-            {activeImage ? (
-              <img src={activeImage.url} alt={`${activeImage.statement} page ${activeImage.page || ""}`} className="mx-auto max-h-[620px] w-full rounded-lg object-contain ring-1 ring-border" />
+          <div className="grid gap-4 bg-[var(--surface)] p-5 lg:grid-cols-[180px_1fr]">
+            <div className="space-y-2">
+              {tocImages.map((image, index) => (
+                <button
+                  key={image.filename || index}
+                  type="button"
+                  onClick={() => setTocIndex(index)}
+                  className={`w-full rounded-lg border px-3 py-2 text-left text-[12px] ${
+                    index === tocIndex ? "border-[var(--navy)] bg-white text-foreground shadow-sm" : "border-border bg-white/70 text-muted-foreground hover:bg-white"
+                  }`}
+                >
+                  <div className="font-medium">{tocImageLabel(image, index)}</div>
+                  <div className="mt-0.5 text-muted-foreground">PDF page {image.page || index + 1}</div>
+                  <div className="mt-0.5 truncate">{image.filename}</div>
+                </button>
+              ))}
+            </div>
+            <div className="max-h-[760px] overflow-auto rounded-xl border border-border bg-white p-3">
+              <img
+                src={cleanImageUrl(tocImages[Math.min(tocIndex, tocImages.length - 1)]?.url || "")}
+                alt={tocImageLabel(tocImages[Math.min(tocIndex, tocImages.length - 1)] || {}, tocIndex)}
+                className="mx-auto w-full min-w-[720px] rounded-lg bg-white shadow-sm"
+                onClick={() => setSelectedFullscreenImage(tocImages[Math.min(tocIndex, tocImages.length - 1)] || null)}
+              />
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated overflow-hidden flex flex-col">
+          <div className="border-b border-border px-5 py-3.5 bg-white">
+            <div className="text-[14px] font-semibold text-foreground">Statement Page Screenshots</div>
+            <div className="text-[12px] text-muted-foreground mt-0.5">
+              Click any image to expand and view the full table contents.
+            </div>
+          </div>
+          <div className="bg-[var(--surface)] p-5 flex-1 min-h-[450px]">
+            {Object.keys(groupedImages).length > 0 ? (
+              <div className="space-y-6 max-h-[650px] overflow-y-auto pr-1">
+                {Object.entries(groupedImages).map(([statementTitle, imgs]) => (
+                  <div key={statementTitle} className="border-b border-border/60 pb-5 last:border-0">
+                    <h3 className="text-[12px] font-semibold text-[color:var(--navy)] mb-3 uppercase tracking-wider">{statementTitle}</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {imgs.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group cursor-pointer border border-border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all hover:scale-[1.01] duration-200"
+                          onClick={() => setSelectedFullscreenImage({ ...img, statement: statementTitle })}
+                        >
+                          <img
+                            src={cleanImageUrl(img.url)}
+                            alt={`${statementTitle} page ${img.page || idx + 1}`}
+                            className="w-full h-40 object-contain bg-slate-50 p-2"
+                          />
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-black/40 text-white text-[11px] px-3 py-1.5 flex justify-between items-center opacity-90 group-hover:opacity-100 transition-opacity">
+                            <span className="font-medium">Page {img.page || idx + 1}</span>
+                            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Expand</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <div className="grid min-h-[360px] place-items-center rounded-lg bg-white text-[13px] text-muted-foreground ring-1 ring-border">
-                {loading ? "Loading screenshots..." : "No statement page screenshots are available yet for this PDF."}
+              <div className="grid min-h-[400px] place-items-center rounded-xl bg-white text-[13px] text-muted-foreground ring-1 ring-border">
+                {loading ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="h-6 w-6 animate-spin text-[var(--navy)]" />
+                    <span>Loading screenshots...</span>
+                  </div>
+                ) : (
+                  "No statement page screenshots are available yet for this PDF."
+                )}
               </div>
             )}
           </div>
@@ -262,11 +405,21 @@ function MappingPage() {
           <div className="mt-6 space-y-4">
             {Object.keys(statementRefs).length > 0 && (
               <div className="rounded-xl border border-border bg-[var(--surface)] p-3 text-[12px]">
-                <div className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">Detected Statement Mappings</div>
+                <div className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">Dynamic Page Offset Resolution</div>
                 {Object.entries(statementRefs).map(([key, page]) => (
-                  <div key={key} className="flex items-center justify-between py-1">
-                    <span>{key.replace(/_/g, " ")}</span>
-                    <span className="font-medium tabular-nums">TOC page {page}</span>
+                  <div key={key} className="grid gap-1 border-t border-border/60 py-2 first:border-t-0">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{key.replace(/_/g, " ")}</span>
+                      <span className="font-medium tabular-nums">TOC page {page}</span>
+                    </div>
+                    {pageMappings[key] && (
+                      <div className="grid grid-cols-4 gap-2 text-[11px] text-muted-foreground">
+                        <span>PDF {pageMappings[key].referenced_pdf_page ?? "-"}</span>
+                        <span>Printed {pageMappings[key].printed_page ?? "-"}</span>
+                        <span>Offset {pageMappings[key].offset == null ? "-" : pageMappings[key].offset! >= 0 ? `+${pageMappings[key].offset}` : pageMappings[key].offset}</span>
+                        <span className="text-right font-medium text-foreground">Open {pageMappings[key].corrected_pdf_page ?? "-"}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -276,7 +429,7 @@ function MappingPage() {
                 <div>
                   <label className="text-[13.5px] font-medium">{STATEMENT_LABELS[statement.type] || statement.title}</label>
                   <div className="mt-0.5 text-[11.5px] text-muted-foreground">
-                    {statement.confidence ? `${Math.round(statement.confidence * (statement.confidence <= 1 ? 100 : 1))}% confidence` : "Needs manual page"}
+                    {(statement as any).confidence ? `${Math.round((statement as any).confidence * ((statement as any).confidence <= 1 ? 100 : 1))}% confidence` : "Needs manual page"}
                   </div>
                 </div>
                 <input
@@ -309,6 +462,43 @@ function MappingPage() {
           </Link>
         </div>
       </div>
+      
+      {/* Fullscreen Image Overlay */}
+      {selectedFullscreenImage && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedFullscreenImage(null)}
+        >
+          <div
+            className="relative max-w-5xl w-full max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-3 bg-white">
+              <div>
+                <span className="text-[14px] font-semibold text-foreground">
+                  {selectedFullscreenImage.statement}
+                </span>
+                <span className="ml-2 text-[12px] text-muted-foreground">
+                  · Page {selectedFullscreenImage.page}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedFullscreenImage(null)}
+                className="grid h-8 w-8 place-items-center rounded-full hover:bg-[var(--hover)] text-foreground/80 hover:text-foreground"
+              >
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+            <div className="p-4 bg-slate-900 flex-1 overflow-auto flex items-center justify-center">
+              <img
+                src={cleanImageUrl(selectedFullscreenImage.url)}
+                alt={`${selectedFullscreenImage.statement} page ${selectedFullscreenImage.page}`}
+                className="max-h-[75vh] object-contain rounded-lg shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </Page>
   );
 }

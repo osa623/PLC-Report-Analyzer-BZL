@@ -27,4 +27,4 @@ __pycache__/
 *.
 /services/data*
 /services/extract/
-/
+/pipeline_artifacts

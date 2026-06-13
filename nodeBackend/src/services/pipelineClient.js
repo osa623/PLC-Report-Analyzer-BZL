@@ -89,5 +89,12 @@ async function triggerRetryDocumentExtraction(reportId, pdfName, selectedPages) 
   });
 }
 
-module.exports = { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline, triggerRetryDocumentExtraction, initPipelineStages };
+async function triggerFinalizeCompletedBatch(reportId) {
+  return axios.post(`${config.pipelineOrchestratorUrl}/finalize-completed-batch`, {
+    report_id: reportId,
+    ...buildContractEnvelope(reportId, 'pipeline_batch_finalize_v1', 'analysis_calculation_engine_v1'),
+  });
+}
+
+module.exports = { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline, triggerRetryDocumentExtraction, triggerFinalizeCompletedBatch, initPipelineStages };
 

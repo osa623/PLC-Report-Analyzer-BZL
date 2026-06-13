@@ -12,9 +12,10 @@ export type PipelineDocument = {
   toc_lines?: string[];
   toc_pages?: number[];
   statement_refs?: Record<string, number>;
+  page_mappings?: Record<string, { toc_page?: number | null; referenced_pdf_page?: number | null; printed_page?: number | null; offset?: number | null; corrected_pdf_page?: number | null }>;
   statement_pages?: Record<string, number[]>;
   statement_statuses?: Record<string, { status?: string; pages?: number[]; has_data?: boolean }>;
-  statement_images?: Record<string, Array<{ url: string; page?: number; filename?: string }>>;
+  statement_images?: Record<string, Array<{ url: string; page?: number; filename?: string; kind?: string; source_toc_page?: number }>>;
   manual_page_mapping?: Record<string, number[]>;
 };
 
@@ -43,6 +44,7 @@ export type ValidatedRow = {
   value?: number | string | null;
   year?: string | number | null;
   statement_type?: string;
+  entity?: string | null;
   confidence_score?: number;
   page_number?: number | null;
   report_name?: string;
@@ -50,12 +52,40 @@ export type ValidatedRow = {
   source_path?: string;
 };
 
+export type NormalizedStatement = {
+  statement_type: string;
+  label: string;
+  rows: Array<{ label: string; value: number | string | null; display_value?: string }>;
+};
+
+export type NormalizedEntity = {
+  entity: string;
+  statements: NormalizedStatement[];
+};
+
+export type NormalizedYearGroup = {
+  year: string;
+  entities: NormalizedEntity[];
+};
+
+export type NormalizedReportGroup = {
+  company?: string;
+  source_pdf: string;
+  years: NormalizedYearGroup[];
+};
+
 export type DocumentExtractedData = {
   report_id: string;
   pdf_name: string;
   report_year?: string | null;
+  toc_pages?: number[];
+  toc_lines?: string[];
+  statement_images?: Record<string, Array<{ url: string; page?: number; filename?: string; kind?: string; source_toc_page?: number }>>;
+  statement_refs?: Record<string, number>;
+  page_mappings?: Record<string, { toc_page?: number | null; referenced_pdf_page?: number | null; printed_page?: number | null; offset?: number | null; corrected_pdf_page?: number | null }>;
   statement_pages?: Record<string, number[]>;
   statement_statuses?: Record<string, { status?: string; pages?: number[]; has_data?: boolean }>;
+  normalized_grouped?: NormalizedReportGroup[];
   rows: ValidatedRow[];
   by_statement?: Record<string, ValidatedRow[]>;
   by_year?: Record<string, ValidatedRow[]>;
@@ -188,5 +218,12 @@ export function retryDocumentExtraction(reportId: string, pdfName: string, selec
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ selectedPages }),
     },
+  );
+}
+
+export function finalizeCompletedBatch(reportId: string) {
+  return request<{ status: string; report_id: string; normalized_ready?: boolean; completed?: number; total?: number }>(
+    `/api/pipeline/${reportId}/finalize-completed-batch`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
   );
 }

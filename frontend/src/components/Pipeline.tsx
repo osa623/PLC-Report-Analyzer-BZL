@@ -27,7 +27,7 @@ export function Pipeline({ stageIndex, progress, stages = STAGES }: { stageIndex
                 )}
                 <div className={`relative grid h-6 w-6 place-items-center rounded-full text-[10px] font-medium transition-colors ${
                   done ? "bg-[var(--gold)] text-white" :
-                  current ? "bg-white ring-2 ring-[var(--gold)] text-[var(--navy)]" :
+                  current ? "bg-white ring-3 ring-[var(--gold)] text-[var(--navy)]" :
                   "bg-white ring-1 ring-border text-muted-foreground"
                 }`}>
                   {done ? <Check className="h-3 w-3" /> : <span>{i + 1}</span>}

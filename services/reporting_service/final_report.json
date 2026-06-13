@@ -1,5 +1,5 @@
 {
-  "report_id": "13ebc067-14a2-429e-a17d-0f73da59bbe9",
+  "report_id": "6733692f-76e0-410a-ba5f-188eeed18b0e",
   "status": "completed",
   "strict_report": {
     "source": "analytics.json",
@@ -17,82 +17,62 @@
         ],
         "rows": [
           [
-            "2015",
-            0.027718,
-            null,
-            1.0,
-            null,
-            0.076739,
-            null,
-            null
-          ],
-          [
-            "2016",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             "2017",
-            0.044444,
+            0.016616,
             null,
-            1.0,
+            1.142485,
             null,
-            0.148418,
+            null,
             null,
             null
           ],
           [
             "2018",
-            0.048496,
+            0.017762,
             null,
-            1.0,
+            1.135803,
             null,
-            0.135565,
+            null,
             null,
             null
           ],
           [
             "2019",
+            0.012811,
             null,
+            1.143693,
             null,
-            null,
-            null,
-            null,
+            0.103363,
             null,
             null
           ],
           [
             "2020",
+            0.010636,
             null,
+            1.131751,
             null,
-            null,
-            null,
-            null,
+            0.101626,
             null,
             null
           ],
           [
             "2021",
+            0.02582,
             null,
+            1.144261,
             null,
-            1.125967,
-            null,
-            0.171848,
+            0.147994,
             null,
             null
           ],
           [
             "2022",
+            0.084137,
             null,
+            1.118199,
             null,
-            1.112792,
-            null,
-            0.123816,
+            0.058217,
             null,
             null
           ],
@@ -100,9 +80,9 @@
             "2023",
             null,
             null,
-            1.157501,
+            1.120142,
             null,
-            null,
+            0.157903,
             null,
             null
           ],
@@ -110,9 +90,9 @@
             "2024",
             null,
             null,
-            1.143214,
+            1.139087,
             null,
-            null,
+            0.171155,
             null,
             null
           ]
@@ -121,7 +101,7 @@
     },
     "key_findings": [
       "Latest analytics period: 2024.",
-      "Confidence band: high with score 0.986.",
+      "Confidence band: high with score 1.0.",
       "Risk level: high.",
       "Consistent multi-year validation coverage available"
     ],
@@ -129,17 +109,15 @@
     "validation_summary": [
       "Consistent multi-year validation coverage available"
     ],
-    "financial_health_score": 0.986,
+    "financial_health_score": 1.0,
     "risk_score": 100.0,
     "scores": {
       "confidence": {
-        "score": 0.986,
-        "raw_score": 0.986,
-        "overall_data_quality_score": 0.986,
+        "score": 1.0,
+        "raw_score": 1.0,
+        "overall_data_quality_score": 1.0,
         "band": "high",
         "valid_years": [
-          "2015",
-          "2016",
           "2017",
           "2018",
           "2019",

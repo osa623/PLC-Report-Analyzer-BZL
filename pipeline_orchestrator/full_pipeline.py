@@ -117,6 +117,7 @@ def _public_document_details(details: dict[str, Any]) -> dict[str, Any]:
         "statement_pages",
         "statement_statuses",
         "statement_images",
+        "page_mappings",
         "printed_page",
         "toc_anchor_page",
     ):
@@ -209,6 +210,61 @@ def _save_statement_images(redis_client, report_id: str, pdf_path: Path, raw_res
                 "url": f"/api/pipeline/{report_id}/documents/{quote(pdf_path.name, safe='')}/images/{filename}",
             })
 
+    # Render and save TOC preview pages as well. For each detected TOC page,
+    # include the immediate next PDF page because some reports continue the TOC
+    # or place the relevant statement index on the following page.
+    toc_pages = raw_result.get("toc_pages") or []
+    if isinstance(toc_pages, (int, str)):
+        try:
+            toc_pages = [int(toc_pages)]
+        except Exception:
+            toc_pages = []
+    if isinstance(toc_pages, list):
+        toc_page_set: set[int] = set()
+        for page in toc_pages:
+            try:
+                page_num = int(page)
+            except Exception:
+                continue
+            if page_num > 0:
+                toc_page_set.add(page_num)
+
+        preview_pages: list[dict[str, Any]] = []
+        for page_num in sorted(toc_page_set):
+            preview_pages.append({"page": page_num, "source_toc_page": page_num, "kind": "detected_toc"})
+            next_page = page_num + 1
+            if next_page not in toc_page_set:
+                preview_pages.append({"page": next_page, "source_toc_page": page_num, "kind": "next_page_after_toc"})
+
+        rendered_toc_pages: set[int] = set()
+        for preview in preview_pages:
+            try:
+                page_num = int(preview["page"])
+                if page_num in rendered_toc_pages:
+                    continue
+                image_bytes = _render_page_png(pdf_bytes, page_num, poppler_path)
+                rendered_toc_pages.add(page_num)
+                filename = f"toc_{preview['kind']}_page_{page_num}.png"
+                image_path = output_dir / filename
+                image_path.write_bytes(image_bytes)
+                image_map.setdefault("toc", []).append({
+                    "page": page_num,
+                    "source_toc_page": preview["source_toc_page"],
+                    "kind": preview["kind"],
+                    "filename": filename,
+                    "url": f"/api/pipeline/{report_id}/documents/{quote(pdf_path.name, safe='')}/images/{filename}",
+                })
+            except Exception as exc:
+                update_document_status(
+                    redis_client,
+                    report_id,
+                    pdf_path.name,
+                    "running",
+                    "EXTRACTION",
+                    PIPELINE_TTL_SECONDS,
+                    message=f"Screenshot failed for TOC preview page {preview.get('page')}: {exc}",
+                )
+
     return image_map
 
 
@@ -220,7 +276,15 @@ def _document_result_details(raw_result: dict[str, Any], statement_images: dict[
     }
 
 
-def _save_raw_extraction_result(redis_client, report_id: str, pdf_name: str, raw_result: dict[str, Any]) -> None:
+def _save_raw_extraction_result(
+    redis_client,
+    report_id: str,
+    pdf_name: str,
+    raw_result: dict[str, Any],
+    statement_images: dict[str, list[dict[str, Any]]] | None = None,
+) -> None:
+    if isinstance(raw_result, dict) and statement_images is not None:
+        raw_result["statement_images"] = statement_images
     set_json(redis_client, f"report:{report_id}:document_result:{pdf_name}", raw_result, PIPELINE_TTL_SECONDS)
 
 
@@ -272,6 +336,7 @@ def _run_analysis_and_reporting_for_completed_batch(
         raise RuntimeError("Cannot run analysis until every annual report has completed extraction")
 
     normalized_records = persist_normalized_results(raw_results, pdf_names)
+    set_json(redis_client, f"report:{report_id}:normalized_results", normalized_records, PIPELINE_TTL_SECONDS)
     analysis_dataset = load_canonical_analysis_dataset()
     company_name = str(analysis_dataset.get("company_name") or company_name_hint)
     log_file = log_dir / "pipeline.log"
@@ -567,7 +632,7 @@ def _process_pdf_batch(pdf_paths: list[Path], report_id: str, redis_client) -> d
         )
         raw_result = raw_results[0] if raw_results else {"pdf_name": pdf_path.name, "error": "No extraction result returned"}
         statement_images = _save_statement_images(redis_client, report_id, pdf_path, raw_result)
-        _save_raw_extraction_result(redis_client, report_id, pdf_path.name, raw_result)
+        _save_raw_extraction_result(redis_client, report_id, pdf_path.name, raw_result, statement_images)
         if _raw_result_is_success(raw_result):
             update_document_status(
                 redis_client,
@@ -746,7 +811,7 @@ def retry_document_extraction(report_id: str, pdf_name: str, selected_pages: dic
     )
     raw_result = raw_results[0] if raw_results else {"pdf_name": pdf_name, "error": "No extraction result returned"}
     statement_images = _save_statement_images(redis_client, report_id, target_path, raw_result)
-    _save_raw_extraction_result(redis_client, report_id, pdf_name, raw_result)
+    _save_raw_extraction_result(redis_client, report_id, pdf_name, raw_result, statement_images)
     if not _raw_result_is_success(raw_result):
         error = _missing_statement_error(raw_result)
         update_document_status(
@@ -816,3 +881,84 @@ def retry_document_extraction(report_id: str, pdf_name: str, selected_pages: dic
         {"remaining_failures": remaining_failures, "completed": counts["completed"], "total": counts["total"]},
     )
     return {"status": "retry_completed", "report_id": report_id, "pdf_name": pdf_name, "remaining_failures": remaining_failures}
+
+
+def finalize_completed_batch(report_id: str) -> dict[str, Any]:
+    """Run normalization, analysis, and reporting for a batch whose PDFs already extracted."""
+    redis_client = get_redis_client(os.environ.get("REDIS_URL", "redis://localhost:6379/0"))
+
+    if get_json(redis_client, f"report:{report_id}:final_report", default=None):
+        return {"status": "already_completed", "report_id": report_id}
+
+    uploaded_files = get_json(redis_client, f"report:{report_id}:uploaded_files", default=[])
+    if not isinstance(uploaded_files, list):
+        uploaded_files = []
+    if not uploaded_files:
+        single_file = redis_client.get(f"report:{report_id}:uploaded_file")
+        if single_file:
+            uploaded_files = [single_file.decode("utf-8") if isinstance(single_file, bytes) else str(single_file)]
+    pdf_paths = [Path(p).expanduser().resolve() for p in uploaded_files]
+    pdf_names = [path.name for path in pdf_paths]
+    if not pdf_names:
+        raise RuntimeError("No uploaded PDFs found for this report")
+
+    raw_statuses = redis_client.hgetall(f"report:{report_id}:document_statuses") or {}
+    documents: list[dict[str, Any]] = []
+    for raw in raw_statuses.values():
+        if isinstance(raw, bytes):
+            raw = raw.decode("utf-8")
+        try:
+            doc = json.loads(raw)
+        except Exception:
+            continue
+        if isinstance(doc, dict):
+            documents.append(doc)
+
+    completed_names = {
+        str(doc.get("pdf_name") or doc.get("name") or "")
+        for doc in documents
+        if str(doc.get("status") or "").lower() == "completed"
+    }
+    failed_docs = [
+        {"pdf_name": doc.get("pdf_name"), "error": doc.get("error") or "Extraction failed"}
+        for doc in documents
+        if str(doc.get("status") or "").lower() == "failed"
+    ]
+    if failed_docs:
+        _set_partial_extraction_failure(redis_client, report_id, failed_docs, len(pdf_names))
+        raise RuntimeError(f"Cannot finalize batch while documents are failed: {failed_docs}")
+
+    if completed_names and any(name not in completed_names for name in pdf_names):
+        raise RuntimeError("Cannot finalize batch until every uploaded annual report is completed")
+
+    raw_results = _load_raw_extraction_results(redis_client, report_id, pdf_names)
+    if len(raw_results) != len(pdf_names):
+        missing = [name for name in pdf_names if not get_json(redis_client, f"report:{report_id}:document_result:{name}", default=None)]
+        raise RuntimeError(f"Completed batch is missing raw extraction results: {missing or pdf_names}")
+
+    company_hint = Path(pdf_names[-1]).stem if pdf_names else report_id
+    log_dir = _prepare_log_dir(company_hint, pdf_paths[-1] if pdf_paths else Path(company_hint))
+    update_pipeline_stage(
+        redis_client,
+        report_id,
+        "EXTRACTION",
+        "completed",
+        PIPELINE_TTL_SECONDS,
+        {"pdf_names": pdf_names, "stage": "Finalizing completed extraction batch"},
+    )
+    result = _run_analysis_and_reporting_for_completed_batch(
+        redis_client,
+        report_id,
+        pdf_names,
+        log_dir,
+        company_hint,
+    )
+    set_json(redis_client, f"report:{report_id}:final_pipeline_result", {
+        "report_id": report_id,
+        "status": "completed",
+        "processed_count": len(pdf_names),
+        "failed_count": 0,
+        "results": [result],
+        "failures": [],
+    }, PIPELINE_TTL_SECONDS)
+    return {"status": "completed", "report_id": report_id, "pipeline": result}

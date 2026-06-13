@@ -11,6 +11,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 import pdfplumber
 from pdf2image import convert_from_bytes
 
+from ..locator.dynamic_offset_engine import DynamicPageOffsetResolutionEngine
 from .llm_extractor import LLMFinancialExtractor
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,32 @@ _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
         "statement of comprehensive income",
         "Statement of Profit or Loss and Other Comprehensive Income"
     ],
+    "notes": [
+        "notes to the financial statements",
+        "notes to the accounts",
+        "accounting policies",
+    ],
+    "shareholding": [
+        "shareholding",
+        "shareholder information",
+        "major shareholders",
+        "twenty largest shareholders",
+    ],
+    "subsidiaries": [
+        "subsidiaries",
+        "group structure",
+        "principal subsidiaries",
+        "subsidiary companies",
+    ],
 }
+
+_EXTRACTABLE_STATEMENTS = (
+    "income_statement",
+    "balance_sheet",
+    "cash_flow",
+    "equity",
+    "comprehensive_income",
+)
 
 _TOC_LINE_REJECT = ["usd", "us$", "$", "USD"]
 
@@ -147,6 +173,7 @@ def _process_single_pdf(
         toc_page_indices: List[int] = []
         toc_text = ""
         statement_refs: Dict[str, int] = {}
+        page_mappings: Dict[str, Dict[str, Optional[int]]] = {}
         printed_page: Optional[int] = None
         toc_index: Optional[int] = None
 
@@ -169,7 +196,12 @@ def _process_single_pdf(
                 text = pdf.pages[page_num - 1].extract_text() or ""
                 toc_text += "\n" + text
 
-            printed_page = _extract_printed_page_number(first_toc_text)
+            try:
+                printed_page = _extract_printed_page_number(first_toc_text)
+            except Exception as e:
+                logger.warning(f"Could not extract printed page number from TOC page footer: {e}")
+                printed_page = None
+
             statement_refs = _parse_statement_references(toc_text)
 
             logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
@@ -183,6 +215,8 @@ def _process_single_pdf(
                 {"toc_pages": toc_page_indices, "toc_text": toc_text, "statement_refs": statement_refs},
             )
 
+            offset_engine = DynamicPageOffsetResolutionEngine()
+
             statement_pages = _resolve_statement_pages(
                 pdf,
                 toc_index,
@@ -190,14 +224,20 @@ def _process_single_pdf(
                 statement_refs,
                 total_pages,
                 pdf_name,
+                offset_engine,
             )
+            page_mappings = _build_page_mapping_diagnostics(pdf, statement_refs, offset_engine)
             _emit(
                 progress_callback,
                 pdf_name,
                 "STRUCTURE",
                 "completed",
                 "Statement pages resolved from TOC and heading scan",
-                {"statement_pages": statement_pages, "statement_refs": statement_refs},
+                {
+                    "statement_pages": statement_pages,
+                    "statement_refs": statement_refs,
+                    "page_mappings": page_mappings,
+                },
             )
 
         statement_texts: Dict[str, str] = {}
@@ -218,6 +258,7 @@ def _process_single_pdf(
         "toc_pages": toc_page_indices,
         "toc_text": toc_text,
         "statement_refs": statement_refs,
+        "page_mappings": page_mappings,
         "printed_page": printed_page,
         "toc_anchor_page": toc_index,
         "statements": extracted,
@@ -237,11 +278,7 @@ def _normalize_manual_statement_pages(manual_page_mapping: Dict[str, List[int]],
         "comprehensive_income": "comprehensive_income",
     }
     resolved: Dict[str, List[int]] = {
-        "income_statement": [],
-        "balance_sheet": [],
-        "cash_flow": [],
-        "equity": [],
-        "comprehensive_income": [],
+        key: [] for key in _EXTRACTABLE_STATEMENTS
     }
     for raw_key, raw_pages in manual_page_mapping.items():
         key = aliases.get(str(raw_key))
@@ -306,12 +343,17 @@ def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:
         raise RuntimeError("Table of Contents page not found in first 20 pages")
 
     # Step 2 — detect continuation pages
+    non_toc_gap = 0
+    gap_tolerance = 2
     for i in range(start_idx + 1, max_scan):
         text = pdf.pages[i].extract_text() or ""
         if _looks_like_toc_continuation(text):
             toc_pages.append(i + 1)
+            non_toc_gap = 0
         else:
-            break
+            non_toc_gap += 1
+            if non_toc_gap > gap_tolerance:
+                break
 
     return toc_pages
 
@@ -480,27 +522,23 @@ def _resolve_statement_pages(
     references: Dict[str, int],
     total_pages: int,
     pdf_name: str,
+    offset_engine: DynamicPageOffsetResolutionEngine,
 ) -> Dict[str, List[int]]:
     resolved: Dict[str, List[int]] = {
-        "income_statement": [],
-        "balance_sheet": [],
-        "cash_flow": [],
-        "equity": [],
-        "comprehensive_income": [],
+        key: [] for key in _EXTRACTABLE_STATEMENTS
     }
 
     for statement_key in resolved.keys():
         resolved_page = None
         if statement_key in references:
             toc_page = references[statement_key]
-            real_page = toc_index - printed_page + toc_page
+            keywords = _STATEMENT_KEYWORDS.get(statement_key, [])
+            real_page = offset_engine.resolve_correct_pdf_page(pdf, toc_page, keywords)
             logger.info(
-                "PDF %s computed %s real page = %s (y=%s, x=%s, r=%s)",
+                "PDF %s computed %s real page = %s (TOC Page = %s)",
                 pdf_name,
                 statement_key,
                 real_page,
-                toc_index,
-                printed_page,
                 toc_page,
             )
             resolved_page = _validate_statement_page(pdf, real_page, statement_key, total_pages)
@@ -528,6 +566,37 @@ def _resolve_statement_pages(
                     break
 
     return resolved
+
+
+def _build_page_mapping_diagnostics(
+    pdf: pdfplumber.PDF,
+    references: Dict[str, int],
+    offset_engine: DynamicPageOffsetResolutionEngine,
+) -> Dict[str, Dict[str, Optional[int]]]:
+    diagnostics: Dict[str, Dict[str, Optional[int]]] = {}
+    for statement_key, toc_page in references.items():
+        try:
+            referenced_pdf_page = max(1, min(int(toc_page), len(pdf.pages)))
+            printed_page = offset_engine.detect_printed_page_number(pdf, referenced_pdf_page)
+            offset = referenced_pdf_page - printed_page if printed_page is not None else offset_engine.resolve_page_offset(pdf, int(toc_page))
+            corrected_pdf_page = max(1, min(int(toc_page) + int(offset), len(pdf.pages)))
+            diagnostics[statement_key] = {
+                "toc_page": int(toc_page),
+                "referenced_pdf_page": referenced_pdf_page,
+                "printed_page": printed_page,
+                "offset": int(offset),
+                "corrected_pdf_page": corrected_pdf_page,
+            }
+        except Exception as exc:
+            logger.warning("Could not build page mapping diagnostics for %s: %s", statement_key, exc)
+            diagnostics[statement_key] = {
+                "toc_page": int(toc_page) if str(toc_page).isdigit() else None,
+                "referenced_pdf_page": None,
+                "printed_page": None,
+                "offset": None,
+                "corrected_pdf_page": None,
+            }
+    return diagnostics
 
 
 def _validate_statement_page(
