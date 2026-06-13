@@ -6,7 +6,7 @@ import os
 import re
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pdfplumber
 from pdf2image import convert_from_bytes
@@ -78,7 +78,27 @@ def extract_statement_from_image(image_bytes: bytes) -> dict:
     return extract_statement_from_images([image_bytes])
 
 
-def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
+ProgressCallback = Callable[[str, str, str, str, Optional[dict]], None]
+
+
+def _emit(
+    progress_callback: Optional[ProgressCallback],
+    pdf_name: str,
+    stage: str,
+    status: str,
+    message: str,
+    details: Optional[dict] = None,
+) -> None:
+    if progress_callback:
+        progress_callback(pdf_name, stage, status, message, details)
+
+
+def process_annual_reports(
+    pdf_files: List[bytes],
+    pdf_names: Optional[List[str]] = None,
+    progress_callback: Optional[ProgressCallback] = None,
+    manual_page_mappings: Optional[Dict[str, Dict[str, List[int]]]] = None,
+) -> List[dict]:
     """
     Process up to 5 PDF files sequentially and return per-PDF extraction results.
     """
@@ -87,11 +107,23 @@ def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
 
     results: List[dict] = []
     for index, pdf_bytes in enumerate(pdf_files, start=1):
-        pdf_name = f"pdf_{index}"
+        pdf_name = (
+            pdf_names[index - 1]
+            if pdf_names and index - 1 < len(pdf_names)
+            else f"pdf_{index}"
+        )
         try:
-            result = _process_single_pdf(pdf_bytes, pdf_name)
+            _emit(progress_callback, pdf_name, "PARSING", "running", "Reading PDF and locating table of contents")
+            result = _process_single_pdf(
+                pdf_bytes,
+                pdf_name,
+                progress_callback=progress_callback,
+                manual_page_mapping=(manual_page_mappings or {}).get(pdf_name),
+            )
+            _emit(progress_callback, pdf_name, "EXTRACTION", "completed", "Extraction completed successfully")
         except Exception as exc:
             logger.error("PDF %s failed: %s", pdf_name, exc, exc_info=True)
+            _emit(progress_callback, pdf_name, "EXTRACTION", "failed", f"Extraction failed: {exc}")
             result = {
                 "pdf_name": pdf_name,
                 "error": str(exc),
@@ -101,37 +133,72 @@ def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
     return results
 
 
-def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
+def _process_single_pdf(
+    pdf_bytes: bytes,
+    pdf_name: str,
+    progress_callback: Optional[ProgressCallback] = None,
+    manual_page_mapping: Optional[Dict[str, List[int]]] = None,
+) -> dict:
     if not pdf_bytes:
         raise ValueError("PDF bytes are empty")
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        toc_page_indices = _find_toc_page(pdf)
-        # Anchor y/x to the first TOC page (offset is constant across the document)
-        toc_index = toc_page_indices[0]
-        first_toc_text = pdf.pages[toc_index - 1].extract_text() or ""
-
-        # Concatenate text from ALL detected TOC pages for complete regex coverage
-        toc_text = ""
-        for page_num in toc_page_indices:
-            text = pdf.pages[page_num - 1].extract_text() or ""
-            toc_text += "\n" + text
-
-        printed_page = _extract_printed_page_number(first_toc_text)
-        statement_refs = _parse_statement_references(toc_text)
-
-        logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
-        logger.info("PDF %s TOC anchor y=%s, printed page x=%s", pdf_name, toc_index, printed_page)
-
         total_pages = len(pdf.pages)
-        statement_pages = _resolve_statement_pages(
-            pdf,
-            toc_index,
-            printed_page,
-            statement_refs,
-            total_pages,
-            pdf_name,
-        )
+        toc_page_indices: List[int] = []
+        toc_text = ""
+        statement_refs: Dict[str, int] = {}
+        printed_page: Optional[int] = None
+        toc_index: Optional[int] = None
+
+        if manual_page_mapping:
+            statement_pages = _normalize_manual_statement_pages(manual_page_mapping, total_pages)
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "completed",
+                "Using corrected manual statement page mappings",
+                {"statement_pages": statement_pages},
+            )
+        else:
+            toc_page_indices = _find_toc_page(pdf)
+            toc_index = toc_page_indices[0]
+            first_toc_text = pdf.pages[toc_index - 1].extract_text() or ""
+
+            for page_num in toc_page_indices:
+                text = pdf.pages[page_num - 1].extract_text() or ""
+                toc_text += "\n" + text
+
+            printed_page = _extract_printed_page_number(first_toc_text)
+            statement_refs = _parse_statement_references(toc_text)
+
+            logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
+            logger.info("PDF %s TOC anchor y=%s, printed page x=%s", pdf_name, toc_index, printed_page)
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "running",
+                f"TOC pages detected: {toc_page_indices}",
+                {"toc_pages": toc_page_indices, "toc_text": toc_text, "statement_refs": statement_refs},
+            )
+
+            statement_pages = _resolve_statement_pages(
+                pdf,
+                toc_index,
+                printed_page,
+                statement_refs,
+                total_pages,
+                pdf_name,
+            )
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "completed",
+                "Statement pages resolved from TOC and heading scan",
+                {"statement_pages": statement_pages, "statement_refs": statement_refs},
+            )
 
         statement_texts: Dict[str, str] = {}
         for key, page_indices in statement_pages.items():
@@ -142,13 +209,54 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
             statement_texts[key] = combined_text
 
     statement_images = _render_statement_images(pdf_bytes, statement_pages, pdf_name)
+    _emit(progress_callback, pdf_name, "EXTRACTION", "running", "Statement page screenshots rendered")
     extracted = _extract_statements_parallel(statement_images, statement_texts, pdf_name)
 
     return {
         "pdf_name": pdf_name,
         "statement_pages": statement_pages,
+        "toc_pages": toc_page_indices,
+        "toc_text": toc_text,
+        "statement_refs": statement_refs,
+        "printed_page": printed_page,
+        "toc_anchor_page": toc_index,
         "statements": extracted,
     }
+
+
+def _normalize_manual_statement_pages(manual_page_mapping: Dict[str, List[int]], total_pages: int) -> Dict[str, List[int]]:
+    aliases = {
+        "income": "income_statement",
+        "income_statement": "income_statement",
+        "balance": "balance_sheet",
+        "balance_sheet": "balance_sheet",
+        "cashflow": "cash_flow",
+        "cash_flow": "cash_flow",
+        "cash_flow_statement": "cash_flow",
+        "equity": "equity",
+        "comprehensive_income": "comprehensive_income",
+    }
+    resolved: Dict[str, List[int]] = {
+        "income_statement": [],
+        "balance_sheet": [],
+        "cash_flow": [],
+        "equity": [],
+        "comprehensive_income": [],
+    }
+    for raw_key, raw_pages in manual_page_mapping.items():
+        key = aliases.get(str(raw_key))
+        if not key:
+            continue
+        pages = []
+        for raw_page in raw_pages or []:
+            try:
+                page = int(raw_page)
+            except (TypeError, ValueError):
+                continue
+            if 1 <= page <= total_pages and page not in pages:
+                pages.append(page)
+        resolved[key] = pages
+    return resolved
 
 
 def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:

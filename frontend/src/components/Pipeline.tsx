@@ -2,21 +2,23 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { STAGES } from "@/lib/mock-data";
 
-export function Pipeline({ stageIndex, progress }: { stageIndex: number; progress: number }) {
+export function Pipeline({ stageIndex, progress, stages = STAGES }: { stageIndex: number; progress: number; stages?: string[] }) {
+  const safeIndex = Math.max(0, Math.min(stageIndex, stages.length - 1));
+  const safeProgress = Math.max(0, Math.min(progress, 100));
   return (
     <div className="relative">
       <div className="absolute left-0 right-0 top-3 h-px bg-border" />
       <motion.div
         className="absolute left-0 top-3 h-px bg-gradient-to-r from-[var(--gold)] to-[var(--gold-soft)]"
         initial={{ width: 0 }}
-        animate={{ width: `${((stageIndex + progress / 100) / (STAGES.length - 1)) * 100}%` }}
+        animate={{ width: `${((safeIndex + safeProgress / 100) / Math.max(1, stages.length - 1)) * 100}%` }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         style={{ maxWidth: "100%" }}
       />
-      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${STAGES.length}, minmax(0,1fr))` }}>
-        {STAGES.map((s, i) => {
-          const done = i < stageIndex;
-          const current = i === stageIndex;
+      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0,1fr))` }}>
+        {stages.map((s, i) => {
+          const done = i < safeIndex;
+          const current = i === safeIndex;
           return (
             <div key={s} className="flex flex-col items-center gap-2">
               <div className="relative">

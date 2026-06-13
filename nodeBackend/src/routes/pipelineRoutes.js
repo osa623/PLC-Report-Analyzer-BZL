@@ -1,9 +1,10 @@
 const { Router } = require('express');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const path = require('path');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
-const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline } = require('../services/pipelineClient');
+const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline, triggerRetryDocumentExtraction } = require('../services/pipelineClient');
 const {
   derivePipelineStatus,
   parseDocumentStatuses,
@@ -12,6 +13,8 @@ const {
 } = require('../services/pipelineContract');
 
 const router = Router();
+const WORKSPACE_ROOT = path.resolve(__dirname, '..', '..', '..');
+const PIPELINE_ARTIFACTS_ROOT = path.join(WORKSPACE_ROOT, 'pipeline_artifacts');
 
 const BASE_CURRENCY = 'LKR';
 const SUPPORTED_CURRENCIES = new Set(['LKR', 'USD']);
@@ -189,6 +192,79 @@ function parseJson(raw, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function slugifyArtifact(value) {
+  const safe = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._ -]+/g, '')
+    .replace(/[ _.-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return safe || 'unknown-company';
+}
+
+function inferYearFromPdfName(pdfName = '') {
+  const match = String(pdfName).match(/(?:19|20)\d{2}/);
+  return match ? match[0] : null;
+}
+
+function flattenStatementPayload(value, statementType, pdfName, rows, pathParts = []) {
+  if (value == null) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenStatementPayload(item, statementType, pdfName, rows, [...pathParts, String(index + 1)]));
+    return;
+  }
+
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 0) {
+      return;
+    }
+    keys.forEach((key) => flattenStatementPayload(value[key], statementType, pdfName, rows, [...pathParts, key]));
+    return;
+  }
+
+  const label = pathParts.filter((part) => !/^\d+$/.test(part)).join(' / ') || statementType;
+  const year = pathParts.find((part) => /^(?:19|20)\d{2}$/.test(part)) || inferYearFromPdfName(pdfName);
+  rows.push({
+    row_id: `${statementType}-${rows.length}`,
+    report_name: pdfName,
+    report_year: year,
+    statement_type: statementType,
+    canonical_label: label,
+    original_label: label,
+    value,
+    year,
+    confidence_score: null,
+    source_path: pathParts.join('.'),
+  });
+}
+
+function buildDocumentExtractedRows(rawResult, pdfName) {
+  const statements = rawResult?.statements && typeof rawResult.statements === 'object' ? rawResult.statements : {};
+  const rows = [];
+  Object.entries(statements).forEach(([statementType, payload]) => {
+    flattenStatementPayload(payload, statementType, pdfName, rows);
+  });
+  return rows;
+}
+
+function buildStatementStatuses(rawResult) {
+  const requiredStatements = ['income_statement', 'balance_sheet', 'cash_flow', 'equity', 'comprehensive_income'];
+  const statements = rawResult?.statements && typeof rawResult.statements === 'object' ? rawResult.statements : {};
+  const statementPages = rawResult?.statement_pages && typeof rawResult.statement_pages === 'object' ? rawResult.statement_pages : {};
+  return Object.fromEntries(requiredStatements.map((statement) => [
+    statement,
+    {
+      status: statements[statement] ? 'completed' : 'failed',
+      pages: Array.isArray(statementPages[statement]) ? statementPages[statement] : [],
+      has_data: Boolean(statements[statement]),
+    },
+  ]));
 }
 
 function clamp01(value) {
@@ -1521,6 +1597,100 @@ router.get('/pipeline/:reportId/documents', async (req, res, next) => {
     };
 
     return res.json({ report_id: reportId, documents, counts });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/pipeline/:reportId/documents/:pdfName/images/:filename', async (req, res, next) => {
+  try {
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const filename = path.basename(req.params.filename);
+    const imagePath = path.resolve(
+      PIPELINE_ARTIFACTS_ROOT,
+      reportId,
+      slugifyArtifact(path.parse(pdfName).name),
+      filename,
+    );
+
+    if (!imagePath.startsWith(path.resolve(PIPELINE_ARTIFACTS_ROOT))) {
+      return res.status(400).json({ error: 'Invalid image path' });
+    }
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    return res.sendFile(imagePath);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/pipeline/:reportId/documents/:pdfName/data', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const rawResult = parseJson(await redis.get(`report:${reportId}:document_result:${pdfName}`), null);
+    if (!rawResult) {
+      return res.status(404).json({ error: 'Extracted data not found for this annual report' });
+    }
+
+    const rows = buildDocumentExtractedRows(rawResult, pdfName);
+    const byStatement = rows.reduce((acc, row) => {
+      acc[row.statement_type] ||= [];
+      acc[row.statement_type].push(row);
+      return acc;
+    }, {});
+    const byYear = rows.reduce((acc, row) => {
+      const year = row.report_year || 'unknown';
+      acc[year] ||= [];
+      acc[year].push(row);
+      return acc;
+    }, {});
+
+    return res.json({
+      report_id: reportId,
+      pdf_name: pdfName,
+      report_year: inferYearFromPdfName(pdfName),
+      statement_pages: rawResult.statement_pages || {},
+      statement_statuses: buildStatementStatuses(rawResult),
+      rows,
+      by_statement: byStatement,
+      by_year: byYear,
+      raw_result: rawResult,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/pipeline/:reportId/documents/:pdfName/retry-extraction', async (req, res, next) => {
+  try {
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const selectedPages = req.body?.selectedPages;
+
+    if (!selectedPages || typeof selectedPages !== 'object' || Array.isArray(selectedPages)) {
+      return res.status(400).json({ error: 'selectedPages is required' });
+    }
+
+    const normalizedPages = {};
+    Object.entries(selectedPages).forEach(([key, value]) => {
+      const pages = Array.isArray(value)
+        ? value.map((page) => Number(page)).filter((page) => Number.isFinite(page) && page > 0)
+        : [];
+      if (pages.length) {
+        normalizedPages[key] = pages;
+      }
+    });
+
+    if (Object.keys(normalizedPages).length === 0) {
+      return res.status(400).json({ error: 'At least one valid page number is required' });
+    }
+
+    const response = await triggerRetryDocumentExtraction(reportId, pdfName, normalizedPages);
+    return res.json(response.data);
   } catch (error) {
     return next(error);
   }

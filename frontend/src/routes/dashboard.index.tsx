@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { kpis, yearSeries, patterns, risks } from "@/lib/mock-data";
+import { getCurrentReportId, getFullReport } from "@/lib/api";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp, Percent, Activity, Wallet, ArrowRight, AlertTriangle, ShieldCheck } from "lucide-react";
 
@@ -17,18 +18,32 @@ const gold = "#D4A017";
 
 function Dashboard() {
   const [year, setYear] = useState(2023);
+  const [report, setReport] = useState<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    const reportId = getCurrentReportId();
+    if (!reportId) return;
+    getFullReport(reportId).then((data) => {
+      setReport(data);
+      const years = Object.keys(data?.analytics?.ratios?.by_year || {}).map(Number).filter(Number.isFinite).sort();
+      if (years.length) setYear(years[years.length - 1]);
+    }).catch(() => setReport(null));
+  }, []);
+
+  const dashboardData = useMemo(() => buildDashboardData(report), [report]);
+
   return (
     <Page>
-      <DashboardHeader year={year} setYear={setYear} />
+      <DashboardHeader year={year} setYear={setYear} availableYears={dashboardData.years} companyName={dashboardData.companyName} />
 
       {/* KPIs */}
       <section className="mt-8">
         <SectionTitle index="1" title="Key Financial Metrics" subtitle={`Latest year · ${year}`} />
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Kpi label="Revenue" value={`$${kpis.revenue.value.toFixed(1)}M`} change={kpis.revenue.change} series={kpis.revenue.series} icon={<TrendingUp className="h-4 w-4" />} />
-          <Kpi label="Net Profit" value={`$${kpis.netProfit.value.toFixed(1)}M`} change={kpis.netProfit.change} series={kpis.netProfit.series} icon={<Percent className="h-4 w-4" />} />
-          <Kpi label="Total Assets" value={`$${kpis.totalAssets.value.toFixed(1)}M`} change={kpis.totalAssets.change} series={kpis.totalAssets.series} icon={<Activity className="h-4 w-4" />} />
-          <Kpi label="Cash & Equivalents" value={`$${kpis.cash.value.toFixed(1)}M`} change={kpis.cash.change} series={kpis.cash.series} icon={<Wallet className="h-4 w-4" />} />
+          <Kpi label="Revenue" value={dashboardData.kpis.revenue.value} change={dashboardData.kpis.revenue.change} series={dashboardData.kpis.revenue.series} icon={<TrendingUp className="h-4 w-4" />} />
+          <Kpi label="Net Profit" value={dashboardData.kpis.netProfit.value} change={dashboardData.kpis.netProfit.change} series={dashboardData.kpis.netProfit.series} icon={<Percent className="h-4 w-4" />} />
+          <Kpi label="Total Assets" value={dashboardData.kpis.totalAssets.value} change={dashboardData.kpis.totalAssets.change} series={dashboardData.kpis.totalAssets.series} icon={<Activity className="h-4 w-4" />} />
+          <Kpi label="Cash Flow" value={dashboardData.kpis.cash.value} change={dashboardData.kpis.cash.change} series={dashboardData.kpis.cash.series} icon={<Wallet className="h-4 w-4" />} />
         </div>
       </section>
 
@@ -38,7 +53,7 @@ function Dashboard() {
         <div className="mt-5 grid gap-4 lg:grid-cols-2">
           <ChartCard title="Revenue (M)" delta="+12.4%">
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+              <BarChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={navy} stopOpacity={0.95} />
@@ -55,7 +70,7 @@ function Dashboard() {
           </ChartCard>
           <ChartCard title="Cash Flow (M)" delta="+15.1%">
             <ResponsiveContainer width="100%" height={180}>
-              <AreaChart data={yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+              <AreaChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor={gold} stopOpacity={0.35} />
@@ -72,7 +87,7 @@ function Dashboard() {
           </ChartCard>
           <ChartCard title="Interest Expense (M)" delta="+6.1%">
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+              <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <CartesianGrid stroke="#EEF2F6" vertical={false} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
@@ -83,7 +98,7 @@ function Dashboard() {
           </ChartCard>
           <ChartCard title="Liabilities (M)" delta="+9.6%">
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+              <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <CartesianGrid stroke="#EEF2F6" vertical={false} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
@@ -99,7 +114,7 @@ function Dashboard() {
       <section className="mt-12">
         <SectionTitle index="3" title="Pattern Analysis" subtitle="AI-generated insights" cta={<Link to="/dashboard/patterns" className="text-[12.5px] font-medium text-muted-foreground hover:text-foreground">View more →</Link>} />
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {patterns.map((p, i) => (
+          {dashboardData.patterns.map((p, i) => (
             <motion.div key={p.key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }} className="card-elevated card-elevated-hover p-5">
               <div className="flex items-center justify-between">
                 <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--gold)]/12 text-[var(--navy)]"><TrendingUp className="h-4 w-4" /></span>
@@ -120,7 +135,7 @@ function Dashboard() {
       <section className="mt-12 mb-4">
         <SectionTitle index="4" title="Risk Analysis" subtitle="Multi-dimensional risk scoring" cta={<Link to="/dashboard/risk" className="text-[12.5px] font-medium text-muted-foreground hover:text-foreground">View more →</Link>} />
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {risks.map((r) => <RiskCard key={r.key} label={r.label} level={r.level} score={r.score} items={r.items as [string, string][]} />)}
+          {dashboardData.risks.map((r) => <RiskCard key={r.key} label={r.label} level={r.level} score={r.score} items={r.items as [string, string][]} />)}
         </div>
       </section>
 
