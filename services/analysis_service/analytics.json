@@ -1,32 +1,32 @@
 {
-  "report_id": "47af6ac1-17d1-4e0a-af44-ed7b8f71f12e",
+  "report_id": "1aa82c69-1c6d-4bbb-9d1b-8d4d1ef011d0",
   "source": "normalized_results.json",
   "ratios": {
-    "revenue": null,
-    "net_income": 8338661.0,
-    "gross_profit_margin": null,
-    "operating_margin": null,
-    "net_profit_margin": null,
-    "return_on_equity": 0.087493,
-    "return_on_assets": 0.087493,
-    "current_ratio": null,
-    "quick_ratio": null,
+    "revenue": 492201092000.0,
+    "net_income": 22512592000.0,
+    "gross_profit_margin": 0.240373,
+    "operating_margin": 0.097048,
+    "net_profit_margin": 0.045739,
+    "return_on_equity": 2.021767,
+    "return_on_assets": 0.456101,
+    "current_ratio": 0.300322,
+    "quick_ratio": 0.298614,
     "cash_ratio": null,
-    "debt_to_equity": 0.0,
-    "debt_ratio": 0.0,
-    "interest_coverage": -9.11179,
-    "asset_turnover": null,
-    "inventory_turnover": -3.819032,
-    "receivables_turnover": null,
+    "debt_to_equity": 3.432713,
+    "debt_ratio": 0.774405,
+    "interest_coverage": -2.500068,
+    "asset_turnover": 9.971914,
+    "inventory_turnover": -10150.493287,
+    "receivables_turnover": 13853.112637,
     "ocf_ratio": null,
     "cash_flow_to_net_income": null,
     "free_cash_flow": null,
-    "revenue_growth_yoy": null,
-    "net_profit_growth_yoy": 0.312213,
-    "operating_cash_flow": -7851804.0,
-    "total_assets": 96890526.0,
+    "revenue_growth_yoy": 0.127009,
+    "net_profit_growth_yoy": 0.516334,
+    "operating_cash_flow": null,
+    "total_assets": 49358738000.0,
     "total_liabilities": null,
-    "total_equity": 96890526.0,
+    "total_equity": 11135108000.0,
     "total_cash_flow": null,
     "by_year": {
       "2017": {
@@ -58,19 +58,19 @@
         "total_cash_flow": null
       },
       "2018": {
-        "revenue": null,
-        "net_income": 2950813.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.135288,
-        "return_on_assets": 0.092115,
+        "revenue": 163249467000.0,
+        "net_income": 3272438000.0,
+        "gross_profit_margin": 0.21959,
+        "operating_margin": 0.069851,
+        "net_profit_margin": 0.020046,
+        "return_on_equity": null,
+        "return_on_assets": null,
         "current_ratio": null,
         "quick_ratio": null,
         "cash_ratio": null,
-        "debt_to_equity": 0.468689,
-        "debt_ratio": 0.319121,
-        "interest_coverage": null,
+        "debt_to_equity": null,
+        "debt_ratio": null,
+        "interest_coverage": -1.619779,
         "asset_turnover": null,
         "inventory_turnover": null,
         "receivables_turnover": null,
@@ -80,205 +80,205 @@
         "revenue_growth_yoy": null,
         "net_profit_growth_yoy": null,
         "operating_cash_flow": null,
-        "total_assets": 32034183.0,
+        "total_assets": null,
         "total_liabilities": null,
-        "total_equity": 21811416.0,
+        "total_equity": null,
         "total_cash_flow": null
       },
       "2019": {
-        "revenue": null,
-        "net_income": 3679236.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.157956,
-        "return_on_assets": 0.10727,
+        "revenue": 219181960000.0,
+        "net_income": 2749917000.0,
+        "gross_profit_margin": 0.223446,
+        "operating_margin": 0.07295,
+        "net_profit_margin": 0.012546,
+        "return_on_equity": null,
+        "return_on_assets": null,
         "current_ratio": null,
         "quick_ratio": null,
         "cash_ratio": null,
-        "debt_to_equity": 0.475871,
-        "debt_ratio": 0.322434,
-        "interest_coverage": null,
+        "debt_to_equity": null,
+        "debt_ratio": null,
+        "interest_coverage": -2.249692,
         "asset_turnover": null,
         "inventory_turnover": null,
         "receivables_turnover": null,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 0.246855,
+        "revenue_growth_yoy": 0.34262,
+        "net_profit_growth_yoy": -0.159673,
         "operating_cash_flow": null,
-        "total_assets": 36563345.0,
+        "total_assets": null,
         "total_liabilities": null,
-        "total_equity": 24774085.0,
+        "total_equity": null,
         "total_cash_flow": null
       },
       "2020": {
-        "revenue": null,
-        "net_income": 1362707.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.03057,
-        "return_on_assets": 0.026999,
+        "revenue": 210307003.0,
+        "net_income": 2894792.0,
+        "gross_profit_margin": 0.238477,
+        "operating_margin": 0.078328,
+        "net_profit_margin": 0.013765,
+        "return_on_equity": 0.046054,
+        "return_on_assets": 0.011658,
         "current_ratio": null,
         "quick_ratio": null,
         "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -3.775002,
-        "asset_turnover": null,
-        "inventory_turnover": null,
-        "receivables_turnover": null,
+        "debt_to_equity": 2.950412,
+        "debt_ratio": 0.746862,
+        "interest_coverage": -1.262546,
+        "asset_turnover": 0.846957,
+        "inventory_turnover": -3.74948,
+        "receivables_turnover": 3.557537,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": -0.629622,
+        "revenue_growth_yoy": -0.99904,
+        "net_profit_growth_yoy": -0.998947,
         "operating_cash_flow": null,
-        "total_assets": 64380417.0,
+        "total_assets": 248309088.0,
         "total_liabilities": null,
-        "total_equity": 64380417.0,
+        "total_equity": 62856502.0,
         "total_cash_flow": null
       },
       "2021": {
-        "revenue": null,
-        "net_income": 3342026.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.052229,
-        "return_on_assets": 0.052229,
+        "revenue": 241275661.0,
+        "net_income": 14046207.0,
+        "gross_profit_margin": 0.25348,
+        "operating_margin": 0.107569,
+        "net_profit_margin": 0.058216,
+        "return_on_equity": 0.203487,
+        "return_on_assets": 0.053237,
         "current_ratio": null,
         "quick_ratio": null,
         "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -0.993639,
-        "asset_turnover": null,
-        "inventory_turnover": null,
-        "receivables_turnover": null,
+        "debt_to_equity": 2.715253,
+        "debt_ratio": 0.730839,
+        "interest_coverage": -2.582024,
+        "asset_turnover": 0.863606,
+        "inventory_turnover": -3.356768,
+        "receivables_turnover": 3.589013,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 1.452491,
+        "revenue_growth_yoy": 0.147255,
+        "net_profit_growth_yoy": 3.852234,
         "operating_cash_flow": null,
-        "total_assets": 63594388.0,
+        "total_assets": 279381760.0,
         "total_liabilities": null,
-        "total_equity": 63594388.0,
+        "total_equity": 75198581.0,
         "total_cash_flow": null
       },
       "2022": {
-        "revenue": null,
-        "net_income": 4834466.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.069112,
-        "return_on_assets": 0.069112,
-        "current_ratio": null,
-        "quick_ratio": null,
-        "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -13.948895,
-        "asset_turnover": null,
-        "inventory_turnover": -3.3903,
-        "receivables_turnover": null,
+        "revenue": 338009580000.0,
+        "net_income": 28098901000.0,
+        "gross_profit_margin": 0.22891,
+        "operating_margin": 0.099387,
+        "net_profit_margin": 0.08313,
+        "return_on_equity": 0.330027,
+        "return_on_assets": 0.139326,
+        "current_ratio": 1.196824,
+        "quick_ratio": 0.791629,
+        "cash_ratio": 0.134788,
+        "debt_to_equity": 1.714333,
+        "debt_ratio": 0.723912,
+        "interest_coverage": -2.257225,
+        "asset_turnover": 0.838576,
+        "inventory_turnover": -3.139828,
+        "receivables_turnover": 3.156534,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 0.446567,
-        "operating_cash_flow": -1797904.0,
-        "total_assets": 76307670.0,
-        "total_liabilities": null,
-        "total_equity": 76307670.0,
+        "revenue_growth_yoy": 1399.926967,
+        "net_profit_growth_yoy": 1999.461833,
+        "operating_cash_flow": 16169577000.0,
+        "total_assets": 403075792000.0,
+        "total_liabilities": 291791466000.0,
+        "total_equity": 170207001000.0,
         "total_cash_flow": null
       },
       "2023": {
-        "revenue": null,
-        "net_income": 5068683.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.057992,
-        "return_on_assets": 0.057992,
-        "current_ratio": null,
-        "quick_ratio": null,
-        "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -2.667729,
-        "asset_turnover": null,
-        "inventory_turnover": -2.872026,
-        "receivables_turnover": null,
+        "revenue": 487430881000.0,
+        "net_income": 27672300000.0,
+        "gross_profit_margin": 0.244617,
+        "operating_margin": 0.125295,
+        "net_profit_margin": 0.056772,
+        "return_on_equity": 0.156447,
+        "return_on_assets": 0.067839,
+        "current_ratio": 1.217985,
+        "quick_ratio": 0.769391,
+        "cash_ratio": 0.123949,
+        "debt_to_equity": 1.577121,
+        "debt_ratio": 0.701371,
+        "interest_coverage": -1.544649,
+        "asset_turnover": 1.180958,
+        "inventory_turnover": -4.157288,
+        "receivables_turnover": 4.940929,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 0.048447,
-        "operating_cash_flow": -610376.0,
-        "total_assets": 98497883.0,
-        "total_liabilities": null,
-        "total_equity": 98497883.0,
+        "revenue_growth_yoy": 0.442062,
+        "net_profit_growth_yoy": -0.015182,
+        "operating_cash_flow": 68796978000.0,
+        "total_assets": 412741973000.0,
+        "total_liabilities": 289485316000.0,
+        "total_equity": 183553032000.0,
         "total_cash_flow": null
       },
       "2024": {
-        "revenue": null,
-        "net_income": 6354653.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.066118,
-        "return_on_assets": 0.066118,
-        "current_ratio": null,
-        "quick_ratio": null,
+        "revenue": 436732127000.0,
+        "net_income": 14846723000.0,
+        "gross_profit_margin": 0.250754,
+        "operating_margin": 0.097824,
+        "net_profit_margin": 0.033995,
+        "return_on_equity": 0.152518,
+        "return_on_assets": 0.064258,
+        "current_ratio": 0.300322,
+        "quick_ratio": 0.298614,
         "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -3.660698,
-        "asset_turnover": null,
-        "inventory_turnover": -3.75921,
-        "receivables_turnover": null,
+        "debt_to_equity": 3.432713,
+        "debt_ratio": 0.774405,
+        "interest_coverage": -1.573583,
+        "asset_turnover": 8.848122,
+        "inventory_turnover": -8852.292645,
+        "receivables_turnover": 12291.925894,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 0.253709,
-        "operating_cash_flow": -8522834.0,
-        "total_assets": 93722932.0,
+        "revenue_growth_yoy": -0.104012,
+        "net_profit_growth_yoy": -0.463481,
+        "operating_cash_flow": null,
+        "total_assets": 49358738000.0,
         "total_liabilities": null,
-        "total_equity": 93722932.0,
+        "total_equity": 11135108000.0,
         "total_cash_flow": null
       },
       "2025": {
-        "revenue": null,
-        "net_income": 8338661.0,
-        "gross_profit_margin": null,
-        "operating_margin": null,
-        "net_profit_margin": null,
-        "return_on_equity": 0.087493,
-        "return_on_assets": 0.087493,
-        "current_ratio": null,
-        "quick_ratio": null,
+        "revenue": 492201092000.0,
+        "net_income": 22512592000.0,
+        "gross_profit_margin": 0.240373,
+        "operating_margin": 0.097048,
+        "net_profit_margin": 0.045739,
+        "return_on_equity": 2.021767,
+        "return_on_assets": 0.456101,
+        "current_ratio": 0.300322,
+        "quick_ratio": 0.298614,
         "cash_ratio": null,
-        "debt_to_equity": 0.0,
-        "debt_ratio": 0.0,
-        "interest_coverage": -9.11179,
-        "asset_turnover": null,
-        "inventory_turnover": -3.819032,
-        "receivables_turnover": null,
+        "debt_to_equity": 3.432713,
+        "debt_ratio": 0.774405,
+        "interest_coverage": -2.500068,
+        "asset_turnover": 9.971914,
+        "inventory_turnover": -10150.493287,
+        "receivables_turnover": 13853.112637,
         "ocf_ratio": null,
         "cash_flow_to_net_income": null,
         "free_cash_flow": null,
-        "revenue_growth_yoy": null,
-        "net_profit_growth_yoy": 0.312213,
-        "operating_cash_flow": -7851804.0,
-        "total_assets": 96890526.0,
+        "revenue_growth_yoy": 0.127009,
+        "net_profit_growth_yoy": 0.516334,
+        "operating_cash_flow": null,
+        "total_assets": 49358738000.0,
         "total_liabilities": null,
-        "total_equity": 96890526.0,
+        "total_equity": 11135108000.0,
         "total_cash_flow": null
       }
     },
@@ -297,8 +297,8 @@
     "latest_growth_snapshot": {
       "period": "2025",
       "previous_period": "2024",
-      "revenue_growth_yoy": null,
-      "net_profit_growth_yoy": 0.312213
+      "revenue_growth_yoy": 0.127009,
+      "net_profit_growth_yoy": 0.516334
     },
     "data_quality_score": 0.9644,
     "data_coverage": {
@@ -487,58 +487,58 @@
         },
         "2018": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (None) / Revenue (None)",
+            "value": 0.21959,
+            "equation": "Gross Profit (35848016000.0) / Revenue (163249467000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (None)",
+            "value": 0.069851,
+            "equation": "Operating Profit (11403177000.0) / Revenue (163249467000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (2950813.0) / Revenue (None)",
+            "value": 0.020046,
+            "equation": "Net Profit (3272438000.0) / Revenue (163249467000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.092115,
-            "equation": "Net Profit (2950813.0) / Avg Assets (32034183.0)",
+            "value": null,
+            "equation": "Net Profit (3272438000.0) / Avg Assets (None)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "ROE": {
-            "value": 0.135288,
-            "equation": "Net Profit (2950813.0) / Avg Equity (21811416.0)",
+            "value": null,
+            "equation": "Net Profit (3272438000.0) / Avg Equity (None)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (None)",
+            "value": 0.069851,
+            "equation": "Operating Profit (11403177000.0) / Revenue (163249467000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
             "value": null,
@@ -568,35 +568,35 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.468689,
-            "equation": "Total Liabilities (10222767.0) / Equity (21811416.0)",
+            "value": null,
+            "equation": "Total Liabilities (None) / Equity (None)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "Debt Ratio": {
-            "value": 0.319121,
-            "equation": "Total Liabilities (10222767.0) / Total Assets (32034183.0)",
+            "value": null,
+            "equation": "Total Liabilities (None) / Total Assets (None)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "Interest Coverage": {
-            "value": null,
-            "equation": "Operating Profit (None) / Finance Cost (None)",
+            "value": -1.619779,
+            "equation": "Operating Profit (11403177000.0) / Finance Cost (-7039958000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Asset Turnover": {
             "value": null,
-            "equation": "Revenue (None) / Total Assets (32034183.0)",
+            "equation": "Revenue (163249467000.0) / Total Assets (None)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
@@ -605,7 +605,7 @@
           },
           "Inventory Turnover": {
             "value": null,
-            "equation": "Cost of Sales (None) / Inventory (None)",
+            "equation": "Cost of Sales (-126831893000.0) / Inventory (None)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -614,7 +614,7 @@
           },
           "Receivables Turnover": {
             "value": null,
-            "equation": "Revenue (None) / Receivables (None)",
+            "equation": "Revenue (163249467000.0) / Receivables (None)",
             "inputs_used": [
               "Revenue",
               "Receivables"
@@ -632,7 +632,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (2950813.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (3272438000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -651,58 +651,58 @@
         },
         "2019": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (None) / Revenue (None)",
+            "value": 0.223446,
+            "equation": "Gross Profit (48975430000.0) / Revenue (219181960000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (None)",
+            "value": 0.07295,
+            "equation": "Operating Profit (15989281000.0) / Revenue (219181960000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (3679236.0) / Revenue (None)",
+            "value": 0.012546,
+            "equation": "Net Profit (2749917000.0) / Revenue (219181960000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.10727,
-            "equation": "Net Profit (3679236.0) / Avg Assets (34298764.0)",
+            "value": null,
+            "equation": "Net Profit (2749917000.0) / Avg Assets (None)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
             ],
-            "confidence": 0.9
+            "confidence": 0.0
           },
           "ROE": {
-            "value": 0.157956,
-            "equation": "Net Profit (3679236.0) / Avg Equity (23292750.5)",
+            "value": null,
+            "equation": "Net Profit (2749917000.0) / Avg Equity (None)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
             ],
-            "confidence": 0.9
+            "confidence": 0.0
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (None) / Revenue (None)",
+            "value": 0.07295,
+            "equation": "Operating Profit (15989281000.0) / Revenue (219181960000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
             "value": null,
@@ -732,35 +732,35 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.475871,
-            "equation": "Total Liabilities (11789260.0) / Equity (24774085.0)",
+            "value": null,
+            "equation": "Total Liabilities (None) / Equity (None)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "Debt Ratio": {
-            "value": 0.322434,
-            "equation": "Total Liabilities (11789260.0) / Total Assets (36563345.0)",
+            "value": null,
+            "equation": "Total Liabilities (None) / Total Assets (None)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
             ],
-            "confidence": 1.0
+            "confidence": 0.0
           },
           "Interest Coverage": {
-            "value": null,
-            "equation": "Operating Profit (None) / Finance Cost (None)",
+            "value": -2.249692,
+            "equation": "Operating Profit (15989281000.0) / Finance Cost (-7107319000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Asset Turnover": {
             "value": null,
-            "equation": "Revenue (None) / Total Assets (36563345.0)",
+            "equation": "Revenue (219181960000.0) / Total Assets (None)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
@@ -769,7 +769,7 @@
           },
           "Inventory Turnover": {
             "value": null,
-            "equation": "Cost of Sales (None) / Inventory (None)",
+            "equation": "Cost of Sales (-168941516000.0) / Inventory (None)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -778,7 +778,7 @@
           },
           "Receivables Turnover": {
             "value": null,
-            "equation": "Revenue (None) / Receivables (None)",
+            "equation": "Revenue (219181960000.0) / Receivables (None)",
             "inputs_used": [
               "Revenue",
               "Receivables"
@@ -796,7 +796,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (3679236.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (2749917000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -815,62 +815,62 @@
         },
         "2020": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (19147684.0) / Revenue (None)",
+            "value": 0.238477,
+            "equation": "Gross Profit (50153396.0) / Revenue (210307003.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (3531779.0) / Revenue (None)",
+            "value": 0.078328,
+            "equation": "Operating Profit (16472880.0) / Revenue (210307003.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (1362707.0) / Revenue (None)",
+            "value": 0.013765,
+            "equation": "Net Profit (2894792.0) / Revenue (210307003.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.026999,
-            "equation": "Net Profit (1362707.0) / Avg Assets (50471881.0)",
+            "value": 0.011658,
+            "equation": "Net Profit (2894792.0) / Avg Assets (248309088.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
             ],
-            "confidence": 0.9
+            "confidence": 1.0
           },
           "ROE": {
-            "value": 0.03057,
-            "equation": "Net Profit (1362707.0) / Avg Equity (44577251.0)",
+            "value": 0.046054,
+            "equation": "Net Profit (2894792.0) / Avg Equity (62856502.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
             ],
-            "confidence": 0.9
+            "confidence": 1.0
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (3531779.0) / Revenue (None)",
+            "value": 0.078328,
+            "equation": "Operating Profit (16472880.0) / Revenue (210307003.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
             "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "equation": "Current Assets (117630744.0) / Current Liabilities (None)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
@@ -879,7 +879,7 @@
           },
           "Quick Ratio": {
             "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "equation": "(Current Assets - Inventory) (75405015.0) / Current Liabilities (None)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
@@ -888,7 +888,7 @@
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (None) / Current Liabilities (None)",
+            "equation": "Cash (8417779.0) / Current Liabilities (None)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -896,8 +896,8 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (64380417.0)",
+            "value": 2.950412,
+            "equation": "Total Liabilities (185452586.0) / Equity (62856502.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -905,8 +905,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (64380417.0)",
+            "value": 0.746862,
+            "equation": "Total Liabilities (185452586.0) / Total Assets (248309088.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -914,8 +914,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -3.775002,
-            "equation": "Operating Profit (3531779.0) / Finance Cost (-935570.0)",
+            "value": -1.262546,
+            "equation": "Operating Profit (16472880.0) / Finance Cost (-13047348.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -923,31 +923,31 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (64380417.0)",
+            "value": 0.846957,
+            "equation": "Revenue (210307003.0) / Total Assets (248309088.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": null,
-            "equation": "Cost of Sales (-40895806.0) / Inventory (None)",
+            "value": -3.74948,
+            "equation": "Cost of Sales (-158324525.0) / Inventory (42225729.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (None)",
+            "value": 3.557537,
+            "equation": "Revenue (210307003.0) / Receivables (59115893.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
@@ -960,7 +960,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (1362707.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (2894792.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -979,35 +979,35 @@
         },
         "2021": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (18904687.0) / Revenue (None)",
+            "value": 0.25348,
+            "equation": "Gross Profit (61158547.0) / Revenue (241275661.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (6060661.0) / Revenue (None)",
+            "value": 0.107569,
+            "equation": "Operating Profit (25953798.0) / Revenue (241275661.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (3342026.0) / Revenue (None)",
+            "value": 0.058216,
+            "equation": "Net Profit (14046207.0) / Revenue (241275661.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.052229,
-            "equation": "Net Profit (3342026.0) / Avg Assets (63987402.5)",
+            "value": 0.053237,
+            "equation": "Net Profit (14046207.0) / Avg Assets (263845424.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
@@ -1015,8 +1015,8 @@
             "confidence": 0.9
           },
           "ROE": {
-            "value": 0.052229,
-            "equation": "Net Profit (3342026.0) / Avg Equity (63987402.5)",
+            "value": 0.203487,
+            "equation": "Net Profit (14046207.0) / Avg Equity (69027541.5)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
@@ -1024,17 +1024,17 @@
             "confidence": 0.9
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (6060661.0) / Revenue (None)",
+            "value": 0.107569,
+            "equation": "Operating Profit (25953798.0) / Revenue (241275661.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
             "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "equation": "Current Assets (145556205.0) / Current Liabilities (None)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
@@ -1043,7 +1043,7 @@
           },
           "Quick Ratio": {
             "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "equation": "(Current Assets - Inventory) (92456109.0) / Current Liabilities (None)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
@@ -1052,7 +1052,7 @@
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (None) / Current Liabilities (None)",
+            "equation": "Cash (12912378.0) / Current Liabilities (None)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -1060,8 +1060,8 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (63594388.0)",
+            "value": 2.715253,
+            "equation": "Total Liabilities (204183179.0) / Equity (75198581.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -1069,8 +1069,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (63594388.0)",
+            "value": 0.730839,
+            "equation": "Total Liabilities (204183179.0) / Total Assets (279381760.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -1078,8 +1078,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -0.993639,
-            "equation": "Operating Profit (6060661.0) / Finance Cost (-6099458.0)",
+            "value": -2.582024,
+            "equation": "Operating Profit (25953798.0) / Finance Cost (-10051725.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -1087,31 +1087,31 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (63594388.0)",
+            "value": 0.863606,
+            "equation": "Revenue (241275661.0) / Total Assets (279381760.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": null,
-            "equation": "Cost of Sales (-45596061.0) / Inventory (None)",
+            "value": -3.356768,
+            "equation": "Cost of Sales (-178244709.0) / Inventory (53100096.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (None)",
+            "value": 3.589013,
+            "equation": "Revenue (241275661.0) / Receivables (67226194.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
@@ -1124,7 +1124,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (3342026.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (14046207.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -1143,35 +1143,35 @@
         },
         "2022": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (21849662.0) / Revenue (None)",
+            "value": 0.22891,
+            "equation": "Gross Profit (77373881000.0) / Revenue (338009580000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (6782664.0) / Revenue (None)",
+            "value": 0.099387,
+            "equation": "Operating Profit (33593759000.0) / Revenue (338009580000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (4834466.0) / Revenue (None)",
+            "value": 0.08313,
+            "equation": "Net Profit (28098901000.0) / Revenue (338009580000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.069112,
-            "equation": "Net Profit (4834466.0) / Avg Assets (69951029.0)",
+            "value": 0.139326,
+            "equation": "Net Profit (28098901000.0) / Avg Assets (201677586880.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
@@ -1179,8 +1179,8 @@
             "confidence": 0.9
           },
           "ROE": {
-            "value": 0.069112,
-            "equation": "Net Profit (4834466.0) / Avg Equity (69951029.0)",
+            "value": 0.330027,
+            "equation": "Net Profit (28098901000.0) / Avg Equity (85141099790.5)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
@@ -1188,44 +1188,44 @@
             "confidence": 0.9
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (6782664.0) / Revenue (None)",
+            "value": 0.099387,
+            "equation": "Operating Profit (33593759000.0) / Revenue (338009580000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "value": 1.196824,
+            "equation": "Current Assets (243378687000.0) / Current Liabilities (203353797000.0)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "value": 0.791629,
+            "equation": "(Current Assets - Inventory) (160980740000.0) / Current Liabilities (203353797000.0)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Cash Ratio": {
-            "value": null,
-            "equation": "Cash (None) / Current Liabilities (None)",
+            "value": 0.134788,
+            "equation": "Cash (27409656000.0) / Current Liabilities (203353797000.0)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (76307670.0)",
+            "value": 1.714333,
+            "equation": "Total Liabilities (291791466000.0) / Equity (170207001000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -1233,8 +1233,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (76307670.0)",
+            "value": 0.723912,
+            "equation": "Total Liabilities (291791466000.0) / Total Assets (403075792000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -1242,8 +1242,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -13.948895,
-            "equation": "Operating Profit (6782664.0) / Finance Cost (-486251.0)",
+            "value": -2.257225,
+            "equation": "Operating Profit (33593759000.0) / Finance Cost (-14882770000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -1251,17 +1251,17 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (76307670.0)",
+            "value": 0.838576,
+            "equation": "Revenue (338009580000.0) / Total Assets (403075792000.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": -3.3903,
-            "equation": "Cost of Sales (-56981187.0) / Inventory (16807120.0)",
+            "value": -3.139828,
+            "equation": "Cost of Sales (-258715354000.0) / Inventory (82397947000.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -1269,17 +1269,17 @@
             "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (19771795.0)",
+            "value": 3.156534,
+            "equation": "Revenue (338009580000.0) / Receivables (107082508000.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "equation": "Operating Cash Flow (None) / Current Liabilities (203353797000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Current Liabilities"
@@ -1288,7 +1288,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (4834466.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (28098901000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -1307,35 +1307,35 @@
         },
         "2023": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (31792860.0) / Revenue (None)",
+            "value": 0.244617,
+            "equation": "Gross Profit (119234033000.0) / Revenue (487430881000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (10963151.0) / Revenue (None)",
+            "value": 0.125295,
+            "equation": "Operating Profit (61072747000.0) / Revenue (487430881000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (5068683.0) / Revenue (None)",
+            "value": 0.056772,
+            "equation": "Net Profit (27672300000.0) / Revenue (487430881000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.057992,
-            "equation": "Net Profit (5068683.0) / Avg Assets (87402776.5)",
+            "value": 0.067839,
+            "equation": "Net Profit (27672300000.0) / Avg Assets (407908882500.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
@@ -1343,8 +1343,8 @@
             "confidence": 0.9
           },
           "ROE": {
-            "value": 0.057992,
-            "equation": "Net Profit (5068683.0) / Avg Equity (87402776.5)",
+            "value": 0.156447,
+            "equation": "Net Profit (27672300000.0) / Avg Equity (176880016500.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
@@ -1352,44 +1352,44 @@
             "confidence": 0.9
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (10963151.0) / Revenue (None)",
+            "value": 0.125295,
+            "equation": "Operating Profit (61072747000.0) / Revenue (487430881000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "value": 1.217985,
+            "equation": "Current Assets (237578991000.0) / Current Liabilities (195059051000.0)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "value": 0.769391,
+            "equation": "(Current Assets - Inventory) (150076668000.0) / Current Liabilities (195059051000.0)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Cash Ratio": {
-            "value": null,
-            "equation": "Cash (None) / Current Liabilities (None)",
+            "value": 0.123949,
+            "equation": "Cash (24177356000.0) / Current Liabilities (195059051000.0)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (98497883.0)",
+            "value": 1.577121,
+            "equation": "Total Liabilities (289485316000.0) / Equity (183553032000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -1397,8 +1397,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (98497883.0)",
+            "value": 0.701371,
+            "equation": "Total Liabilities (289485316000.0) / Total Assets (412741973000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -1406,8 +1406,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -2.667729,
-            "equation": "Operating Profit (10963151.0) / Finance Cost (-4109544.0)",
+            "value": -1.544649,
+            "equation": "Operating Profit (61072747000.0) / Finance Cost (-39538267000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -1415,17 +1415,17 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (98497883.0)",
+            "value": 1.180958,
+            "equation": "Revenue (487430881000.0) / Total Assets (412741973000.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": -2.872026,
-            "equation": "Cost of Sales (-82146714.0) / Inventory (28602360.0)",
+            "value": -4.157288,
+            "equation": "Cost of Sales (-363772324000.0) / Inventory (87502323000.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -1433,17 +1433,17 @@
             "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (25456335.0)",
+            "value": 4.940929,
+            "equation": "Revenue (487430881000.0) / Receivables (98651675000.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "equation": "Operating Cash Flow (None) / Current Liabilities (195059051000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Current Liabilities"
@@ -1452,7 +1452,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (5068683.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (27672300000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -1471,35 +1471,35 @@
         },
         "2024": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (35997229.0) / Revenue (None)",
+            "value": 0.250754,
+            "equation": "Gross Profit (109512452000.0) / Revenue (436732127000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (11920978.0) / Revenue (None)",
+            "value": 0.097824,
+            "equation": "Operating Profit (42722860000.0) / Revenue (436732127000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (6354653.0) / Revenue (None)",
+            "value": 0.033995,
+            "equation": "Net Profit (14846723000.0) / Revenue (436732127000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.066118,
-            "equation": "Net Profit (6354653.0) / Avg Assets (96110407.5)",
+            "value": 0.064258,
+            "equation": "Net Profit (14846723000.0) / Avg Assets (231050355500.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
@@ -1507,8 +1507,8 @@
             "confidence": 0.9
           },
           "ROE": {
-            "value": 0.066118,
-            "equation": "Net Profit (6354653.0) / Avg Equity (96110407.5)",
+            "value": 0.152518,
+            "equation": "Net Profit (14846723000.0) / Avg Equity (97344070000.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
@@ -1516,35 +1516,35 @@
             "confidence": 0.9
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (11920978.0) / Revenue (None)",
+            "value": 0.097824,
+            "equation": "Operating Profit (42722860000.0) / Revenue (436732127000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "value": 0.300322,
+            "equation": "Current Assets (6403048000.0) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "value": 0.298614,
+            "equation": "(Current Assets - Inventory) (6366625000.0) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (13222991.0) / Current Liabilities (None)",
+            "equation": "Cash (None) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -1552,8 +1552,8 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (93722932.0)",
+            "value": 3.432713,
+            "equation": "Total Liabilities (38223630000.0) / Equity (11135108000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -1561,8 +1561,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (93722932.0)",
+            "value": 0.774405,
+            "equation": "Total Liabilities (38223630000.0) / Total Assets (49358738000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -1570,8 +1570,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -3.660698,
-            "equation": "Operating Profit (11920978.0) / Finance Cost (-3256477.0)",
+            "value": -1.573583,
+            "equation": "Operating Profit (42722860000.0) / Finance Cost (-27150052000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -1579,17 +1579,17 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (93722932.0)",
+            "value": 8.848122,
+            "equation": "Revenue (436732127000.0) / Total Assets (49358738000.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": -3.75921,
-            "equation": "Cost of Sales (-85616543.0) / Inventory (22775145.0)",
+            "value": -8852.292645,
+            "equation": "Cost of Sales (-322427055000.0) / Inventory (36423000.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -1597,17 +1597,17 @@
             "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (26298715.0)",
+            "value": 12291.925894,
+            "equation": "Revenue (436732127000.0) / Receivables (35530000.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "equation": "Operating Cash Flow (None) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Current Liabilities"
@@ -1616,7 +1616,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (6354653.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (14846723000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -1635,80 +1635,80 @@
         },
         "2025": {
           "Gross Margin": {
-            "value": null,
-            "equation": "Gross Profit (37073289.0) / Revenue (None)",
+            "value": 0.240373,
+            "equation": "Gross Profit (118312080000.0) / Revenue (492201092000.0)",
             "inputs_used": [
               "Gross Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Operating Margin": {
-            "value": null,
-            "equation": "Operating Profit (13706629.0) / Revenue (None)",
+            "value": 0.097048,
+            "equation": "Operating Profit (47766935000.0) / Revenue (492201092000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Net Profit Margin": {
-            "value": null,
-            "equation": "Net Profit (8338661.0) / Revenue (None)",
+            "value": 0.045739,
+            "equation": "Net Profit (22512592000.0) / Revenue (492201092000.0)",
             "inputs_used": [
               "Net Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "ROA": {
-            "value": 0.087493,
-            "equation": "Net Profit (8338661.0) / Avg Assets (95306729.0)",
+            "value": 0.456101,
+            "equation": "Net Profit (22512592000.0) / Avg Assets (49358738000.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Assets"
             ],
-            "confidence": 0.9
+            "confidence": 1.0
           },
           "ROE": {
-            "value": 0.087493,
-            "equation": "Net Profit (8338661.0) / Avg Equity (95306729.0)",
+            "value": 2.021767,
+            "equation": "Net Profit (22512592000.0) / Avg Equity (11135108000.0)",
             "inputs_used": [
               "Net Profit",
               "Avg Equity"
             ],
-            "confidence": 0.9
+            "confidence": 1.0
           },
           "EBIT Margin": {
-            "value": null,
-            "equation": "Operating Profit (13706629.0) / Revenue (None)",
+            "value": 0.097048,
+            "equation": "Operating Profit (47766935000.0) / Revenue (492201092000.0)",
             "inputs_used": [
               "Operating Profit",
               "Revenue"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Current Ratio": {
-            "value": null,
-            "equation": "Current Assets (None) / Current Liabilities (None)",
+            "value": 0.300322,
+            "equation": "Current Assets (6403048000.0) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Current Assets",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Quick Ratio": {
-            "value": null,
-            "equation": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
+            "value": 0.298614,
+            "equation": "(Current Assets - Inventory) (6366625000.0) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "(Current Assets - Inventory)",
               "Current Liabilities"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Cash Ratio": {
             "value": null,
-            "equation": "Cash (12578510.0) / Current Liabilities (None)",
+            "equation": "Cash (None) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Cash",
               "Current Liabilities"
@@ -1716,8 +1716,8 @@
             "confidence": 0.0
           },
           "Debt to Equity": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Equity (96890526.0)",
+            "value": 3.432713,
+            "equation": "Total Liabilities (38223630000.0) / Equity (11135108000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Equity"
@@ -1725,8 +1725,8 @@
             "confidence": 1.0
           },
           "Debt Ratio": {
-            "value": 0.0,
-            "equation": "Total Liabilities (0.0) / Total Assets (96890526.0)",
+            "value": 0.774405,
+            "equation": "Total Liabilities (38223630000.0) / Total Assets (49358738000.0)",
             "inputs_used": [
               "Total Liabilities",
               "Total Assets"
@@ -1734,8 +1734,8 @@
             "confidence": 1.0
           },
           "Interest Coverage": {
-            "value": -9.11179,
-            "equation": "Operating Profit (13706629.0) / Finance Cost (-1504274.0)",
+            "value": -2.500068,
+            "equation": "Operating Profit (47766935000.0) / Finance Cost (-19106258000.0)",
             "inputs_used": [
               "Operating Profit",
               "Finance Cost"
@@ -1743,17 +1743,17 @@
             "confidence": 1.0
           },
           "Asset Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Total Assets (96890526.0)",
+            "value": 9.971914,
+            "equation": "Revenue (492201092000.0) / Total Assets (49358738000.0)",
             "inputs_used": [
               "Revenue",
               "Total Assets"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "Inventory Turnover": {
-            "value": -3.819032,
-            "equation": "Cost of Sales (-80896885.0) / Inventory (21182560.0)",
+            "value": -10150.493287,
+            "equation": "Cost of Sales (-369711417000.0) / Inventory (36423000.0)",
             "inputs_used": [
               "Cost of Sales",
               "Inventory"
@@ -1761,17 +1761,17 @@
             "confidence": 1.0
           },
           "Receivables Turnover": {
-            "value": null,
-            "equation": "Revenue (None) / Receivables (25971470.0)",
+            "value": 13853.112637,
+            "equation": "Revenue (492201092000.0) / Receivables (35530000.0)",
             "inputs_used": [
               "Revenue",
               "Receivables"
             ],
-            "confidence": 0.0
+            "confidence": 1.0
           },
           "OCF Ratio": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Current Liabilities (None)",
+            "equation": "Operating Cash Flow (None) / Current Liabilities (21320600000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Current Liabilities"
@@ -1780,7 +1780,7 @@
           },
           "Cash Flow to Net Income": {
             "value": null,
-            "equation": "Operating Cash Flow (None) / Net Profit (8338661.0)",
+            "equation": "Operating Cash Flow (None) / Net Profit (22512592000.0)",
             "inputs_used": [
               "Operating Cash Flow",
               "Net Profit"
@@ -1807,46 +1807,46 @@
           "Equity Growth": null
         },
         "2019": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 0.246855,
-          "Asset Growth": 0.141385,
-          "Equity Growth": 0.135831
+          "Revenue Growth": 0.34262,
+          "Net Profit Growth": -0.159673,
+          "Asset Growth": null,
+          "Equity Growth": null
         },
         "2020": {
-          "Revenue Growth": null,
-          "Net Profit Growth": -0.629622,
-          "Asset Growth": 0.760791,
-          "Equity Growth": 1.5987
+          "Revenue Growth": -0.99904,
+          "Net Profit Growth": -0.998947,
+          "Asset Growth": null,
+          "Equity Growth": null
         },
         "2021": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 1.452491,
-          "Asset Growth": -0.012209,
-          "Equity Growth": -0.012209
+          "Revenue Growth": 0.147255,
+          "Net Profit Growth": 3.852234,
+          "Asset Growth": 0.125137,
+          "Equity Growth": 0.196353
         },
         "2022": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 0.446567,
-          "Asset Growth": 0.199912,
-          "Equity Growth": 0.199912
+          "Revenue Growth": 1399.926967,
+          "Net Profit Growth": 1999.461833,
+          "Asset Growth": 1441.741974,
+          "Equity Growth": 2262.433681
         },
         "2023": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 0.048447,
-          "Asset Growth": 0.290799,
-          "Equity Growth": 0.290799
+          "Revenue Growth": 0.442062,
+          "Net Profit Growth": -0.015182,
+          "Asset Growth": 0.023981,
+          "Equity Growth": 0.078411
         },
         "2024": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 0.253709,
-          "Asset Growth": -0.048478,
-          "Equity Growth": -0.048478
+          "Revenue Growth": -0.104012,
+          "Net Profit Growth": -0.463481,
+          "Asset Growth": -0.880413,
+          "Equity Growth": -0.939336
         },
         "2025": {
-          "Revenue Growth": null,
-          "Net Profit Growth": 0.312213,
-          "Asset Growth": 0.033797,
-          "Equity Growth": 0.033797
+          "Revenue Growth": 0.127009,
+          "Net Profit Growth": 0.516334,
+          "Asset Growth": 0.0,
+          "Equity Growth": 0.0
         }
       },
       "validation_gates": {
@@ -1866,9 +1866,8 @@
         },
         "2018": {
           "Balance Sheet Identity": {
-            "status": "pass",
-            "confidence_weight": 0.3,
-            "detail": "Assets=32034183.0, L+E=32034183.0, diff=0.0000"
+            "status": "unknown",
+            "confidence_weight": 0.0
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -1881,9 +1880,8 @@
         },
         "2019": {
           "Balance Sheet Identity": {
-            "status": "pass",
-            "confidence_weight": 0.3,
-            "detail": "Assets=36563345.0, L+E=36563345.0, diff=0.0000"
+            "status": "unknown",
+            "confidence_weight": 0.0
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -1898,7 +1896,7 @@
           "Balance Sheet Identity": {
             "status": "pass",
             "confidence_weight": 0.3,
-            "detail": "Assets=64380417.0, L+E=64380417.0, diff=0.0000"
+            "detail": "Assets=248309088.0, L+E=248309088.0, diff=0.0000"
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -1913,37 +1911,37 @@
           "Balance Sheet Identity": {
             "status": "pass",
             "confidence_weight": 0.3,
-            "detail": "Assets=63594388.0, L+E=63594388.0, diff=0.0000"
+            "detail": "Assets=279381760.0, L+E=279381760.0, diff=0.0000"
           },
           "Cash Reconciliation": {
             "status": "unknown",
             "confidence_weight": 0.0
           },
           "Multi-Year Continuity": {
-            "status": "pass",
+            "status": "fail",
             "confidence_weight": 0.2
           }
         },
         "2022": {
           "Balance Sheet Identity": {
-            "status": "pass",
+            "status": "fail",
             "confidence_weight": 0.3,
-            "detail": "Assets=76307670.0, L+E=76307670.0, diff=0.0000"
+            "detail": "Assets=403075792000.0, L+E=461998467000.0, diff=0.1462"
           },
           "Cash Reconciliation": {
             "status": "unknown",
             "confidence_weight": 0.0
           },
           "Multi-Year Continuity": {
-            "status": "pass",
+            "status": "fail",
             "confidence_weight": 0.2
           }
         },
         "2023": {
           "Balance Sheet Identity": {
-            "status": "pass",
+            "status": "fail",
             "confidence_weight": 0.3,
-            "detail": "Assets=98497883.0, L+E=98497883.0, diff=0.0000"
+            "detail": "Assets=412741973000.0, L+E=473038348000.0, diff=0.1461"
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -1958,7 +1956,7 @@
           "Balance Sheet Identity": {
             "status": "pass",
             "confidence_weight": 0.3,
-            "detail": "Assets=93722932.0, L+E=93722932.0, diff=0.0000"
+            "detail": "Assets=49358738000.0, L+E=49358738000.0, diff=0.0000"
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -1973,7 +1971,7 @@
           "Balance Sheet Identity": {
             "status": "pass",
             "confidence_weight": 0.3,
-            "detail": "Assets=96890526.0, L+E=96890526.0, diff=0.0000"
+            "detail": "Assets=49358738000.0, L+E=49358738000.0, diff=0.0000"
           },
           "Cash Reconciliation": {
             "status": "unknown",
@@ -2007,170 +2005,170 @@
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2018": {
-          "Gross Margin": "Gross Profit (None) / Revenue (None)",
-          "Operating Margin": "Operating Profit (None) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (2950813.0) / Revenue (None)",
-          "ROA": "Net Profit (2950813.0) / Avg Assets (32034183.0)",
-          "ROE": "Net Profit (2950813.0) / Avg Equity (21811416.0)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+          "Gross Margin": "Gross Profit (35848016000.0) / Revenue (163249467000.0)",
+          "Operating Margin": "Operating Profit (11403177000.0) / Revenue (163249467000.0)",
+          "Net Profit Margin": "Net Profit (3272438000.0) / Revenue (163249467000.0)",
+          "ROA": "Net Profit (3272438000.0) / Avg Assets (None)",
+          "ROE": "Net Profit (3272438000.0) / Avg Equity (None)",
+          "EBIT Margin": "Operating Profit (11403177000.0) / Revenue (163249467000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
           "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (10222767.0) / Equity (21811416.0)",
-          "Debt Ratio": "Total Liabilities (10222767.0) / Total Assets (32034183.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
-          "Asset Turnover": "Revenue (None) / Total Assets (32034183.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (None) / Receivables (None)",
+          "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+          "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+          "Interest Coverage": "Operating Profit (11403177000.0) / Finance Cost (-7039958000.0)",
+          "Asset Turnover": "Revenue (163249467000.0) / Total Assets (None)",
+          "Inventory Turnover": "Cost of Sales (-126831893000.0) / Inventory (None)",
+          "Receivables Turnover": "Revenue (163249467000.0) / Receivables (None)",
           "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (2950813.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (3272438000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2019": {
-          "Gross Margin": "Gross Profit (None) / Revenue (None)",
-          "Operating Margin": "Operating Profit (None) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (3679236.0) / Revenue (None)",
-          "ROA": "Net Profit (3679236.0) / Avg Assets (34298764.0)",
-          "ROE": "Net Profit (3679236.0) / Avg Equity (23292750.5)",
-          "EBIT Margin": "Operating Profit (None) / Revenue (None)",
+          "Gross Margin": "Gross Profit (48975430000.0) / Revenue (219181960000.0)",
+          "Operating Margin": "Operating Profit (15989281000.0) / Revenue (219181960000.0)",
+          "Net Profit Margin": "Net Profit (2749917000.0) / Revenue (219181960000.0)",
+          "ROA": "Net Profit (2749917000.0) / Avg Assets (None)",
+          "ROE": "Net Profit (2749917000.0) / Avg Equity (None)",
+          "EBIT Margin": "Operating Profit (15989281000.0) / Revenue (219181960000.0)",
           "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
           "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
           "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (11789260.0) / Equity (24774085.0)",
-          "Debt Ratio": "Total Liabilities (11789260.0) / Total Assets (36563345.0)",
-          "Interest Coverage": "Operating Profit (None) / Finance Cost (None)",
-          "Asset Turnover": "Revenue (None) / Total Assets (36563345.0)",
-          "Inventory Turnover": "Cost of Sales (None) / Inventory (None)",
-          "Receivables Turnover": "Revenue (None) / Receivables (None)",
+          "Debt to Equity": "Total Liabilities (None) / Equity (None)",
+          "Debt Ratio": "Total Liabilities (None) / Total Assets (None)",
+          "Interest Coverage": "Operating Profit (15989281000.0) / Finance Cost (-7107319000.0)",
+          "Asset Turnover": "Revenue (219181960000.0) / Total Assets (None)",
+          "Inventory Turnover": "Cost of Sales (-168941516000.0) / Inventory (None)",
+          "Receivables Turnover": "Revenue (219181960000.0) / Receivables (None)",
           "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (3679236.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (2749917000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2020": {
-          "Gross Margin": "Gross Profit (19147684.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (3531779.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (1362707.0) / Revenue (None)",
-          "ROA": "Net Profit (1362707.0) / Avg Assets (50471881.0)",
-          "ROE": "Net Profit (1362707.0) / Avg Equity (44577251.0)",
-          "EBIT Margin": "Operating Profit (3531779.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (64380417.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (64380417.0)",
-          "Interest Coverage": "Operating Profit (3531779.0) / Finance Cost (-935570.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (64380417.0)",
-          "Inventory Turnover": "Cost of Sales (-40895806.0) / Inventory (None)",
-          "Receivables Turnover": "Revenue (None) / Receivables (None)",
+          "Gross Margin": "Gross Profit (50153396.0) / Revenue (210307003.0)",
+          "Operating Margin": "Operating Profit (16472880.0) / Revenue (210307003.0)",
+          "Net Profit Margin": "Net Profit (2894792.0) / Revenue (210307003.0)",
+          "ROA": "Net Profit (2894792.0) / Avg Assets (248309088.0)",
+          "ROE": "Net Profit (2894792.0) / Avg Equity (62856502.0)",
+          "EBIT Margin": "Operating Profit (16472880.0) / Revenue (210307003.0)",
+          "Current Ratio": "Current Assets (117630744.0) / Current Liabilities (None)",
+          "Quick Ratio": "(Current Assets - Inventory) (75405015.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (8417779.0) / Current Liabilities (None)",
+          "Debt to Equity": "Total Liabilities (185452586.0) / Equity (62856502.0)",
+          "Debt Ratio": "Total Liabilities (185452586.0) / Total Assets (248309088.0)",
+          "Interest Coverage": "Operating Profit (16472880.0) / Finance Cost (-13047348.0)",
+          "Asset Turnover": "Revenue (210307003.0) / Total Assets (248309088.0)",
+          "Inventory Turnover": "Cost of Sales (-158324525.0) / Inventory (42225729.0)",
+          "Receivables Turnover": "Revenue (210307003.0) / Receivables (59115893.0)",
           "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (1362707.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (2894792.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2021": {
-          "Gross Margin": "Gross Profit (18904687.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (6060661.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (3342026.0) / Revenue (None)",
-          "ROA": "Net Profit (3342026.0) / Avg Assets (63987402.5)",
-          "ROE": "Net Profit (3342026.0) / Avg Equity (63987402.5)",
-          "EBIT Margin": "Operating Profit (6060661.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (63594388.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (63594388.0)",
-          "Interest Coverage": "Operating Profit (6060661.0) / Finance Cost (-6099458.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (63594388.0)",
-          "Inventory Turnover": "Cost of Sales (-45596061.0) / Inventory (None)",
-          "Receivables Turnover": "Revenue (None) / Receivables (None)",
+          "Gross Margin": "Gross Profit (61158547.0) / Revenue (241275661.0)",
+          "Operating Margin": "Operating Profit (25953798.0) / Revenue (241275661.0)",
+          "Net Profit Margin": "Net Profit (14046207.0) / Revenue (241275661.0)",
+          "ROA": "Net Profit (14046207.0) / Avg Assets (263845424.0)",
+          "ROE": "Net Profit (14046207.0) / Avg Equity (69027541.5)",
+          "EBIT Margin": "Operating Profit (25953798.0) / Revenue (241275661.0)",
+          "Current Ratio": "Current Assets (145556205.0) / Current Liabilities (None)",
+          "Quick Ratio": "(Current Assets - Inventory) (92456109.0) / Current Liabilities (None)",
+          "Cash Ratio": "Cash (12912378.0) / Current Liabilities (None)",
+          "Debt to Equity": "Total Liabilities (204183179.0) / Equity (75198581.0)",
+          "Debt Ratio": "Total Liabilities (204183179.0) / Total Assets (279381760.0)",
+          "Interest Coverage": "Operating Profit (25953798.0) / Finance Cost (-10051725.0)",
+          "Asset Turnover": "Revenue (241275661.0) / Total Assets (279381760.0)",
+          "Inventory Turnover": "Cost of Sales (-178244709.0) / Inventory (53100096.0)",
+          "Receivables Turnover": "Revenue (241275661.0) / Receivables (67226194.0)",
           "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (3342026.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (14046207.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2022": {
-          "Gross Margin": "Gross Profit (21849662.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (6782664.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (4834466.0) / Revenue (None)",
-          "ROA": "Net Profit (4834466.0) / Avg Assets (69951029.0)",
-          "ROE": "Net Profit (4834466.0) / Avg Equity (69951029.0)",
-          "EBIT Margin": "Operating Profit (6782664.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (76307670.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (76307670.0)",
-          "Interest Coverage": "Operating Profit (6782664.0) / Finance Cost (-486251.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (76307670.0)",
-          "Inventory Turnover": "Cost of Sales (-56981187.0) / Inventory (16807120.0)",
-          "Receivables Turnover": "Revenue (None) / Receivables (19771795.0)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (4834466.0)",
+          "Gross Margin": "Gross Profit (77373881000.0) / Revenue (338009580000.0)",
+          "Operating Margin": "Operating Profit (33593759000.0) / Revenue (338009580000.0)",
+          "Net Profit Margin": "Net Profit (28098901000.0) / Revenue (338009580000.0)",
+          "ROA": "Net Profit (28098901000.0) / Avg Assets (201677586880.0)",
+          "ROE": "Net Profit (28098901000.0) / Avg Equity (85141099790.5)",
+          "EBIT Margin": "Operating Profit (33593759000.0) / Revenue (338009580000.0)",
+          "Current Ratio": "Current Assets (243378687000.0) / Current Liabilities (203353797000.0)",
+          "Quick Ratio": "(Current Assets - Inventory) (160980740000.0) / Current Liabilities (203353797000.0)",
+          "Cash Ratio": "Cash (27409656000.0) / Current Liabilities (203353797000.0)",
+          "Debt to Equity": "Total Liabilities (291791466000.0) / Equity (170207001000.0)",
+          "Debt Ratio": "Total Liabilities (291791466000.0) / Total Assets (403075792000.0)",
+          "Interest Coverage": "Operating Profit (33593759000.0) / Finance Cost (-14882770000.0)",
+          "Asset Turnover": "Revenue (338009580000.0) / Total Assets (403075792000.0)",
+          "Inventory Turnover": "Cost of Sales (-258715354000.0) / Inventory (82397947000.0)",
+          "Receivables Turnover": "Revenue (338009580000.0) / Receivables (107082508000.0)",
+          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (203353797000.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (28098901000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2023": {
-          "Gross Margin": "Gross Profit (31792860.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (10963151.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (5068683.0) / Revenue (None)",
-          "ROA": "Net Profit (5068683.0) / Avg Assets (87402776.5)",
-          "ROE": "Net Profit (5068683.0) / Avg Equity (87402776.5)",
-          "EBIT Margin": "Operating Profit (10963151.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (None) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (98497883.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (98497883.0)",
-          "Interest Coverage": "Operating Profit (10963151.0) / Finance Cost (-4109544.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (98497883.0)",
-          "Inventory Turnover": "Cost of Sales (-82146714.0) / Inventory (28602360.0)",
-          "Receivables Turnover": "Revenue (None) / Receivables (25456335.0)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (5068683.0)",
+          "Gross Margin": "Gross Profit (119234033000.0) / Revenue (487430881000.0)",
+          "Operating Margin": "Operating Profit (61072747000.0) / Revenue (487430881000.0)",
+          "Net Profit Margin": "Net Profit (27672300000.0) / Revenue (487430881000.0)",
+          "ROA": "Net Profit (27672300000.0) / Avg Assets (407908882500.0)",
+          "ROE": "Net Profit (27672300000.0) / Avg Equity (176880016500.0)",
+          "EBIT Margin": "Operating Profit (61072747000.0) / Revenue (487430881000.0)",
+          "Current Ratio": "Current Assets (237578991000.0) / Current Liabilities (195059051000.0)",
+          "Quick Ratio": "(Current Assets - Inventory) (150076668000.0) / Current Liabilities (195059051000.0)",
+          "Cash Ratio": "Cash (24177356000.0) / Current Liabilities (195059051000.0)",
+          "Debt to Equity": "Total Liabilities (289485316000.0) / Equity (183553032000.0)",
+          "Debt Ratio": "Total Liabilities (289485316000.0) / Total Assets (412741973000.0)",
+          "Interest Coverage": "Operating Profit (61072747000.0) / Finance Cost (-39538267000.0)",
+          "Asset Turnover": "Revenue (487430881000.0) / Total Assets (412741973000.0)",
+          "Inventory Turnover": "Cost of Sales (-363772324000.0) / Inventory (87502323000.0)",
+          "Receivables Turnover": "Revenue (487430881000.0) / Receivables (98651675000.0)",
+          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (195059051000.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (27672300000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2024": {
-          "Gross Margin": "Gross Profit (35997229.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (11920978.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (6354653.0) / Revenue (None)",
-          "ROA": "Net Profit (6354653.0) / Avg Assets (96110407.5)",
-          "ROE": "Net Profit (6354653.0) / Avg Equity (96110407.5)",
-          "EBIT Margin": "Operating Profit (11920978.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (13222991.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (93722932.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (93722932.0)",
-          "Interest Coverage": "Operating Profit (11920978.0) / Finance Cost (-3256477.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (93722932.0)",
-          "Inventory Turnover": "Cost of Sales (-85616543.0) / Inventory (22775145.0)",
-          "Receivables Turnover": "Revenue (None) / Receivables (26298715.0)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (6354653.0)",
+          "Gross Margin": "Gross Profit (109512452000.0) / Revenue (436732127000.0)",
+          "Operating Margin": "Operating Profit (42722860000.0) / Revenue (436732127000.0)",
+          "Net Profit Margin": "Net Profit (14846723000.0) / Revenue (436732127000.0)",
+          "ROA": "Net Profit (14846723000.0) / Avg Assets (231050355500.0)",
+          "ROE": "Net Profit (14846723000.0) / Avg Equity (97344070000.0)",
+          "EBIT Margin": "Operating Profit (42722860000.0) / Revenue (436732127000.0)",
+          "Current Ratio": "Current Assets (6403048000.0) / Current Liabilities (21320600000.0)",
+          "Quick Ratio": "(Current Assets - Inventory) (6366625000.0) / Current Liabilities (21320600000.0)",
+          "Cash Ratio": "Cash (None) / Current Liabilities (21320600000.0)",
+          "Debt to Equity": "Total Liabilities (38223630000.0) / Equity (11135108000.0)",
+          "Debt Ratio": "Total Liabilities (38223630000.0) / Total Assets (49358738000.0)",
+          "Interest Coverage": "Operating Profit (42722860000.0) / Finance Cost (-27150052000.0)",
+          "Asset Turnover": "Revenue (436732127000.0) / Total Assets (49358738000.0)",
+          "Inventory Turnover": "Cost of Sales (-322427055000.0) / Inventory (36423000.0)",
+          "Receivables Turnover": "Revenue (436732127000.0) / Receivables (35530000.0)",
+          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (21320600000.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (14846723000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         },
         "2025": {
-          "Gross Margin": "Gross Profit (37073289.0) / Revenue (None)",
-          "Operating Margin": "Operating Profit (13706629.0) / Revenue (None)",
-          "Net Profit Margin": "Net Profit (8338661.0) / Revenue (None)",
-          "ROA": "Net Profit (8338661.0) / Avg Assets (95306729.0)",
-          "ROE": "Net Profit (8338661.0) / Avg Equity (95306729.0)",
-          "EBIT Margin": "Operating Profit (13706629.0) / Revenue (None)",
-          "Current Ratio": "Current Assets (None) / Current Liabilities (None)",
-          "Quick Ratio": "(Current Assets - Inventory) (None) / Current Liabilities (None)",
-          "Cash Ratio": "Cash (12578510.0) / Current Liabilities (None)",
-          "Debt to Equity": "Total Liabilities (0.0) / Equity (96890526.0)",
-          "Debt Ratio": "Total Liabilities (0.0) / Total Assets (96890526.0)",
-          "Interest Coverage": "Operating Profit (13706629.0) / Finance Cost (-1504274.0)",
-          "Asset Turnover": "Revenue (None) / Total Assets (96890526.0)",
-          "Inventory Turnover": "Cost of Sales (-80896885.0) / Inventory (21182560.0)",
-          "Receivables Turnover": "Revenue (None) / Receivables (25971470.0)",
-          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (None)",
-          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (8338661.0)",
+          "Gross Margin": "Gross Profit (118312080000.0) / Revenue (492201092000.0)",
+          "Operating Margin": "Operating Profit (47766935000.0) / Revenue (492201092000.0)",
+          "Net Profit Margin": "Net Profit (22512592000.0) / Revenue (492201092000.0)",
+          "ROA": "Net Profit (22512592000.0) / Avg Assets (49358738000.0)",
+          "ROE": "Net Profit (22512592000.0) / Avg Equity (11135108000.0)",
+          "EBIT Margin": "Operating Profit (47766935000.0) / Revenue (492201092000.0)",
+          "Current Ratio": "Current Assets (6403048000.0) / Current Liabilities (21320600000.0)",
+          "Quick Ratio": "(Current Assets - Inventory) (6366625000.0) / Current Liabilities (21320600000.0)",
+          "Cash Ratio": "Cash (None) / Current Liabilities (21320600000.0)",
+          "Debt to Equity": "Total Liabilities (38223630000.0) / Equity (11135108000.0)",
+          "Debt Ratio": "Total Liabilities (38223630000.0) / Total Assets (49358738000.0)",
+          "Interest Coverage": "Operating Profit (47766935000.0) / Finance Cost (-19106258000.0)",
+          "Asset Turnover": "Revenue (492201092000.0) / Total Assets (49358738000.0)",
+          "Inventory Turnover": "Cost of Sales (-369711417000.0) / Inventory (36423000.0)",
+          "Receivables Turnover": "Revenue (492201092000.0) / Receivables (35530000.0)",
+          "OCF Ratio": "Operating Cash Flow (None) / Current Liabilities (21320600000.0)",
+          "Cash Flow to Net Income": "Operating Cash Flow (None) / Net Profit (22512592000.0)",
           "Free Cash Flow": "Operating Cash Flow (None) - CapEx (None)"
         }
       },
       "scores": {
-        "reliability_score": 69.7,
-        "risk_score": 30.3,
-        "confidence_score": 0.97,
+        "reliability_score": 71.11,
+        "risk_score": 28.89,
+        "confidence_score": 0.99,
         "risk_level": "low",
         "reliability_band": "high"
       }

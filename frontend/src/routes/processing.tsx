@@ -112,7 +112,7 @@ function ProcessingPage() {
     <Page>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[32px] bg-black text-white w-[22vw] text-nowrap px-2 block font-semibold tracking-tight">Processing Progress</h1>
+          <h1 className="text-[32px] text-foreground text-nowrap px-2 block font-semibold tracking-tight">Processing Progress</h1>
           <p className="mt-1.5 text-[14px] text-muted-foreground">
             Track upload, parsing, structure detection and extraction for each annual report.
           </p>
@@ -209,26 +209,6 @@ function ProcessingPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2">
-                  {statementStatuses.map(([statement, payload]) => {
-                    const itemStatus = String(payload?.status || "pending").toLowerCase();
-                    return (
-                      <span
-                        key={statement}
-                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium ${
-                          itemStatus === "completed"
-                            ? "bg-[var(--success)]/10 text-[color:var(--success)]"
-                            : itemStatus === "failed"
-                              ? "bg-[var(--error)]/10 text-[color:var(--error)]"
-                              : "bg-[var(--hover)] text-muted-foreground"
-                        }`}
-                      >
-                        {STATEMENT_LABELS[statement] || statement.replace(/_/g, " ")}
-                      </span>
-                    );
-                  })}
-              </div>
-
               {statementStatuses.length > 0 && (
                 <div className="mt-5 flex flex-wrap gap-2">
                   {statementStatuses.map(([statement, payload]) => {

@@ -6,7 +6,7 @@ import { getCurrentReportId, getFullReport } from "@/lib/api";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { TrendingUp, Percent, Activity, Wallet, ArrowRight, AlertTriangle, ShieldCheck } from "lucide-react";
+import { TrendingUp, Percent, Activity, Wallet, ArrowRight, AlertTriangle, ShieldCheck, Calculator, CalendarRange,ShieldAlert, } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Dashboard — FDI" }, { name: "description", content: "ABC Corporation financial dashboard." }] }),
@@ -370,18 +370,100 @@ function Dashboard() {
       </section>
 
       {/* Drilldown nav */}
-      <div className="mt-10 grid gap-3 md:grid-cols-4">
-        {[
-          { to: "/dashboard/calculations", label: "Calculation Details" },
-          { to: "/dashboard/year-analysis", label: "Year Analysis" },
-          { to: "/dashboard/patterns", label: "Pattern Insights" },
-          { to: "/dashboard/risk", label: "Risk Details" },
-        ].map((l) => (
-          <Link key={l.to} to={l.to} className="card-elevated card-elevated-hover flex items-center justify-between p-4 text-[13.5px] font-medium">
-            {l.label} <ArrowRight className="h-4 w-4 text-muted-foreground" />
-          </Link>
-        ))}
-      </div>
+<section className="mt-12 mb-4">
+  <SectionTitle
+    index="4"
+    title="Calculation & Analytics"
+    subtitle="Financial calculations, trend analysis, patterns and risk intelligence"
+    cta={
+      <Link
+        to="/dashboard/risk"
+        className="text-sm font-medium text-primary hover:underline"
+      >
+        View all →
+      </Link>
+    }
+  />
+
+  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    {[
+      {
+        to: "/dashboard/calculations",
+        label: "Calculation Details",
+        desc: "View calculated financial metrics",
+        icon: Calculator,
+        accent: "from-white-800 to-white",
+      },
+      {
+        to: "/dashboard/year-analysis",
+        label: "Year Analysis",
+        desc: "Multi-year performance breakdown",
+        icon: CalendarRange,
+        accent: "from-white-800 to-white",
+      },
+      {
+        to: "/dashboard/patterns",
+        label: "Pattern Insights",
+        desc: "Detect recurring financial trends",
+        icon: TrendingUp,
+        accent: "from-white-800 to-white",
+      },
+      {
+        to: "/dashboard/risk",
+        label: "Risk Details",
+        desc: "Risk scoring and warning signals",
+        icon: ShieldAlert,
+        accent: "from-white-800 to-white",
+      },
+    ].map((item) => {
+      const Icon = item.icon;
+
+      return (
+        <Link
+          key={item.to}
+          to={item.to}
+          className={`
+            group relative overflow-hidden
+            rounded-2xl border-2 border-border
+            bg-gradient-to-br ${item.accent}
+            backdrop-blur-sm
+            p-5
+            transition-all duration-300
+            hover:-translate-y-1
+            hover:shadow-xl
+            hover:border-primary/30
+          `}
+        >
+          <div className="flex h-full flex-col justify-between">
+            <div>
+              <div className="mb-4 flex h-11 w-11 items-center justify-center  rounded-xl bg-background/80 shadow-sm">
+                <Icon className="h-5 w-5" />
+              </div>
+
+              <h3 className="text-sm font-semibold">
+                {item.label}
+              </h3>
+
+              <p className="mt-1 text-xs text-muted-foreground">
+                {item.desc}
+              </p>
+            </div>
+
+            <div className="mt-5 flex items-center justify-end">
+              <ArrowRight
+                className="
+                  h-4 w-4 text-muted-foreground
+                  transition-transform duration-300
+                  group-hover:translate-x-1
+                "
+              />
+            </div>
+          </div>
+        </Link>
+      );
+    })}
+  </div>
+</section>
         </>
       )}
     </Page>

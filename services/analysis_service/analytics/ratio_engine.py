@@ -177,7 +177,7 @@ METRIC_ALIASES: dict[str, list[str]] = {
     "interest_expense": ["interest expense", "finance costs", "finance expense"],
     "receivables": ["trade receivables", "accounts receivable", "receivables"],
     "payables": ["trade payables", "accounts payable", "payables"],
-    "operating_cash_flow": ["operating cash flow", "cash from operations", "net cash from operating activities"],
+    "operating_cash_flow": ["operating cash flow", "cash from operations", "net cash from operating activities", "net cash inflow from operating activities", "net cash in flow from operating activities"],
     "net_interest_income": ["net interest income", "net interest revenue"],
     "loans": ["loans and advances", "gross loans", "loan portfolio", "total loans"],
     "deposits": ["customer deposits", "total deposits", "deposits"],

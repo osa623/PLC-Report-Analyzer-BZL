@@ -5,6 +5,7 @@ import { UploadCloud, FileText, Sparkles, CheckCircle2, Clock, Loader2 } from "l
 import { useRef, useState } from "react";
 import { recentUploads } from "@/lib/mock-data";
 import { uploadReports } from "@/lib/api";
+import CompanyForm from "@/components/CompanyForm";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -63,6 +64,8 @@ function UploadPage() {
           </p>
         </motion.div>
       </section>
+      
+      <CompanyForm/>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -147,7 +150,7 @@ function UploadPage() {
         </div>
       </motion.div>
 
-      <section className="mx-auto mt-16 max-w-5xl">
+    {/*  <section className="mx-auto mt-16 max-w-5xl">
         <div className="mb-5 flex items-baseline justify-between">
           <h2 className="text-[22px] font-semibold tracking-tight">Recent Uploads</h2>
           <a className="text-[13px] text-muted-foreground hover:text-foreground" href="/processing">View all</a>
@@ -182,7 +185,7 @@ function UploadPage() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </section> */}
     </Page>
   );
 }

@@ -286,7 +286,8 @@ function MappingPage() {
 
       {tocImages.length > 0 && (
         <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated mt-8 overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3.5 bg-white">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5 bg-white">
+            <div className="flex flex-col items-center justigy-between gap-4">
             <div>
               <div className="text-[14px] font-semibold">Table of Contents Screenshots</div>
               <div className="mt-0.5 text-[12px] text-muted-foreground">Detected TOC pages plus the immediate next page for context.</div>
@@ -309,9 +310,9 @@ function MappingPage() {
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
+           
             </div>
-          </div>
-          <div className="grid gap-4 bg-[var(--surface)] p-5 lg:grid-cols-[180px_1fr]">
+            </div>
             <div className="space-y-2">
               {tocImages.map((image, index) => (
                 <button
@@ -328,67 +329,141 @@ function MappingPage() {
                 </button>
               ))}
             </div>
-            <div className="max-h-[760px] overflow-auto rounded-xl border border-border bg-white p-3">
+          </div>
+          
+          <div className="flex items-start p-5 justify-between gap-4 bg-[var(--surface)] ">
+
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card-elevated p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-[15px] font-medium">Map Statements to Real Pages</div>
+                  <div className="mt-0.5 text-[12px] text-muted-foreground">Use comma-separated pages for multi-page statements.</div>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--gold)]/12 px-2.5 py-1 text-[11px] font-medium text-[color:var(--navy)]">
+                  <Sparkles className="h-3 w-3 text-[var(--gold)]" /> Backend suggested
+                </span>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {Object.keys(statementRefs).length > 0 && (
+                  <div className="rounded-xl border border-border bg-[var(--surface)] p-3 text-[12px]">
+                    <div className="mb-2 text-[11px] uppercase tracking-wider text-muted-foreground">Dynamic Page Offset Resolution</div>
+                    {Object.entries(statementRefs).map(([key, page]) => (
+                      <div key={key} className="grid gap-1 border-t border-border/60 py-2 first:border-t-0">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{key.replace(/_/g, " ")}</span>
+                          <span className="font-medium tabular-nums">TOC page {page}</span>
+                        </div>
+                        {pageMappings[key] && (
+                          <div className="grid grid-cols-4 gap-2 text-[11px] text-muted-foreground">
+                            <span>PDF {pageMappings[key].referenced_pdf_page ?? "-"}</span>
+                            <span>Printed {pageMappings[key].printed_page ?? "-"}</span>
+                            <span>Offset {pageMappings[key].offset == null ? "-" : pageMappings[key].offset! >= 0 ? `+${pageMappings[key].offset}` : pageMappings[key].offset}</span>
+                            <span className="text-right font-medium text-foreground">Open {pageMappings[key].corrected_pdf_page ?? "-"}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {(statements.length ? statements : REQUIRED_MAPPING_STATEMENTS).map((statement) => (
+                  <div key={statement.type} className="grid grid-cols-[1fr_150px] items-center gap-4">
+                    <div>
+                      <label className="text-[13.5px] font-medium">{STATEMENT_LABELS[statement.type] || statement.title}</label>
+                      <div className="mt-0.5 text-[11.5px] text-muted-foreground">
+                        {(statement as any).confidence ? `${Math.round((statement as any).confidence * ((statement as any).confidence <= 1 ? 100 : 1))}% confidence` : "Needs manual page"}
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={values[statement.type] || ""}
+                      placeholder="45, 46"
+                      onChange={(e) => setValues((current) => ({ ...current, [statement.type]: e.target.value }))}
+                      className="h-11 rounded-xl border border-border bg-white px-4 text-right text-[15px] font-medium tabular-nums focus:border-[var(--navy)] focus:outline-none focus:ring-4 focus:ring-[var(--navy)]/8"
+                    />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            <div className="relative h-screen w-auto overflow-auto rounded-xl sticky flex top-20">
               <img
                 src={cleanImageUrl(tocImages[Math.min(tocIndex, tocImages.length - 1)]?.url || "")}
                 alt={tocImageLabel(tocImages[Math.min(tocIndex, tocImages.length - 1)] || {}, tocIndex)}
-                className="mx-auto w-full min-w-[720px] rounded-lg bg-white shadow-sm"
+                className="w-[700px] rounded-lg bg-white overflow-auto shadow-sm"
                 onClick={() => setSelectedFullscreenImage(tocImages[Math.min(tocIndex, tocImages.length - 1)] || null)}
               />
             </div>
+
           </div>
         </motion.section>
       )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
+         
+          { (() => {
+            if (Object.keys(tocImages).length === 0) {
+              return (
+                <div className="hidden lg:block">
+                  
+                </div>
+              );
+            }
+            return null;
+          })() }
+
+          { !tocImages || Object.keys(tocImages).length === 0 ? (
+
+        <div className='relative'>
+          
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated overflow-hidden flex flex-col">
-          <div className="border-b border-border px-5 py-3.5 bg-white">
-            <div className="text-[14px] font-semibold text-foreground">Statement Page Screenshots</div>
-            <div className="text-[12px] text-muted-foreground mt-0.5">
-              Click any image to expand and view the full table contents.
+            <div className="border-b border-border px-5 py-3.5 bg-white">
+              <div className="text-[14px] font-semibold text-foreground">Statement Page Screenshots</div>
+              <div className="text-[12px] text-muted-foreground mt-0.5">
+                Click any image to expand and view the full table contents.
+              </div>
             </div>
-          </div>
-          <div className="bg-[var(--surface)] p-5 flex-1 min-h-[450px]">
-            {Object.keys(groupedImages).length > 0 ? (
-              <div className="space-y-6 max-h-[650px] overflow-y-auto pr-1">
-                {Object.entries(groupedImages).map(([statementTitle, imgs]) => (
-                  <div key={statementTitle} className="border-b border-border/60 pb-5 last:border-0">
-                    <h3 className="text-[12px] font-semibold text-[color:var(--navy)] mb-3 uppercase tracking-wider">{statementTitle}</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      {imgs.map((img, idx) => (
-                        <div
-                          key={idx}
-                          className="relative group cursor-pointer border border-border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all hover:scale-[1.01] duration-200"
-                          onClick={() => setSelectedFullscreenImage({ ...img, statement: statementTitle })}
-                        >
-                          <img
-                            src={cleanImageUrl(img.url)}
-                            alt={`${statementTitle} page ${img.page || idx + 1}`}
-                            className="w-full h-40 object-contain bg-slate-50 p-2"
-                          />
-                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-black/40 text-white text-[11px] px-3 py-1.5 flex justify-between items-center opacity-90 group-hover:opacity-100 transition-opacity">
-                            <span className="font-medium">Page {img.page || idx + 1}</span>
-                            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Expand</span>
+            <div className="bg-[var(--surface)] p-5 flex-1 min-h-[450px]">
+              {Object.keys(groupedImages).length > 0 ? (
+                <div className="space-y-6 max-h-[650px] overflow-y-auto pr-1">
+                  {Object.entries(groupedImages).map(([statementTitle, imgs]) => (
+                    <div key={statementTitle} className="border-b border-border/60 pb-5 last:border-0">
+                      <h3 className="text-[12px] font-semibold text-[color:var(--navy)] mb-3 uppercase tracking-wider">{statementTitle}</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        {imgs.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="relative group cursor-pointer border border-border rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition-all hover:scale-[1.01] duration-200"
+                            onClick={() => setSelectedFullscreenImage({ ...img, statement: statementTitle })}
+                          >
+                            <img
+                              src={cleanImageUrl(img.url)}
+                              alt={`${statementTitle} page ${img.page || idx + 1}`}
+                              className="w-full h-40 object-contain bg-slate-50 p-2"
+                            />
+                            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-black/40 text-white text-[11px] px-3 py-1.5 flex justify-between items-center opacity-90 group-hover:opacity-100 transition-opacity">
+                              <span className="font-medium">Page {img.page || idx + 1}</span>
+                              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-medium">Expand</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid min-h-[400px] place-items-center rounded-xl bg-white text-[13px] text-muted-foreground ring-1 ring-border">
-                {loading ? (
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-6 w-6 animate-spin text-[var(--navy)]" />
-                    <span>Loading screenshots...</span>
-                  </div>
-                ) : (
-                  "No statement page screenshots are available yet for this PDF."
-                )}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid min-h-[400px] place-items-center rounded-xl bg-white text-[13px] text-muted-foreground ring-1 ring-border">
+                  {loading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin text-[var(--navy)]" />
+                      <span>Loading screenshots...</span>
+                    </div>
+                  ) : (
+                    "No statement page screenshots are available yet for this PDF."
+                  )}
+                </div>
+              )}
+            </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card-elevated p-6">
@@ -443,6 +518,12 @@ function MappingPage() {
             ))}
           </div>
         </motion.div>
+
+        </div>
+
+         ) : null }
+
+
       </div>
 
       <div className="sticky bottom-4 mt-10 flex justify-end">

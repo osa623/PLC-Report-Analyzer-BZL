@@ -586,14 +586,7 @@ function ValidationPage() {
                     Manual Mapping
                   </a>
                 )}
-                <Link
-                  to="/validation"
-                  search={{ pdf: name }}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-white px-3 text-[12.5px] font-medium hover:bg-[var(--hover)]"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  View Data
-                </Link>
+
               </div>
             </motion.div>
           );
@@ -626,23 +619,37 @@ function ValidationPage() {
             {/* Report heading */}
             <div className="mb-4">
               <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                Annual Report
+                Statements Data of Each Annual Reports
               </div>
               <h2 className="text-[22px] font-semibold tracking-tight">
-                {report.source_pdf.replace(/^\d+-/, "").replace(/\.pdf$/i, "").replace(/_/g, " ")}
+                {(() => {
+                  const currentYear = parseInt(
+                    report.source_pdf.replace(/^\d+-/, "").replace(/\.pdf$/i, ""),
+                    10
+                  );
+                  return `${currentYear - 1} - ${currentYear}`;
+                })()}
               </h2>
             </div>
 
             {/* Year accordions */}
-            <div className="space-y-3">
-              {report.years.map((year, yearIdx) => (
-                <YearAccordion
-                  key={`${report.source_pdf}-${year.year}`}
-                  reportSourcePdf={report.source_pdf}
-                  year={year}
-                  defaultOpen={yearIdx === 0}
-                />
-              ))}
+             <div className="space-y-3">
+              {report.years.map((year, yearIdx) => {
+                const wrongYear = year.year - 2;
+
+                if (year.year === wrongYear) {
+                  return null;
+                }
+
+                return (
+                  <YearAccordion
+                    key={`${report.source_pdf}-${year.year}`}
+                    reportSourcePdf={report.source_pdf}
+                    year={year}
+                    defaultOpen={yearIdx === 0}
+                  />
+                );
+              })}
             </div>
           </motion.section>
         ))}
@@ -690,7 +697,7 @@ function ValidationPage() {
               <div className="mt-0.5 text-[12px] text-muted-foreground">
                 The backend is normalizing extracted data, computing financial
                 ratios, running risk analysis, and generating the final report.
-                This typically takes 30–60 seconds.
+                This typically takes several minutes.
               </div>
             </div>
           </div>
