@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { YearViewBar } from "@/components/YearViewBar";
 //import { kpis, yearSeries, patterns, risks } from "@/lib/mock-data";
 import { getCurrentReportId, getFullReport } from "@/lib/api";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp, Percent, Activity, Wallet, ArrowRight, AlertTriangle, ShieldCheck, Calculator, CalendarRange,ShieldAlert, } from "lucide-react";
+import { YearsDropdown } from "react-day-picker";
 
 export const Route = createFileRoute("/dashboard/")({
   head: () => ({ meta: [{ title: "Dashboard — FDI" }, { name: "description", content: "ABC Corporation financial dashboard." }] }),
@@ -249,7 +251,7 @@ function Dashboard() {
 
   return (
     <Page>
-      <DashboardHeader year={year} setYear={setYear} availableYears={dashboardData.years} companyName={dashboardCompanyName} />
+      <DashboardHeader year={year} setYear={setYear} availableYears={dashboardData.years} />
 
       {hasActiveReport && loading && (
         <div className="mt-8 rounded-xl border border-border bg-white px-5 py-4 text-[13px] text-muted-foreground">

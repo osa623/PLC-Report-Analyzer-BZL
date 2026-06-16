@@ -22,6 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCompanyStore } from "@/lib/store/company-store";
 
 export const Route = createFileRoute("/validation")({
   head: () => ({
@@ -84,6 +85,8 @@ function YearAccordion({
       ),
     0
   );
+  /* Fetching the company data */
+  const company = useCompanyStore((s) => s.company);
 
   return (
     <div className="overflow-hidden rounded-xl border border-border">
@@ -461,6 +464,9 @@ function ValidationPage() {
         ? "Ready to Finalize"
         : "Processing";
 
+
+  const company = useCompanyStore((s) => s.company);
+
   return (
     <Page>
       {/* ── Header ── */}
@@ -508,7 +514,7 @@ function ValidationPage() {
             </div>
             <div>
               <div className="text-[14px] font-medium">
-                {reportId || "No active report"}
+                {company.companyName}
               </div>
               <div className="text-[11.5px] text-muted-foreground">
                 {documents.length || 0} annual reports · {tableCount}{" "}
@@ -559,7 +565,7 @@ function ValidationPage() {
                   )}
                 </div>
                 <div>
-                  <div className="text-[14px] font-medium">{name}</div>
+                  <div className="text-[14px] font-medium">{company.ticker || "N/A"} - {name.replace(/\.pdf$/i, "").replace(/^\d+-/, "")}</div>
                   <div className="mt-0.5 text-[11.5px] text-muted-foreground">
                     {doc.stage || "Extraction"} ·{" "}
                     {doc.message || doc.error || "Backend document status"}

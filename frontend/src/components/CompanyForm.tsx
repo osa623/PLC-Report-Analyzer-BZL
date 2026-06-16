@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { searchCompanies, getCompany } from "@/lib/company-api";
+import { useCompanyStore } from "@/lib/store/company-store";
 import {
   Building2,
   BadgeDollarSign,
@@ -19,12 +20,11 @@ export default function CompanyForm() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const [company, setCompany] = useState<Company>({
-    companyName: "",
-    ticker: "",
-    sector: "",
-    logo: ""
-  });
+
+
+const company = useCompanyStore((s) => s.company);
+const setCompany = useCompanyStore((s) => s.setCompany);
+
 
   const debounceRef = useRef<any>(null);
 
@@ -98,17 +98,30 @@ export default function CompanyForm() {
       <div className="rounded-3xl border border-border/60 bg-white/80 backdrop-blur-xl shadow-[0_30px_80px_-40px_rgba(0,0,0,0.25)] p-6">
 
         {/* HEADER */}
-        <div className="text-center mb-6">
-          <h2 className="text-xl font-semibold">
-            Company Configuration
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Search CSE companies and auto-fill details
+        <div className="text-start w-full items-center justify-start mb-6">
+          <p className="text-xs text-muted-foreground mt-1">
+            Search for the company name and select the correct company from the results.
           </p>
+           <p className="text-xs font-italic text-muted-foreground mt-1">
+            You may update the sector to the most appropriate category. </p>
         </div>
 
-        {/* SEARCH BOX */}
-        <div className="relative">
+
+
+        {/* LOGO AND FORM */}
+        <div className="mt-6 relative flex items-center gap-4 justify-start">
+
+          <div className="h-20 rounded-full w-20 border overflow-hidden flex items-center justify-center bg-white">
+            {company.logo ? (
+              <img
+                src={company.logo}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <span className="text-xs text-gray-400">Logo</span>
+            )}
+          </div>
+          <div className="relative w-[30vw]">
 
           <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 
@@ -116,7 +129,7 @@ export default function CompanyForm() {
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search company name or symbol..."
-            className="w-full h-12 pl-11 pr-4 rounded-2xl border bg-white text-sm focus:ring-2 focus:ring-black/10 outline-none"
+            className="w-full h-10 pl-11 pr-4 rounded-2xl border bg-white text-sm focus:ring-2 focus:ring-black/10 outline-none"
           />
 
           {loading && (
@@ -149,24 +162,8 @@ export default function CompanyForm() {
               ))}
             </div>
           )}
-        </div>
-
-        {/* LOGO */}
-        <div className="mt-6 flex items-center gap-4">
-          <div className="h-16 w-16 border rounded-2xl overflow-hidden flex items-center justify-center bg-white">
-            {company.logo ? (
-              <img
-                src={company.logo}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <span className="text-xs text-gray-400">Logo</span>
-            )}
           </div>
 
-          <div className="text-sm text-gray-500">
-            Auto-filled company details
-          </div>
         </div>
 
         {/* FORM */}
@@ -215,7 +212,7 @@ export default function CompanyForm() {
           </div>
         </div>
 
-        {/* STATUS */}
+        {/* STATUS 
         <div className="flex flex-wrap gap-2 mt-6">
           {["API Connected", "Auto Fill Active", "CSE Live Data"].map(
             (t) => (
@@ -227,7 +224,8 @@ export default function CompanyForm() {
               </span>
             )
           )}
-        </div>
+        </div> */}
+
       </div>
     </div>
   );

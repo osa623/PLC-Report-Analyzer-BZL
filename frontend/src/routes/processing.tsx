@@ -6,6 +6,9 @@ import { getCurrentFileNames, getCurrentReportId, getDocumentStatuses, getPipeli
 import { FileText, RefreshCw, AlertTriangle, CheckCircle2, Loader2, Table2, MapPinned } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { useCompanyStore } from "@/lib/store/company-store";
+
+
 
 export const Route = createFileRoute("/processing")({
   head: () => ({ meta: [{ title: "Processing - FDI" }, { name: "description", content: "Track extraction progress of uploaded documents." }] }),
@@ -108,6 +111,22 @@ function ProcessingPage() {
     total: documents.length,
   }), [documents]);
 
+  /* Frontend Fix for the pipeline Mismatch with the backend */
+  const derivedPipelineStatus = useMemo(() => {
+  const allCompleted = documents.length > 0 &&
+  documents.every(d => d.status?.toLowerCase() === "completed");
+  const anyFiledOne = documents.some(d => d.status?.toLowerCase() === "running");
+  const anyFailed = documents.some(d => d.status?.toLowerCase() === "failed");
+
+  if (anyFailed) return "FAILED";
+  if (anyFiledOne) return "RUNNING";
+  if (allCompleted) return "COMPLETED";
+  return pipelineStatus;
+}, [documents, pipelineStatus]);
+
+/* Fetching the company data */
+const company = useCompanyStore((s) => s.company);
+
   return (
     <Page>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -128,8 +147,11 @@ function ProcessingPage() {
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
-        <Summary label="Report ID" value={reportId || "No active report"} />
-        <Summary label="Pipeline Status" value={pipelineStatus} />
+          <div className="card-elevated p-4">
+            <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Company Details</div>
+            <div className="mt-1 truncate flex text-[15px] font-semibold tracking-tight">{company.companyName || "N/A"}    - <div className="font-thin"> {company.ticker || "N/A"}</div></div>
+        </div>
+        <Summary label="Pipeline Status" value={derivedPipelineStatus} />
         <Summary label="Extraction Files" value={`${counts.completed}/${counts.total} complete${counts.failed ? `, ${counts.failed} failed` : ""}`} />
       </div>
 
@@ -171,7 +193,7 @@ function ProcessingPage() {
                     <FileText className="h-5 w-5 text-[var(--navy)]" />
                   </div>
                   <div className="min-w-0">
-                    <div className="truncate text-[14px] font-medium">{name}</div>
+                    <div className="text-sm font-medium text-foreground">{company.ticker}{name.replace(/\.pdf$/i, "").replace(/^\d+/, "")}</div>
                     <div className="mt-0.5 text-[12px] text-muted-foreground">{messageFor(doc)}</div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 [
   {
     "company": "Unknown",
-    "source_pdf": "1781523908848-2019.pdf",
+    "source_pdf": "1781607776876-2019.pdf",
     "financials": {
       "2019": {
         "bank": {
@@ -303,12 +303,12 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-15T12:55:06.964375"
+      "normalized_at": "2026-06-16T11:13:01.543019"
     }
   },
   {
     "company": "Unknown",
-    "source_pdf": "1781523908889-2021.pdf",
+    "source_pdf": "1781607776916-2021.pdf",
     "financials": {
       "2021": {
         "consolidated": {
@@ -1020,12 +1020,12 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-15T12:55:27.525141"
+      "normalized_at": "2026-06-16T11:13:20.188827"
     }
   },
   {
     "company": "Unknown",
-    "source_pdf": "1781523908980-2023.pdf",
+    "source_pdf": "1781607777002-2023.pdf",
     "financials": {
       "2023": {
         "consolidated": {
@@ -1969,12 +1969,12 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-15T12:56:09.412120"
+      "normalized_at": "2026-06-16T11:13:55.589823"
     }
   },
   {
     "company": "Unknown",
-    "source_pdf": "1781523909059-2025.pdf",
+    "source_pdf": "1781607777130-2025.pdf",
     "financials": {
       "2025": {
         "group": {
@@ -3018,7 +3018,7 @@
       "version": "4.0",
       "normalized_by": "gemini-chunked",
       "db_ready": true,
-      "normalized_at": "2026-06-15T12:56:59.233926"
+      "normalized_at": "2026-06-16T11:14:32.141894"
     }
   }
 ]

@@ -59,11 +59,11 @@ def fetch_company_profile(symbol: str):
 
         logo_url = None
         if logo_data and logo_data.get("path"):
-            logo_url = f"https://www.cse.lk/{logo_data['path']}"
+            logo_url = f"https://cdn.cse.lk/cmt/{logo_data['path']}"
 
         return {
             "companyName": info.get("name"),
-            "ticker": info.get("symbol"),
+            "ticker": symbol if symbol else info.get("symbol"),
             "sector": info.get("sector"),
             "logo": logo_url
         }
