@@ -178,14 +178,23 @@ def _process_single_pdf(
         toc_index: Optional[int] = None
 
         if manual_page_mapping:
-            statement_pages = _normalize_manual_statement_pages(manual_page_mapping, total_pages)
+            offset_engine = DynamicPageOffsetResolutionEngine()
+            statement_refs = _normalize_manual_statement_refs(manual_page_mapping)
+            statement_pages = _normalize_manual_statement_pages(
+                pdf,
+                manual_page_mapping,
+                total_pages,
+                pdf_name,
+                offset_engine,
+            )
+            page_mappings = _build_page_mapping_diagnostics(pdf, statement_refs, offset_engine)
             _emit(
                 progress_callback,
                 pdf_name,
                 "STRUCTURE",
                 "completed",
                 "Using corrected manual statement page mappings",
-                {"statement_pages": statement_pages},
+                {"statement_pages": statement_pages, "page_mappings": page_mappings},
             )
         else:
             toc_page_indices = _find_toc_page(pdf)
@@ -265,7 +274,13 @@ def _process_single_pdf(
     }
 
 
-def _normalize_manual_statement_pages(manual_page_mapping: Dict[str, List[int]], total_pages: int) -> Dict[str, List[int]]:
+def _normalize_manual_statement_pages(
+    pdf: pdfplumber.PDF,
+    manual_page_mapping: Dict[str, List[int]],
+    total_pages: int,
+    pdf_name: str,
+    offset_engine: DynamicPageOffsetResolutionEngine,
+) -> Dict[str, List[int]]:
     aliases = {
         "income": "income_statement",
         "income_statement": "income_statement",
@@ -287,13 +302,62 @@ def _normalize_manual_statement_pages(manual_page_mapping: Dict[str, List[int]],
         pages = []
         for raw_page in raw_pages or []:
             try:
-                page = int(raw_page)
+                toc_page = int(raw_page)
             except (TypeError, ValueError):
                 continue
+
+            if not (1 <= toc_page <= total_pages):
+                continue
+
+            keywords = _STATEMENT_KEYWORDS.get(key, [])
+            resolved_page = offset_engine.resolve_correct_pdf_page(pdf, toc_page, keywords)
+            validated_page = _validate_statement_page(pdf, resolved_page, key, total_pages)
+            page = validated_page or resolved_page
             if 1 <= page <= total_pages and page not in pages:
                 pages.append(page)
+                logger.info(
+                    "PDF %s manual %s TOC/printed page %s resolved to PDF page %s",
+                    pdf_name,
+                    key,
+                    toc_page,
+                    page,
+                )
+
+                current_page = page
+                for offset in range(1, 4):
+                    next_page = current_page + offset
+                    if _is_next_page_continuation(pdf, current_page, next_page, key):
+                        if next_page not in pages:
+                            pages.append(next_page)
+                        current_page = next_page
+                    else:
+                        break
         resolved[key] = pages
     return resolved
+
+
+def _normalize_manual_statement_refs(manual_page_mapping: Dict[str, List[int]]) -> Dict[str, int]:
+    aliases = {
+        "income": "income_statement",
+        "income_statement": "income_statement",
+        "balance": "balance_sheet",
+        "balance_sheet": "balance_sheet",
+        "cashflow": "cash_flow",
+        "cash_flow": "cash_flow",
+        "cash_flow_statement": "cash_flow",
+        "equity": "equity",
+        "comprehensive_income": "comprehensive_income",
+    }
+    refs: Dict[str, int] = {}
+    for raw_key, raw_pages in manual_page_mapping.items():
+        key = aliases.get(str(raw_key))
+        if not key or not raw_pages:
+            continue
+        try:
+            refs[key] = int(raw_pages[0])
+        except (TypeError, ValueError):
+            continue
+    return refs
 
 
 def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:
@@ -728,11 +792,20 @@ def _detect_scale_multiplier(page_text: str) -> int:
     if not page_text:
         return 1
     text = page_text.lower()
-    if "rs. bn" in text or "rs.bn" in text or "'000,000,000" in text:
+    header_text = "\n".join(text.splitlines()[:40])
+    if re.search(r"\b(?:rs\.?\s*)?bn\b", text) or "billion" in text or "'000,000,000" in text:
         return 1_000_000_000
-    elif "rs. mn" in text or "rs.mn" in text or "'000,000" in text:
+    elif re.search(r"\b(?:rs\.?\s*)?mn\b", text) or "million" in text or "'000,000" in text:
         return 1_000_000
-    elif "rs. '000" in text or "rs.'000" in text or "rs 000" in text or "rs. 000" in text or "(000)" in text or "in thousands" in text:
+    elif (
+        re.search(r"(?:rs\.?\s*'?000\b|'000\b)", text)
+        or re.search(r"(?m)^\s*'?000\s*$", header_text)
+        or re.search(r"(?m)\b(?:group|company|bank|consolidated|year|rs)\b.*'?000\b", header_text)
+        or re.search(r"(?m)'?000\b.*\b(?:group|company|bank|consolidated|year|rs)\b", header_text)
+        or "(000)" in text
+        or "in thousands" in text
+        or "thousand" in text
+    ):
         return 1_000
     return 1
 
@@ -740,6 +813,23 @@ def _apply_multiplier(data: Any, multiplier: int) -> Any:
     if multiplier == 1:
         return data
         
+    per_share_terms = (
+        "basic earnings per share",
+        "basic earnings per ordinary share",
+        "diluted earnings per share",
+        "diluted earnings per ordinary share",
+        "dividend per share",
+        "earnings_per_share",
+        "basic_earnings_per_share",
+        "diluted_earnings_per_share",
+        "dividend_per_share",
+    )
+
+    def is_per_share_key(key: Any) -> bool:
+        normalized = re.sub(r"[^a-z0-9]+", "_", str(key or "").lower()).strip("_")
+        words = normalized.replace("_", " ")
+        return any(term in words or term in normalized for term in per_share_terms)
+
     def multiply_value(val):
         if isinstance(val, (int, float)):
             return val * multiplier
@@ -766,13 +856,20 @@ def _apply_multiplier(data: Any, multiplier: int) -> Any:
 
     if isinstance(data, dict):
         for k, v in data.items():
+            if is_per_share_key(k):
+                data[k] = v
+                continue
             if isinstance(v, dict):
                 data[k] = _apply_multiplier(v.copy(), multiplier)
             elif isinstance(v, list):
                 new_list = []
                 for item in v:
                     if isinstance(item, dict):
-                        new_list.append(_apply_multiplier(item.copy(), multiplier))
+                        row_label = item.get("label") or item.get("item") or item.get("name") or item.get("description")
+                        if is_per_share_key(row_label):
+                            new_list.append(item)
+                        else:
+                            new_list.append(_apply_multiplier(item.copy(), multiplier))
                     else:
                         new_list.append(multiply_value(item))
                 data[k] = new_list

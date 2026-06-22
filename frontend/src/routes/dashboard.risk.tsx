@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer, Line, LineChart, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { AlertTriangle, ShieldCheck, Loader2 } from "lucide-react";
+import { filterValidYears } from "@/lib/year-utils";
 
 export const Route = createFileRoute("/dashboard/risk")({
   head: () => ({ meta: [{ title: "Risk Analysis — FDI" }, { name: "description", content: "Comprehensive risk scoring dashboard." }] }),
@@ -29,7 +30,7 @@ function RiskPage() {
     setLoading(true);
     getFullReport(reportId).then((data) => {
       setReport(data);
-      const years = Object.keys(data?.analytics?.ratios?.by_year || {}).map(Number).filter(Number.isFinite).sort();
+      const years = filterValidYears(data?.analytics?.ratios?.by_year || {});
       if (years.length) setYear(years[years.length - 1]);
     }).catch(() => setReport(null))
       .finally(() => setLoading(false));
@@ -51,7 +52,7 @@ function RiskPage() {
 
     const ratios = report.analytics.ratios;
     const byYear = ratios.by_year || {};
-    const yearsList = Object.keys(byYear).map(Number).filter(Number.isFinite).sort();
+    const yearsList = filterValidYears(byYear);
     
     const yData = byYear[year] || byYear[yearsList[yearsList.length - 1]] || {};
     

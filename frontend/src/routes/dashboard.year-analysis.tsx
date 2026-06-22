@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Loader2 } from "lucide-react";
+import { filterValidYears } from "@/lib/year-utils";
 
 export const Route = createFileRoute("/dashboard/year-analysis")({
   head: () => ({ meta: [{ title: "Year Analysis — FDI" }, { name: "description", content: "Multi-year financial trends and growth analytics." }] }),
@@ -29,7 +30,7 @@ function YearPage() {
     setLoading(true);
     getFullReport(reportId).then((data) => {
       setReport(data);
-      const years = Object.keys(data?.analytics?.ratios?.by_year || {}).map(Number).filter(Number.isFinite).sort();
+      const years = filterValidYears(data?.analytics?.ratios?.by_year || {});
       if (years.length) setYear(years[years.length - 1]);
     }).catch(() => setReport(null))
       .finally(() => setLoading(false));
@@ -52,7 +53,7 @@ function YearPage() {
     }
     const ratios = report.analytics.ratios;
     const byYear = ratios.by_year || {};
-    const yearsList = Object.keys(byYear).map(Number).filter(Number.isFinite).sort();
+    const yearsList = filterValidYears(byYear);
 
     let maxRev = 0;
     yearsList.forEach(y => {

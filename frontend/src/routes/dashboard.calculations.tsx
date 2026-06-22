@@ -6,6 +6,7 @@ import { getCurrentReportId, getFullReport, type NormalizedReportGroup } from "@
 import { Download, ArrowUpDown, Loader2, Table2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import { filterValidYears } from "@/lib/year-utils";
 
 export const Route = createFileRoute("/dashboard/calculations")({
   head: () => ({ meta: [{ title: "Calculation Details — FDI" }, { name: "description", content: "Advanced financial metrics across multiple years." }] }),
@@ -29,7 +30,7 @@ function CalculationsPage() {
       .then((data) => {
         setReport(data);
         setNormalizedReports(Array.isArray(data?.data_views?.normalized_grouped_results) ? data.data_views.normalized_grouped_results : []);
-        const yearsList = Object.keys(data?.analytics?.ratios?.by_year || {}).map(Number).filter(Number.isFinite).sort();
+        const yearsList = filterValidYears(data?.analytics?.ratios?.by_year || {});
         if (yearsList.length) setYear(yearsList[yearsList.length - 1]);
       })
       .catch(() => {
@@ -52,7 +53,7 @@ function CalculationsPage() {
     }
     const ratios = report.analytics.ratios;
     const byYear = ratios.by_year || {};
-    const yearsList = Object.keys(byYear).map(Number).filter(Number.isFinite).sort();
+    const yearsList = filterValidYears(byYear);
     
     let maxRev = 0;
     yearsList.forEach(y => {

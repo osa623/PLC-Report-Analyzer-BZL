@@ -639,23 +639,23 @@ function ValidationPage() {
             </div>
 
             {/* Year accordions */}
-             <div className="space-y-3">
-              {report.years.map((year, yearIdx) => {
-                const wrongYear = year.year - 2;
-
-                if (year.year === wrongYear) {
-                  return null;
-                }
-
-                return (
-                  <YearAccordion
-                    key={`${report.source_pdf}-${year.year}`}
-                    reportSourcePdf={report.source_pdf}
-                    year={year}
-                    defaultOpen={yearIdx === 0}
-                  />
+            <div className="space-y-3">
+              {report.years.filter((year) => {
+                // Skip years where every row value is null
+                const totalDataRows = year.entities.reduce(
+                  (sum, e) => sum + e.statements.reduce(
+                    (s, st) => s + st.rows.filter((r) => r.value != null).length, 0
+                  ), 0
                 );
-              })}
+                return totalDataRows > 0;
+              }).map((year, yearIdx) => (
+                <YearAccordion
+                  key={`${report.source_pdf}-${year.year}`}
+                  reportSourcePdf={report.source_pdf}
+                  year={year}
+                  defaultOpen={yearIdx === 0}
+                />
+              ))}
             </div>
           </motion.section>
         ))}
