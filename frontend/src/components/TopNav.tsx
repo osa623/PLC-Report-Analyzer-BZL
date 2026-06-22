@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, Search, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ProgressPanel } from "./ProgressPanel";
 
 const links = [
   { to: "/", label: "Upload" },
@@ -25,7 +26,8 @@ export function TopNav() {
             Financial Document Intelligence
           </span>
         </Link>
-
+        
+        {/*
         <nav className="hidden items-center gap-1 lg:flex">
           {links.map((l) => {
             const active = l.to === "/" ? pathname === "/" : pathname.startsWith(l.to);
@@ -42,7 +44,7 @@ export function TopNav() {
               </Link>
             );
           })}
-        </nav>
+        </nav> */}
 
         <div className="flex items-center gap-2">
           <button aria-label="Notifications" className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-white/60 text-muted-foreground transition-colors hover:bg-[var(--hover)]">
@@ -82,7 +84,8 @@ export function Page({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--surface)]">
       <TopNav />
-      <main className="mx-auto max-w-[1440px] px-4 py-10 md:px-8 md:py-14">{children}</main>
+      <main className="mx-auto max-w-[1440px] px-4 py-10 pb-24 md:px-8 md:py-14 md:pb-28">{children}</main>
+      <ProgressPanel />
     </div>
   );
 }
