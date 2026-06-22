@@ -8,16 +8,19 @@ import {
   CheckCircle2,
   Clock,
   Loader2,
-  MapPin,
   Lock,
   X,
   ChevronRight,
   FileCheck,
+  Info,
+  FileEdit,
+  Shield,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { recentUploads } from "@/lib/mock-data";
 import { uploadReports } from "@/lib/api";
 import CompanyForm from "@/components/CompanyForm";
+import { useCompanyStore } from "@/lib/store/company-store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -33,8 +36,6 @@ export const Route = createFileRoute("/")({
   component: UploadPage,
 });
 
-const STEPS = ["Company", "Documents", "Review"] as const;
-
 function UploadPage() {
   const [drag, setDrag] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
@@ -42,6 +43,7 @@ function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const company = useCompanyStore((s) => s.company);
 
   const selectFiles = (list: FileList | null) => {
     const selected = Array.from(list || []).filter(
@@ -65,7 +67,11 @@ function UploadPage() {
     setUploading(true);
     setError("");
     try {
-      await uploadReports(files);
+      await uploadReports(files, {
+        symbol: company.ticker,
+        name: company.companyName,
+        sector: company.sector,
+      });
       navigate({ to: "/processing" });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
@@ -76,109 +82,132 @@ function UploadPage() {
 
   return (
     <Page>
+      {/* ── Page Intro with Title on Left and SVG Graphic on Right ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-10">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="flex-1"
+        >
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600 mb-2">
+            New Submission
+          </p>
+          <h1 className="text-[36px] font-extrabold leading-tight tracking-tight text-[var(--navy)]">
+            Submit Your Company Reports
+          </h1>
+          <p className="text-[14px] text-gray-500 mt-2 max-w-xl">
+            Upload annual reports and let our AI extract key insights quickly and accurately.
+          </p>
 
-      {/* ── Page intro ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="mb-10"
-      >
-        <p className="text-[11.5px] font-medium uppercase tracking-[0.12em] text-black/30 mb-2">
-          New submission
-        </p>
-        <h1 className="text-[28px] font-semibold leading-snug tracking-tight text-[var(--navy)]">
-          Submit Your Company Reports Here.
-        </h1>
-        <p className="text-[13px] w-[40vw] bg-black/60 text-start border-white/60 border-2 font-thin rounded-r-2xl font-medium leading-snug text-white p-2 mt-2 ">
-          Currently, only annual reports from companies registered with the<span className="font-bold"> Colombo Stock Exchange (CSE)</span> are supported. We plan to support additional document types and organizations in future releases.
-        </p>
-      </motion.div>
-
-      {/* ── Step trail ── 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="mb-8 flex items-center gap-0"
-      >
-        {STEPS.map((step, i) => (
-          <div key={step} className="flex items-center">
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-semibold transition-all
-                  ${i === 0
-                    ? "bg-[var(--navy)] text-white"
-                    : "border border-black/15 bg-white text-black/30"
-                  }`}
-              >
-                {i + 1}
-              </span>
-              <span
-                className={`text-[12.5px] ${
-                  i === 0
-                    ? "font-semibold text-[var(--navy)]"
-                    : "text-black/35"
-                }`}
-              >
-                {step}
-              </span>
+          {/* Colombo Stock Exchange Info Card */}
+          <div className="flex items-start gap-3 bg-blue-50/40 border border-blue-100 rounded-2xl p-4 max-w-2xl mt-5">
+            <div className="bg-blue-900 text-white rounded-full p-1 shrink-0">
+              <Info className="h-3.5 w-3.5" />
             </div>
-            {i < STEPS.length - 1 && (
-              <div className="mx-3 h-px w-10 bg-black/10" />
-            )}
+            <p className="text-[12.5px] leading-relaxed text-blue-900/80">
+              Currently, only <strong className="font-semibold text-blue-950">annual reports</strong> from companies registered with the <strong className="font-semibold text-blue-950">Colombo Stock Exchange (CSE)</strong> are supported. We plan to support additional document types and organizations in future releases.
+            </p>
           </div>
-        ))}
-      </motion.div> */}
+        </motion.div>
 
-      {/* ── Two-column grid ── */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
+        {/* Beautiful Floating Inline SVG illustration */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="hidden md:block w-72 h-44 shrink-0 relative"
+        >
+          <svg width="280" height="180" viewBox="0 0 280 180" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+            {/* Wave lines background */}
+            <path d="M10 80 Q 70 40, 130 90 T 250 60" stroke="#E2E8F0" strokeWidth="1.5" fill="none" strokeDasharray="4 4" />
+            <path d="M20 110 Q 80 70, 140 120 T 260 90" stroke="#E2E8F0" strokeWidth="1" fill="none" />
+            
+            {/* Document sheet */}
+            <g transform="translate(100, 20)">
+              {/* 3D shadow */}
+              <rect x="2" y="4" width="96" height="126" rx="12" fill="#E2E8F0" opacity="0.4" />
+              {/* Document body */}
+              <rect x="0" y="0" width="96" height="126" rx="12" fill="white" stroke="#E2E8F0" strokeWidth="1" />
+              
+              {/* Fold at top right */}
+              <path d="M84 0 L96 12 L84 12 Z" fill="#F1F5F9" stroke="#E2E8F0" strokeWidth="1" />
+              
+              {/* Lines inside document */}
+              <rect x="12" y="24" width="50" height="6" rx="3" fill="#E2E8F0" />
+              <rect x="12" y="38" width="72" height="4" rx="2" fill="#F1F5F9" />
+              <rect x="12" y="48" width="60" height="4" rx="2" fill="#F1F5F9" />
+              <rect x="12" y="58" width="40" height="4" rx="2" fill="#F1F5F9" />
+              
+              {/* Pie Chart element inside document */}
+              <circle cx="48" cy="90" r="18" fill="#F1F5F9" />
+              <path d="M48 90 L48 72 A18 18 0 0 1 66 90 Z" fill="#2563EB" />
+              <path d="M48 90 L66 90 A18 18 0 0 1 48 108 Z" fill="#93C5FD" />
+            </g>
 
-        {/* ── LEFT: Map placeholder + Company Form ── */}
+            {/* Blue circle badge with Upload Icon */}
+            <g transform="translate(90, 65)">
+              <circle cx="20" cy="20" r="20" fill="#0B1F3A" className="shadow-lg" />
+              <path d="M14 20 L20 14 L26 20 M20 14 L20 26 M13 26 L27 26" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </g>
+            
+            {/* Decorative bubble dots */}
+            <circle cx="210" cy="115" r="7" fill="#93C5FD" opacity="0.6" />
+            <circle cx="70" cy="45" r="4" fill="#CBD5E1" />
+          </svg>
+        </motion.div>
+      </div>
+
+      {/* ── Two-column Grid (Card 1 & Card 2) ── */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
+        {/* Card 1: 1. SELECT COMPANY */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white"
+          className="flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)]"
         >
-          {/* Panel label */}
-          <div className="flex items-center gap-2 border-b border-black/6 px-6 py-3.5">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black/30">
-              Company details
-            </span>
+          <div className="flex items-center gap-3 border-b border-gray-50 px-6 py-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <FileEdit className="h-5 w-5" strokeWidth={1.75} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-slate-800">
+                1. SELECT COMPANY
+              </h2>
+              <p className="text-xs text-gray-400">
+                Search and select the correct company to begin.
+              </p>
+            </div>
           </div>
 
-
-
-          {/* Company form */}
           <div className="flex-1 px-6 py-6">
             <CompanyForm />
           </div>
         </motion.div>
 
-        {/* ── RIGHT: Upload panel ── */}
+        {/* Card 2: 2. UPLOAD REPORTS */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.5 }}
-          className="flex flex-col overflow-hidden rounded-2xl border border-black/8 bg-white"
+          className="flex flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_20px_-2px_rgba(15,23,42,0.05)]"
         >
-          {/* Panel label */}
-          <div className="flex items-center justify-between border-b border-black/6 px-6 py-3.5">
-            <div className="flex items-center gap-2">
-              <UploadCloud className="h-3.5 w-3.5 text-black/30" strokeWidth={1.5} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black/30">
-                Annual reports
-              </span>
+          <div className="flex items-center gap-3 border-b border-gray-50 px-6 py-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <UploadCloud className="h-5 w-5" strokeWidth={1.75} />
             </div>
-            {files.length > 0 && (
-              <span className="rounded-full bg-[var(--navy)] px-2.5 py-0.5 text-[11px] font-medium text-white">
-                {files.length} of 5
-              </span>
-            )}
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wide text-slate-800">
+                2. UPLOAD REPORTS
+              </h2>
+              <p className="text-xs text-gray-400">
+                Upload your annual report (PDF) files.
+              </p>
+            </div>
           </div>
 
-          {/* Drop zone */}
+          {/* Drag zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
             onDragLeave={() => setDrag(false)}
@@ -187,29 +216,28 @@ function UploadPage() {
               setDrag(false);
               selectFiles(e.dataTransfer.files);
             }}
-            className={`relative mx-5 mt-5 flex flex-col items-center rounded-xl border border-dashed px-8 py-10 text-center transition-all duration-200
+            className={`relative mx-6 mt-6 flex flex-col items-center rounded-2xl border border-dashed px-8 py-10 text-center transition-all duration-200
               ${drag
-                ? "border-[var(--navy)] bg-[var(--navy)]/[0.03]"
-                : "border-black/12 bg-black/[0.015]"
+                ? "border-blue-500 bg-blue-50/20"
+                : "border-gray-250 bg-slate-50/30 hover:bg-slate-50/70"
               }`}
           >
-            {/* Upload icon — subtle lift animation */}
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ repeat: Infinity, duration: 3.2, ease: "easeInOut" }}
-              className="mb-5 grid h-14 w-14 place-items-center rounded-2xl border border-black/8 bg-white shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+              className="mb-5 grid h-12 w-12 place-items-center rounded-full border border-gray-100 bg-white shadow-sm"
             >
               <UploadCloud
-                className={`h-6 w-6 transition-colors ${drag ? "text-[var(--navy)]" : "text-black/40"}`}
+                className={`h-5 w-5 transition-colors ${drag ? "text-blue-500" : "text-gray-400"}`}
                 strokeWidth={1.5}
               />
             </motion.div>
 
-            <p className="text-[15px] font-semibold text-[var(--navy)]">
-              Drop your PDF files here
+            <p className="text-sm font-bold text-slate-800">
+              Drag & drop your PDF files here
             </p>
-            <p className="mt-1 text-[13px] text-black/40">
-              or pick them from your computer
+            <p className="mt-1 text-xs text-gray-400">
+              or browse from your computer
             </p>
 
             <input
@@ -224,41 +252,41 @@ function UploadPage() {
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="mt-5 inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--navy)] px-5 text-[13px] font-medium text-white transition-opacity hover:opacity-80"
+              className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-[#0B1F3A] px-5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 shadow-sm"
             >
               Choose files
             </button>
 
-            <p className="mt-4 text-[11.5px] text-black/30">
-              PDF only · up to 5 reports per batch
+            <p className="mt-4 text-[11px] text-gray-450">
+              PDF only · Up to 5 reports per batch · Max 50MB per file
             </p>
           </div>
 
-          {/* File list — animates in when files are added */}
+          {/* File list */}
           {files.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className="mx-5 mt-3 overflow-hidden rounded-xl border border-black/8"
+              className="mx-6 mt-3 overflow-hidden rounded-xl border border-gray-100"
             >
               {files.map((file, idx) => (
                 <div
                   key={`${file.name}-${file.size}`}
-                  className="group flex items-center gap-3 border-b border-black/6 px-4 py-2.5 last:border-b-0 hover:bg-black/[0.015] transition-colors"
+                  className="group flex items-center gap-3 border-b border-gray-50 px-4 py-2.5 last:border-b-0 hover:bg-slate-50 transition-colors"
                 >
-                  <FileCheck className="h-4 w-4 shrink-0 text-[var(--navy)]" strokeWidth={1.5} />
-                  <span className="flex-1 truncate text-[12.5px] font-medium text-[var(--navy)]">
+                  <FileCheck className="h-4 w-4 shrink-0 text-blue-600" strokeWidth={1.5} />
+                  <span className="flex-1 truncate text-xs font-semibold text-slate-700">
                     {file.name}
                   </span>
-                  <span className="shrink-0 text-[11px] text-black/35">
+                  <span className="shrink-0 text-[11px] text-gray-400">
                     {(file.size / (1024 * 1024)).toFixed(1)} MB
                   </span>
                   <button
                     type="button"
                     onClick={() => removeFile(idx)}
                     aria-label={`Remove ${file.name}`}
-                    className="ml-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-black/25 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/6 hover:text-black/60"
+                    className="ml-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-100 hover:text-gray-600"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -269,48 +297,95 @@ function UploadPage() {
 
           {/* Error message */}
           {error && (
-            <p className="mx-5 mt-3 rounded-lg border border-black/8 bg-black/[0.02] px-4 py-2.5 text-[12.5px] text-black/60">
+            <p className="mx-6 mt-3 rounded-lg border border-red-100 bg-red-50/50 px-4 py-2.5 text-xs text-red-600 font-medium">
               {error}
             </p>
           )}
 
           {/* Footer */}
-          <div className="mt-auto px-5 pb-5 pt-4">
+          <div className="mt-6 border-t border-gray-100 bg-slate-50/40 px-6 py-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
             {/* Security note */}
-            <div className="mb-4 flex items-center gap-2 text-[11px] text-black/30">
-              <Lock className="h-3 w-3 shrink-0" strokeWidth={1.5} />
-              <span>Encrypted in transit · processed in your private workspace</span>
+            <div className="flex items-center gap-2 text-[11px] text-gray-400">
+              <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={1.5} />
+              <span>Encrypted in transit · Processed in your private workspace</span>
             </div>
 
-            <div className="flex items-center justify-between">
-              {files.length > 0 ? (
+            <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+              {files.length > 0 && (
                 <button
                   type="button"
                   onClick={() => { setFiles([]); setError(""); }}
-                  className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--navy)] px-5 text-[13px] font-medium text-white transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 text-[13px] font-semibold text-slate-600 hover:bg-gray-50 transition-colors"
                 >
                   Clear all
                 </button>
-              ) : (
-                <span />
               )}
 
               <button
                 type="button"
                 onClick={submit}
                 disabled={uploading}
-                className="inline-flex h-9 items-center gap-2 rounded-lg bg-[var(--navy)] px-5 text-[13px] font-medium text-white transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-white px-5 text-[13px] font-semibold text-blue-600 transition-colors hover:bg-blue-50/50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
               >
                 {uploading ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <UploadCloud className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  <span className="flex items-center gap-2">
+                    Start extraction
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
                 )}
-                {uploading ? "Starting…" : "Start extraction"}
               </button>
             </div>
           </div>
         </motion.div>
+      </div>
+
+      {/* ── Value Proposition Footer Banner ── */}
+      <div className="mt-12 bg-slate-50/50 border border-gray-100 rounded-3xl p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-center">
+        {/* Item 1 */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <Shield className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-800">Your data is secure</h4>
+            <p className="text-[10px] text-gray-400 leading-tight">We use enterprise-grade encryption and never share your data.</p>
+          </div>
+        </div>
+
+        {/* Item 2 */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <Lock className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-800">Secure & Private</h4>
+            <p className="text-[10px] text-gray-400 leading-tight">End-to-end encryption</p>
+          </div>
+        </div>
+
+        {/* Item 3 */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-800">AI-Powered</h4>
+            <p className="text-[10px] text-gray-400 leading-tight">Accurate data extraction</p>
+          </div>
+        </div>
+
+        {/* Item 4 */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-slate-800">Trusted by Professionals</h4>
+            <p className="text-[10px] text-gray-400 leading-tight">Built for compliance</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Commented-out sections preserved exactly as original ── */}

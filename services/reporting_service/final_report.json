@@ -1,5 +1,5 @@
 {
-  "report_id": "cc667f50-18f9-48e6-9247-1ae1e3b9201c",
+  "report_id": "37dcc867-cd57-4c59-96e9-37b6f7301ad7",
   "status": "completed",
   "strict_report": {
     "source": "analytics.json",
@@ -17,39 +17,29 @@
         ],
         "rows": [
           [
-            "2017",
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          [
             "2018",
-            null,
-            null,
-            null,
-            null,
-            0.020046,
+            0.078981,
+            0.037029,
+            0.023147,
+            8.114202,
+            0.00894,
             0.21959,
             null
           ],
           [
             "2019",
-            null,
-            null,
-            null,
-            null,
-            0.012546,
+            0.083602,
+            0.026266,
+            0.852521,
+            2.840237,
+            0.01493,
             0.223446,
             null
           ],
           [
             "2020",
-            0.046054,
-            0.011658,
+            0.047199,
+            0.012639,
             null,
             2.950412,
             0.013765,
@@ -68,8 +58,8 @@
           ],
           [
             "2022",
-            0.330027,
-            0.139326,
+            0.229,
+            0.082346,
             1.196824,
             1.714333,
             0.08313,
@@ -111,7 +101,7 @@
     },
     "key_findings": [
       "Latest analytics period: 2025.",
-      "Confidence band: high with score 0.9644.",
+      "Confidence band: high with score 1.0.",
       "Risk level: high.",
       "Consistent multi-year validation coverage available"
     ],
@@ -119,16 +109,15 @@
     "validation_summary": [
       "Consistent multi-year validation coverage available"
     ],
-    "financial_health_score": 0.9644,
+    "financial_health_score": 1.0,
     "risk_score": 100.0,
     "scores": {
       "confidence": {
-        "score": 0.9644,
-        "raw_score": 0.9644,
-        "overall_data_quality_score": 0.9644,
+        "score": 1.0,
+        "raw_score": 1.0,
+        "overall_data_quality_score": 1.0,
         "band": "high",
         "valid_years": [
-          "2017",
           "2018",
           "2019",
           "2020",

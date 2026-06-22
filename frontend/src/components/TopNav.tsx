@@ -45,11 +45,6 @@ export function TopNav() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <button className="hidden h-9 items-center gap-2 rounded-full border border-border bg-white/60 px-3 text-[13px] text-muted-foreground transition-colors hover:bg-[var(--hover)] md:flex">
-            <Search className="h-3.5 w-3.5" />
-            <span>Search</span>
-            <kbd className="ml-2 rounded border border-border bg-background px-1.5 text-[10px]">⌘K</kbd>
-          </button>
           <button aria-label="Notifications" className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-white/60 text-muted-foreground transition-colors hover:bg-[var(--hover)]">
             <Bell className="h-4 w-4" />
             <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-[var(--gold)]" />

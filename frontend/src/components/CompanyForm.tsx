@@ -3,9 +3,11 @@ import { searchCompanies, getCompany } from "@/lib/company-api";
 import { useCompanyStore } from "@/lib/store/company-store";
 import {
   Building2,
-  BadgeDollarSign,
   Briefcase,
-  Loader2
+  Loader2,
+  Search,
+  SlidersHorizontal,
+  ChevronDown
 } from "lucide-react";
 
 type Company = {
@@ -20,11 +22,8 @@ export default function CompanyForm() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-
-
-const company = useCompanyStore((s) => s.company);
-const setCompany = useCompanyStore((s) => s.setCompany);
-
+  const company = useCompanyStore((s) => s.company);
+  const setCompany = useCompanyStore((s) => s.setCompany);
 
   const debounceRef = useRef<any>(null);
 
@@ -93,139 +92,101 @@ const setCompany = useCompanyStore((s) => s.setCompany);
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      {/* CARD */}
-      <div className="rounded-3xl border border-border/60 bg-white/80 backdrop-blur-xl shadow-[0_30px_80px_-40px_rgba(0,0,0,0.25)] p-6">
+    <div className="w-full flex flex-col gap-5">
+      {/* Search Input */}
+      <div className="relative w-full">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          value={query}
+          onChange={(e) => handleSearch(e.target.value)}
+          placeholder="Search company name or symbol..."
+          className="w-full h-11 pl-11 pr-11 rounded-xl border border-gray-200 bg-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+        />
+        {loading ? (
+          <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+        ) : (
+          <SlidersHorizontal className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 cursor-pointer hover:text-gray-600 transition-colors" />
+        )}
 
-        {/* HEADER */}
-        <div className="text-start w-full items-center justify-start mb-6">
-          <p className="text-xs text-muted-foreground mt-1">
-            Search for the company name and select the correct company from the results.
-          </p>
-           <p className="text-xs font-italic text-muted-foreground mt-1">
-            You may update the sector to the most appropriate category. </p>
-        </div>
-
-
-
-        {/* LOGO AND FORM */}
-        <div className="mt-6 relative flex items-center gap-4 justify-start">
-
-          <div className="h-20 rounded-full w-20 border overflow-hidden flex items-center justify-center bg-white">
-            {company.logo ? (
-              <img
-                src={company.logo}
-                className="h-full w-full object-contain"
-              />
-            ) : (
-              <span className="text-xs text-gray-400">Logo</span>
-            )}
+        {/* DROPDOWN */}
+        {results.length > 0 && (
+          <div className="absolute z-50 mt-2 w-full bg-white border border-gray-150 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+            {results.map((item, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => selectCompany(item.symbol)}
+                className="w-full text-left px-4 py-3 hover:bg-slate-50 flex justify-between items-center transition-colors border-b last:border-b-0 border-gray-100"
+              >
+                <div>
+                  <p className="text-sm font-medium text-slate-800">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {item.symbol}
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                  {item.sector}
+                </span>
+              </button>
+            ))}
           </div>
-          <div className="relative w-[30vw]">
+        )}
+      </div>
 
-          <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-
-          <input
-            value={query}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Search company name or symbol..."
-            className="w-full h-10 pl-11 pr-4 rounded-2xl border bg-white text-sm focus:ring-2 focus:ring-black/10 outline-none"
-          />
-
-          {loading && (
-            <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-500" />
-          )}
-
-          {/* DROPDOWN */}
-          {results.length > 0 && (
-            <div className="absolute z-50 mt-2 w-full bg-white border rounded-2xl shadow-lg overflow-hidden">
-
-              {results.map((item, i) => (
-                <button
-                  key={i}
-                  onClick={() => selectCompany(item.symbol)}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 flex justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-medium">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {item.symbol}
-                    </p>
-                  </div>
-
-                  <span className="text-xs text-gray-400">
-                    {item.sector}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-          </div>
-
-        </div>
-
-        {/* FORM */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-
-          {/* NAME */}
-          <div>
-            <label className="text-sm font-medium">
-              Company Name
-            </label>
+      {/* Grid: Name & Ticker */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Company Name */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
+            Company Name
+          </label>
+          <div className="relative">
+            <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               value={company.companyName}
               readOnly
-              className="w-full mt-2 h-11 px-3 border rounded-xl bg-gray-50"
+              placeholder="Enter company name"
+              className="w-full h-11 pl-10 px-3 border border-gray-200 rounded-xl bg-slate-50/50 text-sm outline-none text-slate-700 font-medium"
             />
-          </div>
-
-          {/* TICKER */}
-          <div>
-            <label className="text-sm font-medium">
-              Ticker
-            </label>
-            <input
-              value={company.ticker}
-              readOnly
-              className="w-full mt-2 h-11 px-3 border rounded-xl bg-gray-50"
-            />
-          </div>
-
-          {/* SECTOR */}
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium">
-              Sector
-            </label>
-            <div className="relative mt-2">
-              <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-
-              <input
-                value={company.sector}
-                onChange={(e) =>
-                  setCompany({ ...company, sector: e.target.value })
-                }
-                className="w-full h-11 pl-10 px-3 border rounded-xl"
-              />
-            </div>
           </div>
         </div>
 
-        {/* STATUS 
-        <div className="flex flex-wrap gap-2 mt-6">
-          {["API Connected", "Auto Fill Active", "CSE Live Data"].map(
-            (t) => (
-              <span
-                key={t}
-                className="text-xs px-3 py-1 rounded-full border bg-gray-50"
-              >
-                {t}
-              </span>
-            )
-          )}
-        </div> */}
+        {/* Ticker */}
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
+            Ticker
+          </label>
+          <div className="relative">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">#</span>
+            <input
+              value={company.ticker}
+              readOnly
+              placeholder="Enter ticker symbol"
+              className="w-full h-11 pl-10 px-3 border border-gray-200 rounded-xl bg-slate-50/50 text-sm outline-none text-slate-700 font-medium"
+            />
+          </div>
+        </div>
+      </div>
 
+      {/* Sector */}
+      <div className="flex flex-col gap-1.5">
+        <label className="text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
+          Sector
+        </label>
+        <div className="relative">
+          <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input
+            value={company.sector}
+            onChange={(e) =>
+              setCompany({ ...company, sector: e.target.value })
+            }
+            placeholder="Select sector"
+            className="w-full h-11 pl-10 pr-10 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-700 font-medium transition-all"
+          />
+          <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        </div>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { Page } from "@/components/TopNav";
 import { Pipeline } from "@/components/Pipeline";
 import { processingFiles } from "@/lib/mock-data";
 import { getCurrentFileNames, getCurrentReportId, getDocumentStatuses, getPipelineStages, type PipelineDocument } from "@/lib/api";
-import { FileText, RefreshCw, AlertTriangle, CheckCircle2, Loader2, Table2, MapPinned } from "lucide-react";
+import { FileText, RefreshCw, AlertTriangle, CheckCircle2, Loader2, Table2, MapPinned, DownloadIcon, UploadIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useCompanyStore } from "@/lib/store/company-store";
@@ -116,9 +116,7 @@ function ProcessingPage() {
   const allCompleted = documents.length > 0 &&
   documents.every(d => d.status?.toLowerCase() === "completed");
   const anyFiledOne = documents.some(d => d.status?.toLowerCase() === "running");
-  const anyFailed = documents.some(d => d.status?.toLowerCase() === "failed");
-
-  if (anyFailed) return "FAILED";
+;
   if (anyFiledOne) return "RUNNING";
   if (allCompleted) return "COMPLETED";
   return pipelineStatus;
@@ -136,14 +134,24 @@ const company = useCompanyStore((s) => s.company);
             Track upload, parsing, structure detection and extraction for each annual report.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--hover)]"
-        >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Refresh
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex cursor-pointer h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--hover)]"
+          >
+            <UploadIcon className="h-3.5 w-3.5" />
+            Add Another Report to the Batch
+          </button>
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-white px-4 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--hover)]"
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -151,8 +159,8 @@ const company = useCompanyStore((s) => s.company);
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Company Details</div>
             <div className="mt-1 truncate flex text-[15px] font-semibold tracking-tight">{company.companyName || "N/A"}    - <div className="font-thin"> {company.ticker || "N/A"}</div></div>
         </div>
-        <Summary label="Pipeline Status" value={derivedPipelineStatus} />
-        <Summary label="Extraction Files" value={`${counts.completed}/${counts.total} complete${counts.failed ? `, ${counts.failed} failed` : ""}`} />
+        <Summary label="Full Pipeline Status" value={derivedPipelineStatus} />
+        <Summary label="Progress of The Extraction Files" value={`${counts.completed}/${counts.total} complete${counts.failed ? `, ${counts.failed} failed` : ""}`} />
       </div>
 
       {error && (
@@ -277,8 +285,41 @@ const company = useCompanyStore((s) => s.company);
 function Summary({ label, value }: { label: string; value: string }) {
   return (
     <div className="card-elevated p-4">
-      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 truncate text-[15px] font-semibold tracking-tight">{value}</div>
+      <div className="text-[11px] uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+
+      {value.includes("complete") && value.includes("failed") ? (
+        <div className="mt-1 flex items-center gap-3 text-[15px] font-semibold tracking-tight">
+          {value.split(",").map((part, i) => {
+            const text = part.trim();
+
+            return text.includes("failed") ? (
+              <span key={i} className="text-[color:var(--error)]">
+                {text}
+              </span>
+            ) : (
+              <span key={i} className="text-[color:var(--success)]">
+                {text}
+              </span>
+            );
+          })}
+        </div>
+      ) : value.includes("failed") ? (
+        <div className="mt-1 flex items-center gap-2 text-[15px] font-semibold tracking-tight text-[color:var(--error)]">
+          <AlertTriangle className="h-4 w-4" />
+          {value}
+        </div>
+      ) : value.includes("complete") ? (
+        <div className="mt-1 flex items-center gap-2 text-[15px] font-semibold tracking-tight text-[color:var(--success)]">
+          <CheckCircle2 className="h-4 w-4" />
+          {value}
+        </div>
+      ) : (
+        <div className="mt-1 text-[15px] font-semibold tracking-tight">
+          {value}
+        </div>
+      )}
     </div>
   );
 }
