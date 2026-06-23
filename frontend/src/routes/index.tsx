@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { motion } from "framer-motion";
+import { useAuthStore } from "@/lib/store/auth-store";
 import {
   UploadCloud,
   FileText,
@@ -37,6 +38,16 @@ export const Route = createFileRoute("/")({
 });
 
 function UploadPage() {
+  const token = useAuthStore((s) => s.token);
+
+  if (!token) {
+    return <WelcomingPage />;
+  }
+
+  return <UploadPageContent />;
+}
+
+function UploadPageContent() {
   const [drag, setDrag] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
@@ -445,5 +456,198 @@ function UploadPage() {
       </section>
       */}
     </Page>
+  );
+}
+
+function WelcomingPage() {
+  return (
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-between font-sans overflow-x-hidden text-slate-800">
+      {/* Simplified Top Nav */}
+      <header className="w-full py-5 px-6 md:px-12 flex justify-between items-center border-b border-gray-100 bg-white/85 backdrop-blur sticky top-0 z-50">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#0B1F3A] text-[13px] font-bold tracking-tight text-white shadow-md">
+            FDI
+          </span>
+          <span className="text-[14px] font-bold tracking-tight text-slate-900 sm:block">
+            Financial Document Intelligence
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link to="/login" className="text-[13px] font-bold text-slate-650 hover:text-slate-900 transition-colors">
+            Sign in
+          </Link>
+          <Link to="/register" className="inline-flex h-9 items-center rounded-xl bg-[#0B1F3A] px-4.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 shadow-sm">
+            Get Started
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex-grow max-w-[1280px] mx-auto w-full px-6 md:px-12 py-12 md:py-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        {/* Left Column */}
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl lg:text-[54px] font-extrabold tracking-tight text-[#0B1F3A] leading-tight">
+              Smarter Financial <br />
+              <span className="text-blue-600 font-extrabold">Document Processing</span>
+            </h1>
+            <p className="text-md md:text-lg text-gray-500 mt-4 max-w-lg leading-relaxed">
+              Automate. Validate. Extract. All in one intelligent platform.
+            </p>
+          </div>
+
+          {/* List of features */}
+          <div className="space-y-4 max-w-lg">
+            {/* Feature 1 */}
+            <div className="flex items-start gap-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Sparkles className="h-4.5 w-4.5" />
+              </span>
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">Intelligent Extraction</h4>
+                <p className="text-xs text-gray-400 mt-0.5">Extract key data from financial documents with high accuracy.</p>
+              </div>
+            </div>
+            {/* Feature 2 */}
+            <div className="flex items-start gap-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <Shield className="h-4.5 w-4.5" />
+              </span>
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">Secure & Compliant</h4>
+                <p className="text-xs text-gray-400 mt-0.5">Your data is encrypted and processed with enterprise-grade security.</p>
+              </div>
+            </div>
+            {/* Feature 3 */}
+            <div className="flex items-start gap-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <FileText className="h-4.5 w-4.5" />
+              </span>
+              <div>
+                <h4 className="text-sm font-bold text-slate-800">Built for Professionals</h4>
+                <p className="text-xs text-gray-400 mt-0.5">Designed for finance teams, auditors, and compliance professionals.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Premium CSS extracted report mockup */}
+        <div className="flex justify-center lg:justify-end">
+          <div className="w-full max-w-[400px] bg-white border border-gray-150 rounded-3xl p-6 shadow-[0_12px_40px_-8px_rgba(15,23,42,0.06)] relative overflow-hidden">
+            {/* Header of Mockup */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-50 text-red-500 rounded-xl p-2.5">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">Annual Report.pdf</h4>
+                  <p className="text-[10px] text-gray-400 mt-0.5">142 pages · 12.8 MB</p>
+                </div>
+              </div>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-100 shadow-sm">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                Processed
+              </span>
+            </div>
+
+            {/* Content stats */}
+            <h5 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Key Highlights</h5>
+            <div className="space-y-3">
+              {/* Stat 1 */}
+              <div className="flex items-center justify-between bg-slate-50/60 border border-slate-100 rounded-2xl p-3">
+                <div>
+                  <p className="text-[10px] text-gray-405 font-medium">Total Assets</p>
+                  <p className="text-[15px] font-bold text-slate-800 mt-0.5">$8,750,000</p>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">+12.5%</span>
+              </div>
+              {/* Stat 2 */}
+              <div className="flex items-center justify-between bg-slate-50/60 border border-slate-100 rounded-2xl p-3">
+                <div>
+                  <p className="text-[10px] text-gray-405 font-medium">Net Profit</p>
+                  <p className="text-[15px] font-bold text-slate-800 mt-0.5">$1,250,000</p>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">+8.3%</span>
+              </div>
+              {/* Stat 3 */}
+              <div className="flex items-center justify-between bg-slate-50/60 border border-slate-100 rounded-2xl p-3">
+                <div>
+                  <p className="text-[10px] text-gray-405 font-medium">Revenue</p>
+                  <p className="text-[15px] font-bold text-slate-800 mt-0.5">$6,300,000</p>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">+10.7%</span>
+              </div>
+            </div>
+
+            {/* Sparkline Accuracy */}
+            <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-gray-450 font-medium">Processing Accuracy</p>
+                <p className="text-[20px] font-extrabold text-[#0B1F3A] mt-0.5">98.6%</p>
+              </div>
+              {/* Wave Sparkline */}
+              <div className="w-28 h-8">
+                <svg className="w-full h-full" viewBox="0 0 100 30" fill="none">
+                  <path d="M0 25 Q15 5, 30 18 T60 8 T90 20 L100 15" stroke="rgb(37, 99, 235)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d="M0 25 Q15 5, 30 18 T60 8 T90 20 L100 15 L100 30 L0 30 Z" fill="rgba(37, 99, 235, 0.08)" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Curved Dark Navy bottom section */}
+      <footer className="bg-[#0B1F3A] text-white pt-16 pb-12 px-6 md:px-12 relative overflow-hidden" style={{ borderRadius: "24px 24px 0 0" }}>
+        {/* Buttons / CTA segment */}
+        <div className="max-w-xl mx-auto text-center space-y-5 mb-12">
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+            <Link 
+              to="/register" 
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-8 text-[14px] font-bold text-[#0B1F3A] hover:bg-slate-50 transition-colors w-full sm:w-auto shadow-md"
+            >
+              <span>Get Started</span>
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <a 
+              href="#features" 
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-white/20 hover:border-white/60 px-8 text-[14px] font-bold text-white transition-colors w-full sm:w-auto"
+            >
+              Learn More
+            </a>
+          </div>
+          <p className="text-xs text-blue-200/60 font-medium">
+            Already have an account?{" "}
+            <Link to="/login" className="font-bold text-white hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </div>
+
+        {/* Trusted Partners / Brands segment */}
+        <div className="max-w-[1280px] mx-auto border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-blue-200/50 text-center md:text-left">
+            Trusted by listed companies and organizations
+          </p>
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 opacity-65">
+            {/* CSE */}
+            <div className="flex flex-col items-center">
+              <span className="font-sans font-black text-lg tracking-tighter text-white">CSE</span>
+              <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-blue-200/60 -mt-1.5">Colombo Stock Exchange</span>
+            </div>
+            {/* DFCC BANK */}
+            <div className="flex flex-col items-center">
+              <span className="font-serif font-black text-lg italic text-white tracking-tight">DFCC BANK</span>
+              <span className="text-[8px] font-bold uppercase tracking-[0.1em] text-blue-200/60 -mt-1.5">Keep Growing</span>
+            </div>
+            {/* Nations Trust Bank */}
+            <div className="flex flex-col items-center">
+              <span className="font-sans font-extrabold text-sm tracking-tight text-white">NationsTrustBank</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
 }

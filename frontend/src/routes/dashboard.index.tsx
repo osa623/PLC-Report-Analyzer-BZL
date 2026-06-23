@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { YearViewBar } from "@/components/YearViewBar";
 //import { kpis, yearSeries, patterns, risks } from "@/lib/mock-data";
 import { getCurrentReportId, getFullReport } from "@/lib/api";
 import { motion } from "framer-motion";

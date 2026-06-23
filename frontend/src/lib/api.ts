@@ -112,8 +112,30 @@ export type ManualStatement = {
 const REPORT_ID_KEY = "fdi.currentReportId";
 const FILE_NAMES_KEY = "fdi.currentFileNames";
 
+import { useAuthStore, type User } from "./store/auth-store";
+
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
-  const response = await fetch(url, options);
+  const token = useAuthStore.getState().token;
+  const headers = new Headers(options.headers || {});
+  
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 401) {
+    // Session is invalid or expired
+    useAuthStore.getState().logout();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
   const contentType = response.headers.get("content-type") || "";
   const payload = contentType.includes("application/json") ? await response.json() : await response.text();
 
@@ -227,3 +249,42 @@ export function finalizeCompletedBatch(reportId: string) {
     { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" },
   );
 }
+
+// ── Authentication API Calls ──
+
+export function registerUser(details: any) {
+  return request<{ token: string; user: User }>("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+}
+
+export function loginUser(details: any) {
+  return request<{ token: string; user: User }>("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+}
+
+export function getUserProfile() {
+  return request<User>("/api/users/profile");
+}
+
+export function updateUserProfile(details: Partial<Omit<User, "id">>) {
+  return request<{ success: boolean; token: string; user: User }>("/api/users/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+}
+
+export function changeUserPassword(details: any) {
+  return request<{ success: boolean; message: string }>("/api/users/change-password", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+}
+

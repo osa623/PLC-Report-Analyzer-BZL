@@ -8,10 +8,12 @@ export function DashboardHeader({
   year,
   setYear,
   availableYears = years as unknown as number[],
+  companyName,
 }: {
   year: number;
   setYear: (y: number) => void;
   availableYears?: number[];
+  companyName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const company = useCompanyStore((s) => s.company);

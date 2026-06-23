@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as ReprocessingRouteImport } from './routes/reprocessing'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProcessingRouteImport } from './routes/processing'
 import { Route as MappingRouteImport } from './routes/mapping'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard.index'
 import { Route as DashboardYearAnalysisRouteImport } from './routes/dashboard.year-analysis'
@@ -31,6 +34,11 @@ const ReprocessingRoute = ReprocessingRouteImport.update({
   path: '/reprocessing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProcessingRoute = ProcessingRouteImport.update({
   id: '/processing',
   path: '/processing',
@@ -41,9 +49,19 @@ const MappingRoute = MappingRouteImport.update({
   path: '/mapping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -79,9 +97,12 @@ const DashboardCalculationsRoute = DashboardCalculationsRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
   '/mapping': typeof MappingRoute
   '/processing': typeof ProcessingRoute
+  '/register': typeof RegisterRoute
   '/reprocessing': typeof ReprocessingRoute
   '/validation': typeof ValidationRoute
   '/dashboard/calculations': typeof DashboardCalculationsRoute
@@ -92,8 +113,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
+  '/login': typeof LoginRoute
   '/mapping': typeof MappingRoute
   '/processing': typeof ProcessingRoute
+  '/register': typeof RegisterRoute
   '/reprocessing': typeof ReprocessingRoute
   '/validation': typeof ValidationRoute
   '/dashboard/calculations': typeof DashboardCalculationsRoute
@@ -105,9 +129,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/login': typeof LoginRoute
   '/mapping': typeof MappingRoute
   '/processing': typeof ProcessingRoute
+  '/register': typeof RegisterRoute
   '/reprocessing': typeof ReprocessingRoute
   '/validation': typeof ValidationRoute
   '/dashboard/calculations': typeof DashboardCalculationsRoute
@@ -120,9 +147,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/dashboard'
+    | '/login'
     | '/mapping'
     | '/processing'
+    | '/register'
     | '/reprocessing'
     | '/validation'
     | '/dashboard/calculations'
@@ -133,8 +163,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
+    | '/login'
     | '/mapping'
     | '/processing'
+    | '/register'
     | '/reprocessing'
     | '/validation'
     | '/dashboard/calculations'
@@ -145,9 +178,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/dashboard'
+    | '/login'
     | '/mapping'
     | '/processing'
+    | '/register'
     | '/reprocessing'
     | '/validation'
     | '/dashboard/calculations'
@@ -159,9 +195,12 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  LoginRoute: typeof LoginRoute
   MappingRoute: typeof MappingRoute
   ProcessingRoute: typeof ProcessingRoute
+  RegisterRoute: typeof RegisterRoute
   ReprocessingRoute: typeof ReprocessingRoute
   ValidationRoute: typeof ValidationRoute
 }
@@ -182,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReprocessingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/processing': {
       id: '/processing'
       path: '/processing'
@@ -196,11 +242,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MappingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -270,9 +330,12 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  LoginRoute: LoginRoute,
   MappingRoute: MappingRoute,
   ProcessingRoute: ProcessingRoute,
+  RegisterRoute: RegisterRoute,
   ReprocessingRoute: ReprocessingRoute,
   ValidationRoute: ValidationRoute,
 }
