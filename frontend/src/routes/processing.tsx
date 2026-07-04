@@ -161,7 +161,7 @@ function ProcessingPage() {
 
   // UI States
   const [filter, setFilter] = useState<"All" | "Running" | "Completed" | "Failed">("All");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("name");
   const [expandedDocs, setExpandedDocs] = useState<Record<string, boolean>>({});
   const [activeTabs, setActiveTabs] = useState<Record<string, "messages" | "categories" | "info">>({});
 

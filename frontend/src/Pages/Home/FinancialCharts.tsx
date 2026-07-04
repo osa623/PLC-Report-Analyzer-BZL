@@ -1,15 +1,12 @@
-'use client'
-
-import Link from "next/link";
-import Image from "next/image";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 //imports for images
 
 //imports for Uis
-import Waves from '../../../../frontend_II/src/components/Ui/Waves';
-import CardSwap, { Card } from '../../../../frontend_II/src/components/Ui/CardSwapI';
-import ScrollVelocity from "@/components/Ui/ScrollVelocity";
+import Waves from "../../components/ui/Waves";
+import CardSwap, { Card } from "../../components/ui/CardSwapI";
+//import ScrollVelocity from "@/components/Ui/ScrollVelocity";
 
 
 //data sets
@@ -148,10 +145,7 @@ export default function FinancialCharts() {
 
           {/* data description section with video introductions */}
           <div className="absolute z-50 bottom-0 right-0 h-full md:p-0 hidden md:flex justify-center items-start bg-transparent md:w-[50%] lg:w-[50%] lg:h-[50vh]">
-            <div
-              className="relative  flex flex-col h-full w-full p-8 transition-all duration-500"
-
-            >
+            <div className="relative  flex flex-col h-full w-full p-8 transition-all duration-500">
 
               {/* Dynamic Content Container */}
               <div

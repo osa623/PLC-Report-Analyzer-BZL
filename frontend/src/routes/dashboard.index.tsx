@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { YearViewBar } from "@/components/YearViewBar";
 //import { kpis, yearSeries, patterns, risks } from "@/lib/mock-data";
 import { getCurrentReportId, getFullReport } from "@/lib/api";
 import { motion } from "framer-motion";
@@ -22,12 +21,12 @@ function buildDashboardData(report: any, selectedYear: number) {
   if (!report || !report.analytics || !report.analytics.ratios) {
     const mockYears = [2020, 2021, 2022, 2023];
     const mockSeries = [
-      { year: "2018", revenue: 720, profit: 82,  assets: 1420, equity: 612, cashflow: 140, interest: 38, liabilities: 808 },
-      { year: "2019", revenue: 845, profit: 95,  assets: 1535, equity: 648, cashflow: 168, interest: 41, liabilities: 887 },
-      { year: "2020", revenue: 982.4, profit: 105.2, assets: 1650.3, equity: 682.1, cashflow: 198, interest: 44, liabilities: 968 },
-      { year: "2021", revenue: 1004.6, profit: 121.3, assets: 1821.0, equity: 743.6, cashflow: 232, interest: 46, liabilities: 1077 },
-      { year: "2022", revenue: 1107.8, profit: 140.6, assets: 2158.2, equity: 876.4, cashflow: 268, interest: 49, liabilities: 1281 },
-      { year: "2023", revenue: 1245.8, profit: 162.6, assets: 2358.7, equity: 954.3, cashflow: 312, interest: 52, liabilities: 1404 },
+      { year: "2018", revenue: 720, profit: 82,  assets: 1420, equity: 612, cashflow: 140, interest: 38, liabilities: 808, netMargin: 11.4, roa: 5.8, roe: 13.4, debtRatio: 56.9 },
+      { year: "2019", revenue: 845, profit: 95,  assets: 1535, equity: 648, cashflow: 168, interest: 41, liabilities: 887, netMargin: 11.2, roa: 6.2, roe: 14.7, debtRatio: 57.8 },
+      { year: "2020", revenue: 982.4, profit: 105.2, assets: 1650.3, equity: 682.1, cashflow: 198, interest: 44, liabilities: 968, netMargin: 10.7, roa: 6.4, roe: 15.4, debtRatio: 58.7 },
+      { year: "2021", revenue: 1004.6, profit: 121.3, assets: 1821.0, equity: 743.6, cashflow: 232, interest: 46, liabilities: 1077, netMargin: 12.1, roa: 6.7, roe: 16.3, debtRatio: 59.1 },
+      { year: "2022", revenue: 1107.8, profit: 140.6, assets: 2158.2, equity: 876.4, cashflow: 268, interest: 49, liabilities: 1281, netMargin: 12.7, roa: 6.5, roe: 16.0, debtRatio: 59.4 },
+      { year: "2023", revenue: 1245.8, profit: 162.6, assets: 2358.7, equity: 954.3, cashflow: 312, interest: 52, liabilities: 1404, netMargin: 13.1, roa: 6.9, roe: 17.0, debtRatio: 59.5 },
     ];
     
     const curIdx = mockSeries.findIndex(s => Number(s.year) === selectedYear);
@@ -47,6 +46,10 @@ function buildDashboardData(report: any, selectedYear: number) {
         netProfit: { value: `$${curYearData.profit}M`, change: calcChange(curYearData.profit, prevYearData.profit), series: mockSeries.slice(0, (curIdx !== -1 ? curIdx : mockSeries.length) + 1).map(s => s.profit) },
         totalAssets: { value: `$${curYearData.assets}M`, change: calcChange(curYearData.assets, prevYearData.assets), series: mockSeries.slice(0, (curIdx !== -1 ? curIdx : mockSeries.length) + 1).map(s => s.assets) },
         cash: { value: `$${curYearData.cashflow}M`, change: calcChange(curYearData.cashflow, prevYearData.cashflow), series: mockSeries.slice(0, (curIdx !== -1 ? curIdx : mockSeries.length) + 1).map(s => s.cashflow) },
+        roa: { value: "7.40%", change: 0, series: [7.4] },
+        roe: { value: "18.10%", change: 0, series: [18.1] },
+        debtRatio: { value: "46.20%", change: 0, series: [46.2] },
+        netProfitMargin: { value: "13.00%", change: 0, series: [13.0] },
       },
       yearSeries: mockSeries,
       patterns: [
@@ -100,6 +103,10 @@ function buildDashboardData(report: any, selectedYear: number) {
       cashflow: Math.round(((yData.operating_cash_flow || 0) / divideFactor) * 10) / 10,
       interest: Math.round((interestVal / divideFactor) * 10) / 10,
       liabilities: Math.round(((yData.total_liabilities || 0) / divideFactor) * 10) / 10,
+      netMargin: Math.round(((yData.net_profit_margin || 0) * 100) * 10) / 10,
+      roa: Math.round(((yData.return_on_assets || 0) * 100) * 10) / 10,
+      roe: Math.round(((yData.return_on_equity || 0) * 100) * 10) / 10,
+      debtRatio: Math.round(((yData.debt_ratio || 0) * 100) * 10) / 10,
       
     };
   });
@@ -114,7 +121,7 @@ function buildDashboardData(report: any, selectedYear: number) {
   const revenueSeries = upToSelectedYears.map(y => (byYear[y]?.revenue || 0) / divideFactor);
   const profitSeries = upToSelectedYears.map(y => (byYear[y]?.net_income || 0) / divideFactor);
   const assetSeries = upToSelectedYears.map(y => (byYear[y]?.total_assets || 0) / divideFactor);
-  const cashSeries = upToSelectedYears.map(y => (byYear[y]?.total_equity || 0) / divideFactor);
+  const cashSeries = upToSelectedYears.map(y => (byYear[y]?.operating_cash_flow || 0) / divideFactor);
   const roaSeries = upToSelectedYears.map(y => byYear[y]?.return_on_assets || 0);
   const roeSeries = upToSelectedYears.map(y => byYear[y]?.return_on_equity || 0);
   const drSeries = upToSelectedYears.map(y => byYear[y]?.debt_ratio || 0);
@@ -142,15 +149,15 @@ function buildDashboardData(report: any, selectedYear: number) {
       series: assetSeries.length ? assetSeries : [0]
     },
     cash: {
-      value: `${formatVal(currentData.total_equity)}${unitStr}`,
-      change: calcChange(currentData.total_equity, prevData.total_equity),
+      value: `${formatVal(currentData.operating_cash_flow)}${unitStr}`,
+      change: calcChange(currentData.operating_cash_flow, prevData.operating_cash_flow),
       series: cashSeries.length ? cashSeries : [0]
     },
     roa: {
-      value: `${((currentData.return_on_assets ?? 0) * 100).toFixed(2)}%`,
-      change: calcChange(currentData.return_on_assets, prevData.return_on_assets),
-      series: roaSeries.length ? roaSeries : [0]
-      },
+    value: `${((currentData.return_on_assets ?? 0) * 100).toFixed(2)}%`,
+    change: calcChange(currentData.return_on_assets, prevData.return_on_assets),
+    series: roaSeries.length ? roaSeries : [0]
+    },
     roe: {
       value: `${((currentData.return_on_equity ?? 0) * 100).toFixed(2)}%`,
       change: calcChange(currentData.return_on_equity, prevData.return_on_equity),
@@ -304,17 +311,17 @@ function Dashboard() {
           <Kpi label="Cash Flow" value={dashboardData.kpis.cash.value} change={dashboardData.kpis.cash.change} series={dashboardData.kpis.cash.series} icon={<Wallet className="h-4 w-4" />} />
            <Kpi label="ROA" value={dashboardData.kpis.roa.value} change={dashboardData.kpis.roa.change} series={dashboardData.kpis.roa.series} icon={<TrendingUp className="h-4 w-4" />} />
           <Kpi label="ROE" value={dashboardData.kpis.roe.value} change={dashboardData.kpis.roe.change} series={dashboardData.kpis.roe.series} icon={<Percent className="h-4 w-4" />} />
-          <Kpi label="Debt Ratio" value={dashboardData.kpis.dr.value} change={dashboardData.kpis.dr.change} series={dashboardData.kpis.dr.series} icon={<Activity className="h-4 w-4" />} />
-          <Kpi label="Net Profit Margin" value={dashboardData.kpis.npm.value} change={dashboardData.kpis.npm.change} series={dashboardData.kpis.npm.series} icon={<Wallet className="h-4 w-4" />} />
+          <Kpi label="Debt Ratio" value={dashboardData.kpis.debtRatio.value} change={dashboardData.kpis.debtRatio.change} series={dashboardData.kpis.debtRatio.series} icon={<Activity className="h-4 w-4" />} />
+          <Kpi label="Net Profit Margin" value={dashboardData.kpis.netProfitMargin.value} change={dashboardData.kpis.netProfitMargin.change} series={dashboardData.kpis.netProfitMargin.series} icon={<Wallet className="h-4 w-4" />} />
        </div>
       </section>
 
       {/* Year Analysis */}
       <section className="mt-12">
         <SectionTitle index="2" title="Year Analysis" subtitle="Multi-year financial trends" cta={<Link to="/dashboard/year-analysis" className="text-[12.5px] font-medium text-muted-foreground hover:text-foreground">View more →</Link>} />
-        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           <ChartCard title="Revenue (M)" delta="+12.4%">
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={130}>
               <BarChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -331,7 +338,7 @@ function Dashboard() {
             </ResponsiveContainer>
           </ChartCard>
           <ChartCard title="Cash Flow (M)" delta="+15.1%">
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={130}>
               <AreaChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
@@ -348,7 +355,7 @@ function Dashboard() {
             </ResponsiveContainer>
           </ChartCard>
           <ChartCard title="Interest Expense (M)" delta="+6.1%">
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={130}>
               <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <CartesianGrid stroke="#EEF2F6" vertical={false} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
@@ -359,7 +366,7 @@ function Dashboard() {
             </ResponsiveContainer>
           </ChartCard>
           <ChartCard title="Liabilities (M)" delta="+9.6%">
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height={130}>
               <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <CartesianGrid stroke="#EEF2F6" vertical={false} />
                 <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
@@ -367,6 +374,64 @@ function Dashboard() {
                 <Tooltip content={<CustomTip />} />
                 <Line type="monotone" dataKey="liabilities" stroke={gold} strokeWidth={2.2} dot={{ r: 3, fill: gold, strokeWidth: 0 }} activeDot={{ r: 5 }} />
               </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Profit vs Revenue" delta="Margin view">
+            <ResponsiveContainer width="100%" height={130}>
+              <BarChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#EEF2F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTip />} />
+                <Bar dataKey="revenue" fill={navy} radius={[5, 5, 0, 0]} />
+                <Bar dataKey="profit" fill={gold} radius={[5, 5, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Assets vs Equity" delta="Capital base">
+            <ResponsiveContainer width="100%" height={130}>
+              <AreaChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#EEF2F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTip />} />
+                <Area type="monotone" dataKey="assets" stroke={navy} strokeWidth={1.8} fill={navy} fillOpacity={0.12} />
+                <Area type="monotone" dataKey="equity" stroke={gold} strokeWidth={1.8} fill={gold} fillOpacity={0.16} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Net Margin (%)" delta="Efficiency">
+            <ResponsiveContainer width="100%" height={130}>
+              <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#EEF2F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTip />} />
+                <Line type="monotone" dataKey="netMargin" stroke={navy} strokeWidth={2.2} dot={{ r: 3, fill: navy, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="ROA / ROE (%)" delta="Returns">
+            <ResponsiveContainer width="100%" height={130}>
+              <LineChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#EEF2F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTip />} />
+                <Line type="monotone" dataKey="roa" stroke={gold} strokeWidth={2.2} dot={{ r: 3, fill: gold, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="roe" stroke={navy} strokeWidth={2.2} dot={{ r: 3, fill: navy, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+          <ChartCard title="Debt Ratio (%)" delta="Leverage">
+            <ResponsiveContainer width="100%" height={130}>
+              <AreaChart data={dashboardData.yearSeries} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+                <CartesianGrid stroke="#EEF2F6" vertical={false} />
+                <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTip />} />
+                <Area type="monotone" dataKey="debtRatio" stroke={gold} strokeWidth={2.2} fill={gold} fillOpacity={0.18} />
+              </AreaChart>
             </ResponsiveContainer>
           </ChartCard>
         </div>
@@ -544,12 +609,12 @@ function Kpi({ label, value, change, series, icon }: { label: string; value: str
 
 function ChartCard({ title, delta, children }: { title: string; delta: string; children: React.ReactNode }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-5">
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card-elevated p-4">
       <div className="flex items-center justify-between">
-        <div className="text-[13px] font-medium">{title}</div>
-        <span className="text-[11.5px] font-medium text-[color:var(--success)]">{delta}</span>
+        <div className="text-[12.5px] font-medium">{title}</div>
+        <span className="text-[11px] font-medium text-[color:var(--success)]">{delta}</span>
       </div>
-      <div className="mt-3">{children}</div>
+      <div className="mt-2">{children}</div>
     </motion.div>
   );
 }

@@ -1,15 +1,10 @@
-'use client'
-
-import Link from "next/link";
-import Image from "next/image";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-
-//imports for images
 
 
 //imports for Uis
-import Waves from '../../../../frontend_II/src/components/Ui/Waves';
-import CardSwap, { Card } from '../../../../frontend_II/src/components/Ui/CardSwapI';
+import Waves from "../../components/ui/Waves";
+import CardSwap, { Card } from "../../components/ui/CardSwapI";
 
 //data sets
 const serviceDetails = [
