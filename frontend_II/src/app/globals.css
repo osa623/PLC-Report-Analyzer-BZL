@@ -1,0 +1,193 @@
+/*fonts*/
+@import url('https://fonts.googleapis.com/css2?family=Bowlby+One+SC&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght,XOPQ,XTRA,YOPQ,YTDE,YTFI,YTLC,YTUC@8..144,100..1000,96,468,79,-203,738,514,712&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Roboto+Flex:opsz,wght,XOPQ,XTRA,YOPQ,YTDE,YTFI,YTLC,YTUC@8..144,100..1000,96,468,79,-203,738,514,712&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Encode+Sans+Expanded:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Saira:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+
+  /* ═══════ Terminal Trading Theme ═══════ */
+  --terminal-bg: #0B0F16;
+  --terminal-surface: #0D131A;
+  --terminal-surface-2: #111827;
+  --terminal-border: rgba(56, 189, 248, 0.08);
+  --terminal-border-strong: rgba(56, 189, 248, 0.15);
+  --neon-blue: #38BDF8;
+  --neon-blue-dim: rgba(56, 189, 248, 0.12);
+  --neon-yellow: #FACC15;
+  --neon-yellow-dim: rgba(250, 204, 21, 0.12);
+  --neon-cyan: #22D3EE;
+  --neon-green: #4ADE80;
+  --neon-red: #F87171;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --text-dim: #475569;
+  --row-hover: rgba(56, 189, 248, 0.04);
+  --row-band: rgba(56, 189, 248, 0.02);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-bowlby: "Bowlby One SC", cursive;
+  --font-roboto: "Roboto Flex", sans-serif;
+  --font-nunito: "Nunito Sans", sans-serif;
+  --font-encode: "Encode Sans Expanded", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-saira: "Saira", sane-serif;
+  --font-fugaz: "Fugaz One", cursive;
+  --font-jetbrains: "JetBrains Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Inter", "Encode Sans Expanded", Arial, Helvetica, sans-serif;
+}
+
+/* ═══════ Terminal Scrollbar ═══════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--terminal-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.15);
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.3);
+}
+
+/* ===== Custom Scrollbar ===== */
+
+/* Hide scrollbar but allow scrolling */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE & Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari */
+}
+
+/* ═══════ Terminal Glow Utilities ═══════ */
+.terminal-glow-blue {
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3), 0 0 20px rgba(56, 189, 248, 0.1);
+}
+
+.terminal-glow-yellow {
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.3), 0 0 20px rgba(250, 204, 21, 0.1);
+}
+
+.terminal-glow-cyan {
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.3), 0 0 20px rgba(34, 211, 238, 0.1);
+}
+
+/* ═══════ Terminal Active Underline ═══════ */
+.terminal-active-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--neon-blue);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5), 0 0 4px rgba(56, 189, 248, 0.8);
+}
+
+/* ═══════ Terminal Row Hover ═══════ */
+.terminal-row-hover {
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.terminal-row-hover:hover {
+  background-color: var(--row-hover);
+  border-left: 2px solid var(--neon-blue);
+}
+
+/* ═══════ Terminal Data Table ═══════ */
+.terminal-table-header {
+  background: var(--terminal-surface);
+  border-bottom: 1px solid var(--terminal-border-strong);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.terminal-row-band:nth-child(even) {
+  background: var(--row-band);
+}
+
+/* ═══════ Neon Badge Glow ═══════ */
+.badge-green {
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ADE80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.15);
+}
+
+.badge-red {
+  background: rgba(248, 113, 113, 0.08);
+  color: #F87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  box-shadow: 0 0 8px rgba(248, 113, 113, 0.15);
+}
+
+/* ═══════ Terminal Pulse Animation ═══════ */
+@keyframes terminal-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.terminal-pulse {
+  animation: terminal-pulse 2s ease-in-out infinite;
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}

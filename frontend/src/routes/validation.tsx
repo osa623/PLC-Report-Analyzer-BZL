@@ -195,48 +195,65 @@ function StatementAccordion({
             transition={{ duration: 0.18, ease: "easeInOut" }}
             className="overflow-hidden border-t border-border"
           >
-            <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
-                <thead className="bg-[var(--surface)] text-left">
+            <div className="overflow-x-auto border border-slate-100 rounded-xl bg-white shadow-sm">
+              <table className="w-full text-[13px] border-collapse">
+                <thead className="bg-[#0B1F3A]/5 border-b border-slate-200/80 text-left">
                   <tr>
-                    <th className="px-5 py-2.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground w-[60%]">
-                      Label
+                    <th className="px-5 py-3 text-[11.5px] font-bold uppercase tracking-wider text-[#0B1F3A] w-[65%]">
+                      Financial Statement Line Item
                     </th>
-                    <th className="px-5 py-2.5 text-right text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    <th className="px-5 py-3 text-right text-[11.5px] font-bold uppercase tracking-wider text-[#0B1F3A]">
                       Value
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {statement.rows.map((row, idx) =>
-                    row.value == null ? (
+                  {statement.rows.map((row, idx) => {
+                    if (row.value == null) {
                       // Section header row
-                      <tr
-                        key={`header-${idx}`}
-                        className="border-t border-border bg-[var(--hover)]"
-                      >
-                        <td
-                          colSpan={2}
-                          className="px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                      return (
+                        <tr
+                          key={`header-${idx}`}
+                          className="border-t border-b border-slate-100 bg-slate-50/50"
                         >
-                          {row.label}
-                        </td>
-                      </tr>
-                    ) : (
-                      // Data row
+                          <td
+                            colSpan={2}
+                            className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-[#0B1F3A]/70"
+                          >
+                            {row.label}
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    // Check if this is a totals or key highlight line item
+                    const cleanLabel = row.label.toLowerCase();
+                    const isTotal = cleanLabel.includes("total") || 
+                                    cleanLabel.includes("net profit") || 
+                                    cleanLabel.includes("net income") || 
+                                    cleanLabel.includes("operating profit") || 
+                                    cleanLabel.includes("gross profit") ||
+                                    cleanLabel.includes("equity") ||
+                                    cleanLabel.includes("retained earnings");
+
+                    return (
                       <tr
                         key={`row-${idx}`}
-                        className="border-t border-border hover:bg-[var(--hover)] transition-colors"
+                        className={`border-t border-slate-100 transition-colors hover:bg-slate-50/80 ${
+                          isTotal 
+                            ? "font-bold bg-slate-50/40 text-[#0B1F3A] border-b border-t-2 border-slate-200" 
+                            : "even:bg-slate-50/15"
+                        }`}
                       >
-                        <td className="px-5 py-3 text-[13px] text-foreground">
+                        <td className="px-5 py-3 text-[13.5px] text-slate-700">
                           {row.label}
                         </td>
-                        <td className="px-5 py-3 text-right font-medium tabular-nums">
+                        <td className={`px-5 py-3 text-right font-semibold tabular-nums ${isTotal ? "text-[#0B1F3A] text-[14px]" : "text-slate-800"}`}>
                           {row.display_value ?? String(row.value ?? "—")}
                         </td>
                       </tr>
-                    )
-                  )}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -584,13 +601,14 @@ function ValidationPage() {
               {/* Actions */}
               <div className="flex items-center justify-end gap-2">
                 {failed && (
-                  <a
-                    href={`/mapping?pdf=${encodeURIComponent(name)}`}
+                  <Link
+                    to="/mapping"
+                    search={{ pdf: name }}
                     className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-white px-3 text-[12.5px] font-medium hover:bg-[var(--hover)]"
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
                     Manual Mapping
-                  </a>
+                  </Link>
                 )}
 
               </div>

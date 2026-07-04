@@ -259,4 +259,104 @@ router.put("/users/change-password", authMiddleware, async (req, res, next) => {
   }
 });
 
+// POST /auth/forgot-password - Generate and "send" code
+router.post("/auth/forgot-password", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email address is required" });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ error: "Invalid email address format" });
+    }
+
+    const db = await getDb();
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Verify user exists
+    const user = await db.collection("users").findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ error: "No account with this email address exists" });
+    }
+
+    // 2. Generate a random 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 3. Save code in database (expires in 10 minutes)
+    await db.collection("password_resets").updateOne(
+      { email: normalizedEmail },
+      {
+        $set: {
+          code,
+          expires_at: new Date(Date.now() + 10 * 60 * 1000)
+        }
+      },
+      { upsert: true }
+    );
+
+    // Mock sending code via email
+    console.log(`\n========================================\n[EMAIL SEND MOCK]\nTo: ${normalizedEmail}\nSubject: FDI Password Reset Code\nBody: Your verification code is ${code}\n========================================\n`);
+
+    res.json({ 
+      success: true, 
+      message: "Verification code sent to your email.",
+      code // Returning code in dev response so user has immediate access without server logs!
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/reset-password - Verify code and reset password
+router.post("/auth/reset-password", async (req, res, next) => {
+  try {
+    const { email, code, newPassword } = req.body;
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: "Email, code, and new password are required" });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long and contain both letters and numbers" });
+    }
+
+    const db = await getDb();
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // 1. Retrieve code details
+    const resetRecord = await db.collection("password_resets").findOne({ email: normalizedEmail });
+    if (!resetRecord) {
+      return res.status(400).json({ error: "No reset request found for this email address" });
+    }
+
+    // 2. Validate code and expiration
+    if (resetRecord.code !== code.trim()) {
+      return res.status(400).json({ error: "Invalid verification code" });
+    }
+
+    if (resetRecord.expires_at < new Date()) {
+      return res.status(400).json({ error: "Verification code has expired. Please request a new one." });
+    }
+
+    // 3. Hash and update password
+    const hashed = hashPassword(newPassword);
+    await db.collection("users").updateOne(
+      { email: normalizedEmail },
+      {
+        $set: {
+          password: hashed,
+          updated_at: new Date()
+        }
+      }
+    );
+
+    // 4. Clean up reset record
+    await db.collection("password_resets").deleteOne({ email: normalizedEmail });
+
+    res.json({ success: true, message: "Password has been successfully reset. You can now log in." });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

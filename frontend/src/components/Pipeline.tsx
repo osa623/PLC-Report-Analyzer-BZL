@@ -19,10 +19,10 @@ export function Pipeline({
   return (
     <div className="relative w-full">
       {/* Connector lines segments background */}
-      <div className="absolute left-[12.5%] right-[12.5%] top-4 h-[2px] bg-slate-100 -z-10" />
+      <div className="absolute left-[12.5%] right-[12.5%] top-4 h-[2px] bg-slate-150" style={{ zIndex: 1 }} />
 
       {/* Colored active segments */}
-      <div className="absolute left-[12.5%] right-[12.5%] top-4 h-[2px] -z-10">
+      <div className="absolute left-[12.5%] right-[12.5%] top-4 h-[2px]" style={{ zIndex: 2 }}>
         <div className="relative w-full h-full">
           {stages.slice(0, -1).map((_, i) => {
             // Segment connects circle i to circle i+1
@@ -38,7 +38,7 @@ export function Pipeline({
               <div
                 key={i}
                 className={`absolute top-0 h-full transition-colors duration-500 ${
-                  active ? "bg-green-500" : "bg-slate-100"
+                  active ? "bg-green-500" : "bg-slate-150"
                 }`}
                 style={{
                   left: `${left}%`,
@@ -50,7 +50,7 @@ export function Pipeline({
         </div>
       </div>
 
-      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0,1fr))` }}>
+      <div className="relative grid" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0,1fr))`, zIndex: 10 }}>
         {stages.map((s, i) => {
           const isStageDone = i < safeIndex || (isCompleted && i === safeIndex);
           const isStageFailed = isFailed && i === safeIndex;

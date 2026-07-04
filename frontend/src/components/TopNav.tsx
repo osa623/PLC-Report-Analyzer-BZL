@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ProgressPanel } from "./ProgressPanel";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { toast } from "sonner";
+import Header from "./Header";
 
 const links = [
   { to: "/", label: "Upload" },
@@ -218,14 +219,31 @@ export function Page({ children, requireAuth = true }: { children: React.ReactNo
   const token = useAuthStore((s) => s.token);
   const navigate = useNavigate();
 
+  // Helper to synchronously read persisted token on client to prevent hydration flashes
+  const getPersistedToken = () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const rawStore = window.localStorage.getItem("fdi-auth-storage");
+      if (rawStore) {
+        const parsed = JSON.parse(rawStore);
+        return parsed?.state?.token || null;
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  };
+
+  const activeToken = token || getPersistedToken();
+
   useEffect(() => {
-    if (requireAuth && !token) {
+    if (requireAuth && !activeToken) {
       toast.error("Please sign in to access this section.");
       navigate({ to: "/login" });
     }
-  }, [token, requireAuth, navigate]);
+  }, [activeToken, requireAuth, navigate]);
 
-  if (requireAuth && !token) {
+  if (requireAuth && !activeToken) {
     return null; // Stop rendering child contents to prevent layout flashes
   }
 

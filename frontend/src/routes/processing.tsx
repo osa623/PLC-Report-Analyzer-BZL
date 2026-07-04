@@ -1,8 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Page } from "@/components/TopNav";
 import { Pipeline } from "@/components/Pipeline";
-import { processingFiles } from "@/lib/mock-data";
-import { getCurrentFileNames, getCurrentReportId, getDocumentStatuses, getPipelineStages, type PipelineDocument } from "@/lib/api";
+import {
+  getCurrentFileNames,
+  getCurrentReportId,
+  getDocumentStatuses,
+  getPipelineStages,
+  uploadReports,
+  type PipelineDocument,
+} from "@/lib/api";
 import {
   FileText,
   RefreshCw,
@@ -23,10 +29,12 @@ import {
   ChevronDown,
   Calendar,
   X,
-  Check
+  Check,
+  UploadCloud,
+  FileCheck,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useCompanyStore } from "@/lib/store/company-store";
 
 export const Route = createFileRoute("/processing")({
@@ -101,6 +109,55 @@ function ProcessingPage() {
   const [pipelineStatus, setPipelineStatus] = useState("PENDING");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Modal and Upload States
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [drag, setDrag] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const company = useCompanyStore((s) => s.company);
+
+  const selectFiles = (list: FileList | null) => {
+    const selected = Array.from(list || []).filter(
+      (file) =>
+        file.type === "application/pdf" ||
+        file.name.toLowerCase().endsWith(".pdf")
+    );
+    setFiles(selected.slice(0, 5));
+    setUploadError("");
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleUpload = async () => {
+    if (!files.length) {
+      setUploadError("Add at least one annual report to continue.");
+      return;
+    }
+    setUploading(true);
+    setUploadError("");
+    try {
+      const currentReportId = getCurrentReportId();
+      await uploadReports(files, {
+        symbol: company.ticker,
+        name: company.companyName,
+        sector: company.sector,
+        report_id: currentReportId || undefined,
+      });
+      setShowUploadModal(false);
+      setFiles([]);
+      load();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // UI States
   const [filter, setFilter] = useState<"All" | "Running" | "Completed" | "Failed">("All");
@@ -205,7 +262,6 @@ function ProcessingPage() {
     setActiveTabs((prev) => ({ ...prev, [docName]: tab }));
   };
 
-  const company = useCompanyStore((s) => s.company);
   const completionPercent = counts.total > 0 ? (counts.completed / counts.total) * 100 : 0;
 
   return (
@@ -221,13 +277,18 @@ function ProcessingPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Link
-            to="/"
+          <button
+            type="button"
+            onClick={() => {
+              setFiles([]);
+              setUploadError("");
+              setShowUploadModal(true);
+            }}
             className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0B1F3A] px-5 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 shadow-sm"
           >
             <Plus className="h-4 w-4" />
             Add Another Report to the Batch
-          </Link>
+          </button>
           <button
             type="button"
             onClick={load}
@@ -444,12 +505,13 @@ function ProcessingPage() {
                     >
                       <Table2 className="h-3.5 w-3.5" /> View Data
                     </Link>
-                    <a
-                      href={`/mapping?pdf=${encodeURIComponent(name)}`}
-                      className={`inline-flex h-8 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors`}
+                    <Link
+                      to="/mapping"
+                      search={{ pdf: name }}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 text-[10px] font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
                     >
                       <MapPinned className="h-3.5 w-3.5" /> Manual Mapping
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -670,6 +732,200 @@ function ProcessingPage() {
           <ChevronRight className="h-3.5 w-3.5" />
         </a>
       </div>
+
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                if (!uploading) setShowUploadModal(false);
+              }}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-[6px]"
+            />
+
+            {/* Modal Body */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 16 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_12px_40px_-4px_rgba(15,23,42,0.15)] flex flex-col z-10"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                    <UploadCloud className="h-5 w-5" strokeWidth={1.75} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold uppercase tracking-wide text-slate-800">
+                      Add Report to Current Batch
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Upload PDF reports to append to the active processing batch.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => setShowUploadModal(false)}
+                  className="grid h-8 w-8 place-items-center rounded-full text-gray-400 transition-colors hover:bg-slate-100 hover:text-slate-650 disabled:opacity-40"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Company Info Box */}
+              <div className="px-6 pt-4">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white font-bold text-xs">
+                      {company.companyName ? company.companyName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "CP"}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-slate-800 truncate">{company.companyName || "Current Batch Company"}</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5 truncate">{company.ticker || "Ticker"} · {company.sector || "Sector"}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-100/60 my-1" />
+                  <p className="text-[10.5px] text-gray-500 leading-relaxed">
+                    You are uploading additional reports for <strong>{company.companyName}</strong>. The company details are locked for this batch.
+                  </p>
+                </div>
+              </div>
+
+              {/* Drag Zone */}
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!uploading) setDrag(true);
+                }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDrag(false);
+                  if (!uploading) selectFiles(e.dataTransfer.files);
+                }}
+                className={`relative mx-6 mt-4 flex flex-col items-center rounded-2xl border border-dashed px-6 py-8 text-center transition-all duration-200
+                  ${drag
+                    ? "border-blue-500 bg-blue-50/20"
+                    : "border-gray-250 bg-slate-50/30 hover:bg-slate-50/70"
+                  } ${uploading ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <div className="mb-3 grid h-10 w-10 place-items-center rounded-full border border-gray-100 bg-white shadow-sm">
+                  <UploadCloud
+                    className={`h-4.5 w-4.5 transition-colors ${drag ? "text-blue-500" : "text-gray-400"}`}
+                    strokeWidth={1.5}
+                  />
+                </div>
+
+                <p className="text-xs font-bold text-slate-800">
+                  Drag & drop your PDF files here
+                </p>
+                <p className="mt-0.5 text-[11px] text-gray-400">
+                  or browse from your computer
+                </p>
+
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => selectFiles(e.target.files)}
+                  disabled={uploading}
+                />
+
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => inputRef.current?.click()}
+                  className="mt-3 inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-4 text-[12px] font-semibold text-white transition-opacity hover:opacity-90 shadow-sm"
+                >
+                  Choose files
+                </button>
+              </div>
+
+              {/* File list */}
+              {files.length > 0 && (
+                <div className="mx-6 mt-3 max-h-36 overflow-y-auto rounded-xl border border-gray-100">
+                  {files.map((file, idx) => (
+                    <div
+                      key={`${file.name}-${file.size}`}
+                      className="group flex items-center gap-3 border-b border-gray-50 px-4 py-2 last:border-b-0 hover:bg-slate-50 transition-colors"
+                    >
+                      <FileCheck className="h-3.5 w-3.5 shrink-0 text-blue-600" strokeWidth={1.5} />
+                      <span className="flex-1 truncate text-[11px] font-semibold text-slate-700">
+                        {file.name}
+                      </span>
+                      <span className="shrink-0 text-[10px] text-gray-400">
+                        {(file.size / (1024 * 1024)).toFixed(1)} MB
+                      </span>
+                      <button
+                        type="button"
+                        disabled={uploading}
+                        onClick={() => removeFile(idx)}
+                        className="ml-1 grid h-5 w-5 shrink-0 place-items-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-650 transition-colors disabled:opacity-40"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Error display */}
+              {uploadError && (
+                <p className="mx-6 mt-3 rounded-lg border border-red-100 bg-red-50/50 px-4 py-2 text-xs text-red-650 font-medium">
+                  {uploadError}
+                </p>
+              )}
+
+              {/* Footer */}
+              <div className="mt-6 border-t border-gray-100 bg-slate-50/40 px-6 py-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
+                  <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={1.5} />
+                  <span>Secure & Encrypted</span>
+                </div>
+
+                <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                  <button
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => setShowUploadModal(false)}
+                    className="inline-flex h-8.5 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 text-[12px] font-semibold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={uploading || !files.length}
+                    className="inline-flex h-8.5 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-4 text-[12px] font-semibold text-blue-600 transition-colors hover:bg-blue-50/50 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Start extraction</span>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </Page>
   );
 }

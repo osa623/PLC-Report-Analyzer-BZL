@@ -268,6 +268,14 @@ export function loginUser(details: any) {
   });
 }
 
+export function forgotPassword(details: any) {
+  return request<{ success: boolean; message: string }>("/api/auth/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+}
+
 export function getUserProfile() {
   return request<User>("/api/users/profile");
 }

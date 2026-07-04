@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { recentUploads } from "@/lib/mock-data";
-import { uploadReports } from "@/lib/api";
+import { uploadReports, getCurrentReportId } from "@/lib/api";
 import CompanyForm from "@/components/CompanyForm";
 import { useCompanyStore } from "@/lib/store/company-store";
 
@@ -48,6 +48,7 @@ function UploadPage() {
 }
 
 function UploadPageContent() {
+  const isAppending = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("append") === "true";
   const [drag, setDrag] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
@@ -78,10 +79,12 @@ function UploadPageContent() {
     setUploading(true);
     setError("");
     try {
+      const currentReportId = isAppending ? getCurrentReportId() : undefined;
       await uploadReports(files, {
         symbol: company.ticker,
         name: company.companyName,
         sector: company.sector,
+        report_id: currentReportId,
       });
       navigate({ to: "/processing" });
     } catch (err) {
@@ -102,13 +105,15 @@ function UploadPageContent() {
           className="flex-1"
         >
           <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-blue-600 mb-2">
-            New Submission
+            {isAppending ? "Append to Batch" : "New Submission"}
           </p>
           <h1 className="text-[36px] font-extrabold leading-tight tracking-tight text-[var(--navy)]">
-            Submit Your Company Reports
+            {isAppending ? "Add Report to Current Batch" : "Submit Your Company Reports"}
           </h1>
           <p className="text-[14px] text-gray-500 mt-2 max-w-xl">
-            Upload annual reports and let our AI extract key insights quickly and accurately.
+            {isAppending 
+              ? "Upload additional annual reports to be analyzed as part of your current active batch." 
+              : "Upload annual reports and let our AI extract key insights quickly and accurately."}
           </p>
 
           {/* Colombo Stock Exchange Info Card */}
@@ -187,13 +192,31 @@ function UploadPageContent() {
                 1. SELECT COMPANY
               </h2>
               <p className="text-xs text-gray-400">
-                Search and select the correct company to begin.
+                {isAppending ? "Selected company is locked for appending" : "Search and select the correct company to begin."}
               </p>
             </div>
           </div>
 
           <div className="flex-1 px-6 py-6">
-            <CompanyForm />
+            {isAppending ? (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-900 text-white font-bold text-sm">
+                    {company.companyName ? company.companyName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2) : "CP"}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-800">{company.companyName || "Current Batch Company"}</h4>
+                    <p className="text-xs text-slate-400 mt-0.5">{company.ticker || "Ticker"} · {company.sector || "Sector"}</p>
+                  </div>
+                </div>
+                <div className="border-t border-slate-100 my-1" />
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  You are appending additional reports to the active processing batch for <strong>{company.companyName}</strong>. The company selection is locked.
+                </p>
+              </div>
+            ) : (
+              <CompanyForm />
+            )}
           </div>
         </motion.div>
 

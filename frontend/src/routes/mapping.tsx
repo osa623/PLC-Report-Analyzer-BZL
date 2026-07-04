@@ -193,6 +193,45 @@ function MappingPage() {
     setLoading(true);
     setError("");
     try {
+      const matchedPdf = manualPdfs.find((p) => p.id === pdfId);
+      const pdfNameStr = matchedPdf ? matchedPdf.name : "";
+      if (pdfNameStr) {
+        setTargetName(pdfNameStr);
+      }
+
+      if (reportId && pdfNameStr) {
+        try {
+          const docs = await getDocumentStatuses(reportId);
+          const matchedDoc = (docs.documents || []).find((doc) => {
+            const docName = doc.pdf_name || doc.filename || doc.name || "";
+            return docName === pdfNameStr || docName.toLowerCase() === pdfNameStr.toLowerCase();
+          });
+          if (matchedDoc) {
+            let hydratedDoc = matchedDoc;
+            try {
+              const data = await getDocumentExtractedData(reportId, docName(matchedDoc));
+              hydratedDoc = {
+                ...matchedDoc,
+                statement_images: data.statement_images || matchedDoc.statement_images,
+                statement_pages: data.statement_pages || matchedDoc.statement_pages,
+                statement_refs: data.statement_refs || matchedDoc.statement_refs,
+                page_mappings: data.page_mappings || matchedDoc.page_mappings,
+              };
+            } catch (err) {
+              console.error("Failed to hydrate document in reloadSelected:", err);
+            }
+            setPipelineDoc(hydratedDoc);
+          } else {
+            setPipelineDoc(null);
+          }
+        } catch (err) {
+          console.error("Failed to load document statuses in reloadSelected:", err);
+          setPipelineDoc(null);
+        }
+      } else {
+        setPipelineDoc(null);
+      }
+
       const detected = await detectManualStatements(pdfId);
       const nextStatements = detected.statements || [];
       setStatements(nextStatements);
@@ -203,6 +242,7 @@ function MappingPage() {
       });
       setValues({ income: "", balance: "", cashflow: "", equity: "", comprehensive_income: "", ...nextValues });
       setImageIndex(0);
+      setTocIndex(0);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to detect statement pages");
     } finally {
