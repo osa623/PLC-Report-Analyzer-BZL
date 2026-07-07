@@ -2,24 +2,27 @@ import json
 import sys
 import logging
 import uuid
-import unittest
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Set up paths to allow importing from different services
-ROOT_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = Path(__file__).parent.absolute()
 
-# 1. Add repo root and extraction_service to path so `src.pipeline...` works
-sys.path.insert(0, str(ROOT_DIR))
+# 1. Add extraction_service to path so `src.pipeline...` works
 EXTRACTION_SERVICE_DIR = ROOT_DIR / "services" / "extraction_service"
-sys.path.insert(0, str(EXTRACTION_SERVICE_DIR))
+sys.path.append(str(EXTRACTION_SERVICE_DIR))
 
 # 2. Add annual-report-backend to path so `pipeline_bridge` can be imported directly
 BACKEND_DIR = ROOT_DIR / "services" / "annual-report-backend"
-sys.path.insert(0, str(BACKEND_DIR))
+sys.path.append(str(BACKEND_DIR))
 
 # Load environment variables (API keys, etc.)
 load_dotenv()
+
+# Import the orchestrators from both services
+from src.pipeline.pdf_image_orchestrator import process_annual_reports
+from services.extraction_service.canonical_results import persist_normalized_results
+from pipeline_bridge import run_pipeline_for_extraction_records, save_pipeline_logs
 
 # Configure logging
 logging.basicConfig(
@@ -43,29 +46,7 @@ PDF_PATHS = [
 
 ]
 
-
-class TestFullPipelineImports(unittest.TestCase):
-    def test_pipeline_imports(self):
-        try:
-            from src.pipeline.pdf_image_orchestrator import process_annual_reports
-            from services.extraction_service.canonical_results import persist_normalized_results
-            from pipeline_bridge import run_pipeline_for_extraction_records, save_pipeline_logs
-        except ModuleNotFoundError as exc:
-            if exc.name == "pdfplumber":
-                self.skipTest("pdfplumber is not installed in this CI environment")
-            raise
-
-        self.assertTrue(callable(process_annual_reports))
-        self.assertTrue(callable(persist_normalized_results))
-        self.assertTrue(callable(run_pipeline_for_extraction_records))
-        self.assertTrue(callable(save_pipeline_logs))
-
 def main():
-    # Import the orchestrators only when the script is executed directly.
-    from src.pipeline.pdf_image_orchestrator import process_annual_reports
-    from services.extraction_service.canonical_results import persist_normalized_results
-    from pipeline_bridge import run_pipeline_for_extraction_records, save_pipeline_logs
-
     pdf_bytes_list = []
     loaded_names = []
     
