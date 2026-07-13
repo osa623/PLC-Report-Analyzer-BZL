@@ -1,0 +1,120 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@theme inline {
+  --font-sans: "Inter", "SF Pro Display", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-navy: var(--navy);
+  --color-navy-2: var(--navy-2);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-surface: var(--surface);
+  --color-hover: var(--hover);
+}
+
+:root {
+  --radius: 0.875rem;
+  --background: oklch(1 0 0);                       /* #FFFFFF */
+  --surface: oklch(0.985 0 0);                       /* #FAFAFA */
+  --hover: oklch(0.977 0.004 247);                   /* #F8FAFC */
+  --foreground: oklch(0.205 0.04 265);               /* #0F172A */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0.04 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0.04 265);
+  --primary: oklch(0.22 0.06 260);                   /* navy */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0.005 247);
+  --secondary-foreground: oklch(0.205 0.04 265);
+  --muted: oklch(0.97 0.005 247);
+  --muted-foreground: oklch(0.55 0.03 257);          /* #64748B */
+  --accent: oklch(0.78 0.14 80);                     /* gold accent */
+  --accent-foreground: oklch(0.205 0.04 265);
+  --destructive: oklch(0.62 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.91 0.014 255);                   /* #E2E8F0 */
+  --input: oklch(0.91 0.014 255);
+  --ring: oklch(0.22 0.06 260);
+
+  --navy: oklch(0.22 0.06 260);                      /* #0B1F3A-ish */
+  --navy-2: oklch(0.30 0.07 260);                    /* #142C54 */
+  --gold: oklch(0.74 0.14 82);                       /* #D4A017 */
+  --gold-soft: oklch(0.86 0.14 88);                  /* #F4D03F */
+  --success: oklch(0.65 0.17 145);
+  --warning: oklch(0.78 0.15 75);
+  --error: oklch(0.62 0.22 27);
+
+  --shadow-elegant: 0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -8px rgba(15,23,42,0.08);
+  --shadow-float: 0 10px 40px -12px rgba(15,23,42,0.18);
+  --gradient-navy: linear-gradient(135deg, oklch(0.22 0.06 260), oklch(0.32 0.07 260));
+  --gradient-gold: linear-gradient(135deg, oklch(0.74 0.14 82), oklch(0.86 0.14 88));
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { letter-spacing: -0.02em; }
+}
+
+@utility glass-nav {
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: saturate(200%) blur(200px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+}
+
+@utility card-elevated {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-elegant);
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+@utility card-elevated-hover {
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-float);
+    border-color: oklch(0.86 0.02 255);
+  }
+}
+
+@utility text-gradient-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

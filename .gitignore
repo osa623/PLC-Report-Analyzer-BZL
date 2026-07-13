@@ -1,30 +1,41 @@
+# Logs, temp files, and local runtime state
 /logs/
+*.log
+*.stackdump
 /backend_pids.json
+/.tmp_ci_env/
+/pipeline_artifacts/
+/outputs/
+
+# Environment files
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Generated JSON artifacts and samples
+mongodb_sample*.json
 /data/
-!/data/
-/data/*
-!/data/eval/
-/data/eval/*
-!/data/eval/cases/
-!/data/eval/cases/*.json
-!/data/eval/golden_set_metadata.json
-!/data/eval/thresholds.json
-!/data/eval/ops_snapshot.json
-!/data/eval/release_readiness_snapshot.json
+/frontend/.lovable/*.json
+/frontend_II/src/Data/*.json
+/services/**/final_report.json
+/services/**/analytics.json
+/services/**/analysis_report_output.json
+/services/**/normalized_results.json
+/services/**/cache/*.json
+
+# Local scripts and notes that should stay out of version control
 start_all_backends_local.ps1
 ROAD_MAP.md
-/.tmp_ci_env/
-.env
-.env.sample
+
+# Python bytecode cache and compiled files
 /services/analysis_service/_pycache__/
 /services/extraction_service/_pycache__/
 /services/reporting_service/_pycache__/
-# Python bytecode cache and compiled files
 __pycache__/
 **/__pycache__/
 *.py[cod]
 *.pyc
-*.
+
 /services/data*
 /services/extract/
-/

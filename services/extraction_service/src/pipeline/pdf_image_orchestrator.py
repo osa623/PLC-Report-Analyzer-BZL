@@ -6,11 +6,12 @@ import os
 import re
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import pdfplumber
 from pdf2image import convert_from_bytes
 
+from ..locator.dynamic_offset_engine import DynamicPageOffsetResolutionEngine
 from .llm_extractor import LLMFinancialExtractor
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,32 @@ _STATEMENT_KEYWORDS: Dict[str, List[str]] = {
         "statement of comprehensive income",
         "Statement of Profit or Loss and Other Comprehensive Income"
     ],
+    "notes": [
+        "notes to the financial statements",
+        "notes to the accounts",
+        "accounting policies",
+    ],
+    "shareholding": [
+        "shareholding",
+        "shareholder information",
+        "major shareholders",
+        "twenty largest shareholders",
+    ],
+    "subsidiaries": [
+        "subsidiaries",
+        "group structure",
+        "principal subsidiaries",
+        "subsidiary companies",
+    ],
 }
+
+_EXTRACTABLE_STATEMENTS = (
+    "income_statement",
+    "balance_sheet",
+    "cash_flow",
+    "equity",
+    "comprehensive_income",
+)
 
 _TOC_LINE_REJECT = ["usd", "us$", "$", "USD"]
 
@@ -78,7 +104,27 @@ def extract_statement_from_image(image_bytes: bytes) -> dict:
     return extract_statement_from_images([image_bytes])
 
 
-def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
+ProgressCallback = Callable[[str, str, str, str, Optional[dict]], None]
+
+
+def _emit(
+    progress_callback: Optional[ProgressCallback],
+    pdf_name: str,
+    stage: str,
+    status: str,
+    message: str,
+    details: Optional[dict] = None,
+) -> None:
+    if progress_callback:
+        progress_callback(pdf_name, stage, status, message, details)
+
+
+def process_annual_reports(
+    pdf_files: List[bytes],
+    pdf_names: Optional[List[str]] = None,
+    progress_callback: Optional[ProgressCallback] = None,
+    manual_page_mappings: Optional[Dict[str, Dict[str, List[int]]]] = None,
+) -> List[dict]:
     """
     Process up to 5 PDF files sequentially and return per-PDF extraction results.
     """
@@ -87,11 +133,23 @@ def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
 
     results: List[dict] = []
     for index, pdf_bytes in enumerate(pdf_files, start=1):
-        pdf_name = f"pdf_{index}"
+        pdf_name = (
+            pdf_names[index - 1]
+            if pdf_names and index - 1 < len(pdf_names)
+            else f"pdf_{index}"
+        )
         try:
-            result = _process_single_pdf(pdf_bytes, pdf_name)
+            _emit(progress_callback, pdf_name, "PARSING", "running", "Reading PDF and locating table of contents")
+            result = _process_single_pdf(
+                pdf_bytes,
+                pdf_name,
+                progress_callback=progress_callback,
+                manual_page_mapping=(manual_page_mappings or {}).get(pdf_name),
+            )
+            _emit(progress_callback, pdf_name, "EXTRACTION", "completed", "Extraction completed successfully")
         except Exception as exc:
             logger.error("PDF %s failed: %s", pdf_name, exc, exc_info=True)
+            _emit(progress_callback, pdf_name, "EXTRACTION", "failed", f"Extraction failed: {exc}")
             result = {
                 "pdf_name": pdf_name,
                 "error": str(exc),
@@ -101,37 +159,95 @@ def process_annual_reports(pdf_files: List[bytes]) -> List[dict]:
     return results
 
 
-def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
+def _process_single_pdf(
+    pdf_bytes: bytes,
+    pdf_name: str,
+    progress_callback: Optional[ProgressCallback] = None,
+    manual_page_mapping: Optional[Dict[str, List[int]]] = None,
+) -> dict:
     if not pdf_bytes:
         raise ValueError("PDF bytes are empty")
 
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        toc_page_indices = _find_toc_page(pdf)
-        # Anchor y/x to the first TOC page (offset is constant across the document)
-        toc_index = toc_page_indices[0]
-        first_toc_text = pdf.pages[toc_index - 1].extract_text() or ""
-
-        # Concatenate text from ALL detected TOC pages for complete regex coverage
-        toc_text = ""
-        for page_num in toc_page_indices:
-            text = pdf.pages[page_num - 1].extract_text() or ""
-            toc_text += "\n" + text
-
-        printed_page = _extract_printed_page_number(first_toc_text)
-        statement_refs = _parse_statement_references(toc_text)
-
-        logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
-        logger.info("PDF %s TOC anchor y=%s, printed page x=%s", pdf_name, toc_index, printed_page)
-
         total_pages = len(pdf.pages)
-        statement_pages = _resolve_statement_pages(
-            pdf,
-            toc_index,
-            printed_page,
-            statement_refs,
-            total_pages,
-            pdf_name,
-        )
+        toc_page_indices: List[int] = []
+        toc_text = ""
+        statement_refs: Dict[str, int] = {}
+        page_mappings: Dict[str, Dict[str, Optional[int]]] = {}
+        printed_page: Optional[int] = None
+        toc_index: Optional[int] = None
+
+        if manual_page_mapping:
+            offset_engine = DynamicPageOffsetResolutionEngine()
+            statement_refs = _normalize_manual_statement_refs(manual_page_mapping)
+            statement_pages = _normalize_manual_statement_pages(
+                pdf,
+                manual_page_mapping,
+                total_pages,
+                pdf_name,
+                offset_engine,
+            )
+            page_mappings = _build_page_mapping_diagnostics(pdf, statement_refs, offset_engine)
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "completed",
+                "Using corrected manual statement page mappings",
+                {"statement_pages": statement_pages, "page_mappings": page_mappings},
+            )
+        else:
+            toc_page_indices = _find_toc_page(pdf)
+            toc_index = toc_page_indices[0]
+            first_toc_text = pdf.pages[toc_index - 1].extract_text() or ""
+
+            for page_num in toc_page_indices:
+                text = pdf.pages[page_num - 1].extract_text() or ""
+                toc_text += "\n" + text
+
+            try:
+                printed_page = _extract_printed_page_number(first_toc_text)
+            except Exception as e:
+                logger.warning(f"Could not extract printed page number from TOC page footer: {e}")
+                printed_page = None
+
+            statement_refs = _parse_statement_references(toc_text)
+
+            logger.info("PDF %s TOC pages detected: %s", pdf_name, toc_page_indices)
+            logger.info("PDF %s TOC anchor y=%s, printed page x=%s", pdf_name, toc_index, printed_page)
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "running",
+                f"TOC pages detected: {toc_page_indices}",
+                {"toc_pages": toc_page_indices, "toc_text": toc_text, "statement_refs": statement_refs},
+            )
+
+            offset_engine = DynamicPageOffsetResolutionEngine()
+
+            statement_pages = _resolve_statement_pages(
+                pdf,
+                toc_index,
+                printed_page,
+                statement_refs,
+                total_pages,
+                pdf_name,
+                offset_engine,
+            )
+            page_mappings = _build_page_mapping_diagnostics(pdf, statement_refs, offset_engine)
+            _emit(
+                progress_callback,
+                pdf_name,
+                "STRUCTURE",
+                "completed",
+                "Statement pages resolved from TOC and heading scan",
+                {
+                    "statement_pages": statement_pages,
+                    "statement_refs": statement_refs,
+                    "page_mappings": page_mappings,
+                },
+            )
 
         statement_texts: Dict[str, str] = {}
         for key, page_indices in statement_pages.items():
@@ -142,13 +258,106 @@ def _process_single_pdf(pdf_bytes: bytes, pdf_name: str) -> dict:
             statement_texts[key] = combined_text
 
     statement_images = _render_statement_images(pdf_bytes, statement_pages, pdf_name)
+    _emit(progress_callback, pdf_name, "EXTRACTION", "running", "Statement page screenshots rendered")
     extracted = _extract_statements_parallel(statement_images, statement_texts, pdf_name)
 
     return {
         "pdf_name": pdf_name,
         "statement_pages": statement_pages,
+        "toc_pages": toc_page_indices,
+        "toc_text": toc_text,
+        "statement_refs": statement_refs,
+        "page_mappings": page_mappings,
+        "printed_page": printed_page,
+        "toc_anchor_page": toc_index,
         "statements": extracted,
     }
+
+
+def _normalize_manual_statement_pages(
+    pdf: pdfplumber.PDF,
+    manual_page_mapping: Dict[str, List[int]],
+    total_pages: int,
+    pdf_name: str,
+    offset_engine: DynamicPageOffsetResolutionEngine,
+) -> Dict[str, List[int]]:
+    aliases = {
+        "income": "income_statement",
+        "income_statement": "income_statement",
+        "balance": "balance_sheet",
+        "balance_sheet": "balance_sheet",
+        "cashflow": "cash_flow",
+        "cash_flow": "cash_flow",
+        "cash_flow_statement": "cash_flow",
+        "equity": "equity",
+        "comprehensive_income": "comprehensive_income",
+    }
+    resolved: Dict[str, List[int]] = {
+        key: [] for key in _EXTRACTABLE_STATEMENTS
+    }
+    for raw_key, raw_pages in manual_page_mapping.items():
+        key = aliases.get(str(raw_key))
+        if not key:
+            continue
+        pages = []
+        for raw_page in raw_pages or []:
+            try:
+                toc_page = int(raw_page)
+            except (TypeError, ValueError):
+                continue
+
+            if not (1 <= toc_page <= total_pages):
+                continue
+
+            keywords = _STATEMENT_KEYWORDS.get(key, [])
+            resolved_page = offset_engine.resolve_correct_pdf_page(pdf, toc_page, keywords)
+            validated_page = _validate_statement_page(pdf, resolved_page, key, total_pages)
+            page = validated_page or resolved_page
+            if 1 <= page <= total_pages and page not in pages:
+                pages.append(page)
+                logger.info(
+                    "PDF %s manual %s TOC/printed page %s resolved to PDF page %s",
+                    pdf_name,
+                    key,
+                    toc_page,
+                    page,
+                )
+
+                current_page = page
+                for offset in range(1, 4):
+                    next_page = current_page + offset
+                    if _is_next_page_continuation(pdf, current_page, next_page, key):
+                        if next_page not in pages:
+                            pages.append(next_page)
+                        current_page = next_page
+                    else:
+                        break
+        resolved[key] = pages
+    return resolved
+
+
+def _normalize_manual_statement_refs(manual_page_mapping: Dict[str, List[int]]) -> Dict[str, int]:
+    aliases = {
+        "income": "income_statement",
+        "income_statement": "income_statement",
+        "balance": "balance_sheet",
+        "balance_sheet": "balance_sheet",
+        "cashflow": "cash_flow",
+        "cash_flow": "cash_flow",
+        "cash_flow_statement": "cash_flow",
+        "equity": "equity",
+        "comprehensive_income": "comprehensive_income",
+    }
+    refs: Dict[str, int] = {}
+    for raw_key, raw_pages in manual_page_mapping.items():
+        key = aliases.get(str(raw_key))
+        if not key or not raw_pages:
+            continue
+        try:
+            refs[key] = int(raw_pages[0])
+        except (TypeError, ValueError):
+            continue
+    return refs
 
 
 def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:
@@ -198,12 +407,17 @@ def _find_toc_page(pdf: pdfplumber.PDF) -> list[int]:
         raise RuntimeError("Table of Contents page not found in first 20 pages")
 
     # Step 2 — detect continuation pages
+    non_toc_gap = 0
+    gap_tolerance = 2
     for i in range(start_idx + 1, max_scan):
         text = pdf.pages[i].extract_text() or ""
         if _looks_like_toc_continuation(text):
             toc_pages.append(i + 1)
+            non_toc_gap = 0
         else:
-            break
+            non_toc_gap += 1
+            if non_toc_gap > gap_tolerance:
+                break
 
     return toc_pages
 
@@ -372,27 +586,23 @@ def _resolve_statement_pages(
     references: Dict[str, int],
     total_pages: int,
     pdf_name: str,
+    offset_engine: DynamicPageOffsetResolutionEngine,
 ) -> Dict[str, List[int]]:
     resolved: Dict[str, List[int]] = {
-        "income_statement": [],
-        "balance_sheet": [],
-        "cash_flow": [],
-        "equity": [],
-        "comprehensive_income": [],
+        key: [] for key in _EXTRACTABLE_STATEMENTS
     }
 
     for statement_key in resolved.keys():
         resolved_page = None
         if statement_key in references:
             toc_page = references[statement_key]
-            real_page = toc_index - printed_page + toc_page
+            keywords = _STATEMENT_KEYWORDS.get(statement_key, [])
+            real_page = offset_engine.resolve_correct_pdf_page(pdf, toc_page, keywords)
             logger.info(
-                "PDF %s computed %s real page = %s (y=%s, x=%s, r=%s)",
+                "PDF %s computed %s real page = %s (TOC Page = %s)",
                 pdf_name,
                 statement_key,
                 real_page,
-                toc_index,
-                printed_page,
                 toc_page,
             )
             resolved_page = _validate_statement_page(pdf, real_page, statement_key, total_pages)
@@ -420,6 +630,37 @@ def _resolve_statement_pages(
                     break
 
     return resolved
+
+
+def _build_page_mapping_diagnostics(
+    pdf: pdfplumber.PDF,
+    references: Dict[str, int],
+    offset_engine: DynamicPageOffsetResolutionEngine,
+) -> Dict[str, Dict[str, Optional[int]]]:
+    diagnostics: Dict[str, Dict[str, Optional[int]]] = {}
+    for statement_key, toc_page in references.items():
+        try:
+            referenced_pdf_page = max(1, min(int(toc_page), len(pdf.pages)))
+            printed_page = offset_engine.detect_printed_page_number(pdf, referenced_pdf_page)
+            offset = referenced_pdf_page - printed_page if printed_page is not None else offset_engine.resolve_page_offset(pdf, int(toc_page))
+            corrected_pdf_page = max(1, min(int(toc_page) + int(offset), len(pdf.pages)))
+            diagnostics[statement_key] = {
+                "toc_page": int(toc_page),
+                "referenced_pdf_page": referenced_pdf_page,
+                "printed_page": printed_page,
+                "offset": int(offset),
+                "corrected_pdf_page": corrected_pdf_page,
+            }
+        except Exception as exc:
+            logger.warning("Could not build page mapping diagnostics for %s: %s", statement_key, exc)
+            diagnostics[statement_key] = {
+                "toc_page": int(toc_page) if str(toc_page).isdigit() else None,
+                "referenced_pdf_page": None,
+                "printed_page": None,
+                "offset": None,
+                "corrected_pdf_page": None,
+            }
+    return diagnostics
 
 
 def _validate_statement_page(
@@ -551,11 +792,20 @@ def _detect_scale_multiplier(page_text: str) -> int:
     if not page_text:
         return 1
     text = page_text.lower()
-    if "rs. bn" in text or "rs.bn" in text or "'000,000,000" in text:
+    header_text = "\n".join(text.splitlines()[:40])
+    if re.search(r"\b(?:rs\.?\s*)?bn\b", text) or "billion" in text or "'000,000,000" in text:
         return 1_000_000_000
-    elif "rs. mn" in text or "rs.mn" in text or "'000,000" in text:
+    elif re.search(r"\b(?:rs\.?\s*)?mn\b", text) or "million" in text or "'000,000" in text:
         return 1_000_000
-    elif "rs. '000" in text or "rs.'000" in text or "rs 000" in text or "rs. 000" in text or "(000)" in text or "in thousands" in text:
+    elif (
+        re.search(r"(?:rs\.?\s*'?000\b|'000\b)", text)
+        or re.search(r"(?m)^\s*'?000\s*$", header_text)
+        or re.search(r"(?m)\b(?:group|company|bank|consolidated|year|rs)\b.*'?000\b", header_text)
+        or re.search(r"(?m)'?000\b.*\b(?:group|company|bank|consolidated|year|rs)\b", header_text)
+        or "(000)" in text
+        or "in thousands" in text
+        or "thousand" in text
+    ):
         return 1_000
     return 1
 
@@ -563,6 +813,23 @@ def _apply_multiplier(data: Any, multiplier: int) -> Any:
     if multiplier == 1:
         return data
         
+    per_share_terms = (
+        "basic earnings per share",
+        "basic earnings per ordinary share",
+        "diluted earnings per share",
+        "diluted earnings per ordinary share",
+        "dividend per share",
+        "earnings_per_share",
+        "basic_earnings_per_share",
+        "diluted_earnings_per_share",
+        "dividend_per_share",
+    )
+
+    def is_per_share_key(key: Any) -> bool:
+        normalized = re.sub(r"[^a-z0-9]+", "_", str(key or "").lower()).strip("_")
+        words = normalized.replace("_", " ")
+        return any(term in words or term in normalized for term in per_share_terms)
+
     def multiply_value(val):
         if isinstance(val, (int, float)):
             return val * multiplier
@@ -589,13 +856,20 @@ def _apply_multiplier(data: Any, multiplier: int) -> Any:
 
     if isinstance(data, dict):
         for k, v in data.items():
+            if is_per_share_key(k):
+                data[k] = v
+                continue
             if isinstance(v, dict):
                 data[k] = _apply_multiplier(v.copy(), multiplier)
             elif isinstance(v, list):
                 new_list = []
                 for item in v:
                     if isinstance(item, dict):
-                        new_list.append(_apply_multiplier(item.copy(), multiplier))
+                        row_label = item.get("label") or item.get("item") or item.get("name") or item.get("description")
+                        if is_per_share_key(row_label):
+                            new_list.append(item)
+                        else:
+                            new_list.append(_apply_multiplier(item.copy(), multiplier))
                     else:
                         new_list.append(multiply_value(item))
                 data[k] = new_list

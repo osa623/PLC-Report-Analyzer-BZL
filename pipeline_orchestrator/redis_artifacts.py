@@ -6,6 +6,7 @@ endpoints so the Node backend / frontend can read pipeline results from Redis.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 
 from platform_core.contracts.canonical_dataset import (
@@ -120,11 +121,49 @@ def update_document_status(
     status: str,
     stage: str,
     ttl: int,
+    message: str | None = None,
+    error: str | None = None,
+    details: dict[str, Any] | None = None,
 ) -> None:
-    """Track per-PDF document status in a Redis hash."""
-    doc = json.dumps({"pdf_name": pdf_name, "status": status, "stage": stage})
-    redis_client.hset(f"report:{report_id}:document_statuses", pdf_name, doc)
-    redis_client.expire(f"report:{report_id}:document_statuses", ttl)
+    """Track per-PDF document status in a Redis hash with an append-only UI event trail."""
+    key = f"report:{report_id}:document_statuses"
+    existing = {}
+    try:
+        raw = redis_client.hget(key, pdf_name)
+        if raw:
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            existing = json.loads(raw)
+    except Exception:
+        existing = {}
+
+    events = existing.get("messages") if isinstance(existing.get("messages"), list) else []
+    if message or error:
+        events = [
+            *events[-49:],
+            {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "stage": stage,
+                "status": status,
+                "message": message or error,
+                "level": "error" if error else "info",
+            },
+        ]
+
+    doc = {
+        **existing,
+        "pdf_name": pdf_name,
+        "status": status,
+        "stage": stage,
+        "message": message or existing.get("message"),
+        "error": error or existing.get("error"),
+        "messages": events,
+    }
+    if details:
+        doc.update(details)
+
+    redis_client.hset(key, pdf_name, json.dumps(doc))
+    redis_client.expire(key, ttl)
 
 
 # ---------------------------------------------------------------------------

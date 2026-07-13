@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const pipelineRoutes = require('./routes/pipelineRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 function createApp() {
   const app = express();
@@ -9,6 +10,7 @@ function createApp() {
   app.use(express.json({ limit: '10mb' }));
 
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'node-backend' }));
+  app.use('/', authRoutes);
   app.use('/', pipelineRoutes);
   app.use('/', companyRoutes);
 

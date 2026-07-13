@@ -72,6 +72,7 @@ $servicePorts = @{
     "REPORTING_SERVICE_PORT" = Resolve-Port "REPORTING_SERVICE_PORT" 8003
     "PIPELINE_ORCHESTRATOR_PORT" = Resolve-Port "PIPELINE_ORCHESTRATOR_PORT" 8100
     "ANNUAL_REPORT_BACKEND_PORT" = Resolve-Port "ANNUAL_REPORT_BACKEND_PORT" 5000
+    "COMPANY_SERVICE_PORT" = Resolve-Port "COMPANY_SERVICE_PORT" 8005
 }
 
 foreach ($entry in $servicePorts.GetEnumerator()) {
@@ -88,6 +89,7 @@ Start-ServiceWindow "reporting_service :$($servicePorts['REPORTING_SERVICE_PORT'
 Start-ServiceWindow "pipeline_orchestrator :$($servicePorts['PIPELINE_ORCHESTRATOR_PORT'])" "$pySetup; `$env:PORT='$($servicePorts['PIPELINE_ORCHESTRATOR_PORT'])'; uvicorn pipeline_orchestrator.app:app --host 0.0.0.0 --port $($servicePorts['PIPELINE_ORCHESTRATOR_PORT'])$reloadFlag"
 Start-ServiceWindow "pipeline_worker" "$pySetup; python -m pipeline_orchestrator.worker"
 Start-ServiceWindow "annual-report-backend :$($servicePorts['ANNUAL_REPORT_BACKEND_PORT'])" "$pySetup; `$env:PORT='$($servicePorts['ANNUAL_REPORT_BACKEND_PORT'])'; python services/annual-report-backend/api_server.py"
+Start-ServiceWindow "company_service :$($servicePorts['COMPANY_SERVICE_PORT'])" "$pySetup; Set-Location '$repoRoot/services/company_service'; `$env:PORT='$($servicePorts['COMPANY_SERVICE_PORT'])'; uvicorn main:app --host 0.0.0.0 --port $($servicePorts['COMPANY_SERVICE_PORT'])$reloadFlag"
 Start-ServiceWindow "nodeBackend :$($servicePorts['NODE_BACKEND_PORT'])" "Set-Location '$repoRoot/nodeBackend'; `$env:PORT='$($servicePorts['NODE_BACKEND_PORT'])'; npm run dev"
 
 Write-Host "All services started from central .env."

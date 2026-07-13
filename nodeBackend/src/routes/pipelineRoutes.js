@@ -1,9 +1,10 @@
 const { Router } = require('express');
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
+const path = require('path');
 const upload = require('../utils/upload');
 const { getRedis } = require('../services/redisClient');
-const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline } = require('../services/pipelineClient');
+const { triggerExtract, triggerAnalyze, triggerGenerateReport, triggerFullPipeline, triggerRetryDocumentExtraction, triggerFinalizeCompletedBatch } = require('../services/pipelineClient');
 const {
   derivePipelineStatus,
   parseDocumentStatuses,
@@ -12,6 +13,8 @@ const {
 } = require('../services/pipelineContract');
 
 const router = Router();
+const WORKSPACE_ROOT = path.resolve(__dirname, '..', '..', '..');
+const PIPELINE_ARTIFACTS_ROOT = path.join(WORKSPACE_ROOT, 'pipeline_artifacts');
 
 const BASE_CURRENCY = 'LKR';
 const SUPPORTED_CURRENCIES = new Set(['LKR', 'USD']);
@@ -189,6 +192,218 @@ function parseJson(raw, fallback = null) {
   } catch {
     return fallback;
   }
+}
+
+function slugifyArtifact(value) {
+  const safe = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._ -]+/g, '')
+    .replace(/[ _.-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return safe || 'unknown-company';
+}
+
+function inferYearFromPdfName(pdfName = '') {
+  const match = String(pdfName).match(/(?:19|20)\d{2}/);
+  return match ? match[0] : null;
+}
+
+function humanizeLabel(value = '') {
+  return String(value || '')
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function isYearKey(value) {
+  return /^(?:19|20)\d{2}$/.test(String(value || ''));
+}
+
+function extractYearFromPath(pathParts = []) {
+  const direct = pathParts.find((part) => isYearKey(part));
+  if (direct) return direct;
+  const embedded = pathParts.map((part) => String(part).match(/(?:19|20)\d{2}/)).find(Boolean);
+  return embedded ? embedded[0] : null;
+}
+
+function extractEntityFromPath(pathParts = []) {
+  const known = ['group', 'consolidated', 'bank', 'company', 'standalone', 'parent', 'entity'];
+  return pathParts.find((part) => known.includes(String(part).toLowerCase())) || null;
+}
+
+function rowLabelFromObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  for (const key of ['label', 'row_header', 'description', 'name', 'title', 'line_item', 'account']) {
+    if (typeof value[key] === 'string' && value[key].trim()) {
+      return value[key].trim();
+    }
+  }
+  return '';
+}
+
+function primitiveValueKeys(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+  return Object.keys(value).filter((key) => {
+    const item = value[key];
+    return item == null || typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean';
+  });
+}
+
+function flattenStatementPayload(value, statementType, pdfName, rows, pathParts = []) {
+  if (value == null) {
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenStatementPayload(item, statementType, pdfName, rows, [...pathParts, String(index + 1)]));
+    return;
+  }
+
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 0) {
+      return;
+    }
+
+    const rowLabel = rowLabelFromObject(value);
+    const valueKeys = primitiveValueKeys(value);
+    const yearValueKeys = valueKeys.filter((key) => /(?:19|20)\d{2}/.test(key));
+    if (rowLabel && yearValueKeys.length) {
+      yearValueKeys.forEach((key) => {
+        rows.push({
+          row_id: `${statementType}-${rows.length}`,
+          report_name: pdfName,
+          report_year: String(key).match(/(?:19|20)\d{2}/)?.[0] || inferYearFromPdfName(pdfName),
+          statement_type: statementType,
+          entity: extractEntityFromPath([key]),
+          canonical_label: rowLabel,
+          original_label: rowLabel,
+          value: value[key],
+          year: String(key).match(/(?:19|20)\d{2}/)?.[0] || inferYearFromPdfName(pdfName),
+          confidence_score: null,
+          page_number: null,
+          source_path: [...pathParts, key].join('.'),
+        });
+      });
+      return;
+    }
+
+    keys.forEach((key) => flattenStatementPayload(value[key], statementType, pdfName, rows, [...pathParts, key]));
+    return;
+  }
+
+  const usefulPath = pathParts.filter((part) => !/^\d+$/.test(part));
+  const leaf = usefulPath[usefulPath.length - 1] || statementType;
+  const label = humanizeLabel(leaf);
+  const year = extractYearFromPath(pathParts) || inferYearFromPdfName(pdfName);
+  rows.push({
+    row_id: `${statementType}-${rows.length}`,
+    report_name: pdfName,
+    report_year: year,
+    statement_type: statementType,
+    entity: extractEntityFromPath(pathParts),
+    canonical_label: label,
+    original_label: label,
+    value,
+    year,
+    confidence_score: null,
+    source_path: pathParts.join('.'),
+  });
+}
+
+function buildDocumentExtractedRows(rawResult, pdfName) {
+  const statements = rawResult?.statements && typeof rawResult.statements === 'object' ? rawResult.statements : {};
+  const rows = [];
+  Object.entries(statements).forEach(([statementType, payload]) => {
+    flattenStatementPayload(payload, statementType, pdfName, rows);
+  });
+  return rows;
+}
+
+function buildStatementStatuses(rawResult) {
+  const requiredStatements = ['income_statement', 'balance_sheet', 'cash_flow', 'equity', 'comprehensive_income'];
+  const statements = rawResult?.statements && typeof rawResult.statements === 'object' ? rawResult.statements : {};
+  const statementPages = rawResult?.statement_pages && typeof rawResult.statement_pages === 'object' ? rawResult.statement_pages : {};
+  return Object.fromEntries(requiredStatements.map((statement) => [
+    statement,
+    {
+      status: statements[statement] ? 'completed' : 'failed',
+      pages: Array.isArray(statementPages[statement]) ? statementPages[statement] : [],
+      has_data: Boolean(statements[statement]),
+    },
+  ]));
+}
+
+function readCanonicalNormalizedResults() {
+  const normalizedPath = path.join(WORKSPACE_ROOT, 'services', 'extraction_service', 'normalized_results.json');
+  if (!fs.existsSync(normalizedPath)) {
+    return [];
+  }
+  return parseJson(fs.readFileSync(normalizedPath, 'utf8'), []);
+}
+
+function displayNormalizedValue(value) {
+  if (value == null || value === '') return '-';
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    return numeric.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  }
+  return String(value);
+}
+
+function selectPreferredNormalizedEntities(entities) {
+  const entries = Object.entries(entities && typeof entities === 'object' ? entities : {});
+  const groupEntries = entries.filter(([entity]) => {
+    const normalized = String(entity || '').trim().toLowerCase();
+    return normalized === 'group' || normalized === 'consolidated';
+  });
+  if (groupEntries.length > 0) {
+    return groupEntries.sort(([a], [b]) => {
+      const order = { group: 0, consolidated: 1 };
+      return (order[String(a).toLowerCase()] ?? 99) - (order[String(b).toLowerCase()] ?? 99);
+    });
+  }
+  return entries.sort(([a], [b]) => String(a).localeCompare(String(b)));
+}
+
+function buildNormalizedGroupedResults(normalizedRecords = []) {
+  const records = Array.isArray(normalizedRecords) ? normalizedRecords : [normalizedRecords].filter(Boolean);
+  return records
+    .filter((record) => record && typeof record === 'object')
+    .map((record) => {
+      const financials = record.financials && typeof record.financials === 'object' ? record.financials : {};
+      const years = Object.entries(financials)
+        .sort(([a], [b]) => String(a).localeCompare(String(b)))
+        .map(([year, entities]) => ({
+          year,
+          entities: selectPreferredNormalizedEntities(entities)
+            .map(([entity, statements]) => ({
+              entity,
+              statements: Object.entries(statements && typeof statements === 'object' ? statements : {})
+                .sort(([a], [b]) => String(a).localeCompare(String(b)))
+                .map(([statement_type, values]) => ({
+                  statement_type,
+                  label: humanizeLabel(statement_type),
+                  rows: Object.entries(values && typeof values === 'object' ? values : {}).map(([label, value]) => ({
+                    label,
+                    value,
+                    display_value: displayNormalizedValue(value),
+                  })),
+                })),
+            })),
+        }));
+
+      return {
+        company: record.company || 'Unknown',
+        source_pdf: record.source_pdf || record.pdf_name || 'Annual report',
+        years,
+      };
+    });
 }
 
 function clamp01(value) {
@@ -1316,7 +1531,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
   try {
     const redis = await getRedis();
     const reportId = req.params.reportId;
-    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr, extractionFailureStr, strictAnalysisStr, strictExtractionStr, extractionCoverageStr, rawExtractionSubstages, rawDocumentStatuses] = await Promise.all([
+    const [rawMeta, rawStages, uploadedFile, canonicalRawStr, validatedStr, ratiosStr, patternsStr, sectorStr, riskStr, confidenceStr, finalReportStr, extractionFailureStr, strictAnalysisStr, strictExtractionStr, extractionCoverageStr, rawExtractionSubstages, rawDocumentStatuses, normalizedResultsStr] = await Promise.all([
       redis.get(`report:${reportId}:meta`),
       redis.get(`report:${reportId}:pipeline_stages`),
       redis.get(`report:${reportId}:uploaded_file`),
@@ -1334,6 +1549,7 @@ router.get('/reports/:reportId', async (req, res, next) => {
       redis.get(`report:${reportId}:extraction_coverage`),
       redis.get(`report:${reportId}:extraction_substages`),
       redis.hGetAll(`report:${reportId}:document_statuses`),
+      redis.get(`report:${reportId}:normalized_results`),
     ]);
 
     const meta = parseJson(rawMeta, {});
@@ -1351,6 +1567,8 @@ router.get('/reports/:reportId', async (req, res, next) => {
     const strictExtraction = parseJson(strictExtractionStr, null);
     const extractionCoverage = parseJson(extractionCoverageStr, null);
     const extractionSubstages = parseJson(rawExtractionSubstages, {});
+    const normalizedResults = parseJson(normalizedResultsStr, null) || (uploadedFile ? [] : readCanonicalNormalizedResults());
+    const normalizedGroupedResults = buildNormalizedGroupedResults(normalizedResults);
     const documents = parseDocumentStatuses(rawDocumentStatuses);
     const pipelineStatus = derivePipelineStatus({
       stageState,
@@ -1444,6 +1662,8 @@ router.get('/reports/:reportId', async (req, res, next) => {
       data_views: {
         raw_data: canonicalRaw || null,
         cleaned_data: canonicalRaw || null,
+        normalized_results: normalizedResults,
+        normalized_grouped_results: normalizedGroupedResults,
         validated_data: validated
           ? {
               ...validated,
@@ -1521,6 +1741,160 @@ router.get('/pipeline/:reportId/documents', async (req, res, next) => {
     };
 
     return res.json({ report_id: reportId, documents, counts });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/pipeline/:reportId/documents/:pdfName/images/:filename', async (req, res, next) => {
+  try {
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const filename = path.basename(req.params.filename);
+    const imagePath = path.resolve(
+      PIPELINE_ARTIFACTS_ROOT,
+      reportId,
+      slugifyArtifact(path.parse(pdfName).name),
+      filename,
+    );
+
+    if (!imagePath.startsWith(path.resolve(PIPELINE_ARTIFACTS_ROOT))) {
+      return res.status(400).json({ error: 'Invalid image path' });
+    }
+    if (!fs.existsSync(imagePath)) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    return res.sendFile(imagePath);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.get('/pipeline/:reportId/documents/:pdfName/data', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const [rawResultPayload, normalizedResultsPayload] = await Promise.all([
+      redis.get(`report:${reportId}:document_result:${pdfName}`),
+      redis.get(`report:${reportId}:normalized_results`),
+    ]);
+    const rawResult = parseJson(rawResultPayload, null);
+    if (!rawResult) {
+      return res.status(404).json({ error: 'Extracted data not found for this annual report' });
+    }
+    const normalizedResults = parseJson(normalizedResultsPayload, null) || readCanonicalNormalizedResults();
+    const normalizedGrouped = buildNormalizedGroupedResults(normalizedResults).filter((record) => {
+      const source = String(record.source_pdf || '').toLowerCase();
+      const target = String(pdfName || '').toLowerCase();
+      return source === target || source.endsWith(target) || target.endsWith(source);
+    });
+
+    const rows = buildDocumentExtractedRows(rawResult, pdfName);
+    const byStatement = rows.reduce((acc, row) => {
+      acc[row.statement_type] ||= [];
+      acc[row.statement_type].push(row);
+      return acc;
+    }, {});
+    const byYear = rows.reduce((acc, row) => {
+      const year = row.report_year || 'unknown';
+      acc[year] ||= [];
+      acc[year].push(row);
+      return acc;
+    }, {});
+
+    return res.json({
+      report_id: reportId,
+      pdf_name: pdfName,
+      report_year: inferYearFromPdfName(pdfName),
+      toc_pages: rawResult.toc_pages || [],
+      toc_lines: rawResult.toc_text
+        ? String(rawResult.toc_text).split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 200)
+        : [],
+      statement_refs: rawResult.statement_refs || {},
+      page_mappings: rawResult.page_mappings || {},
+      statement_pages: rawResult.statement_pages || {},
+      statement_statuses: buildStatementStatuses(rawResult),
+      statement_images: rawResult.statement_images || {},
+      normalized_grouped: normalizedGrouped,
+      rows,
+      by_statement: byStatement,
+      by_year: byYear,
+      raw_result: rawResult,
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/pipeline/:reportId/documents/:pdfName/retry-extraction', async (req, res, next) => {
+  try {
+    const reportId = req.params.reportId;
+    const pdfName = decodeURIComponent(req.params.pdfName);
+    const selectedPages = req.body?.selectedPages;
+
+    if (!selectedPages || typeof selectedPages !== 'object' || Array.isArray(selectedPages)) {
+      return res.status(400).json({ error: 'selectedPages is required' });
+    }
+
+    const normalizedPages = {};
+    Object.entries(selectedPages).forEach(([key, value]) => {
+      const pages = Array.isArray(value)
+        ? value.map((page) => Number(page)).filter((page) => Number.isFinite(page) && page > 0)
+        : [];
+      if (pages.length) {
+        normalizedPages[key] = pages;
+      }
+    });
+
+    if (Object.keys(normalizedPages).length === 0) {
+      return res.status(400).json({ error: 'At least one valid page number is required' });
+    }
+
+    const response = await triggerRetryDocumentExtraction(reportId, pdfName, normalizedPages);
+    return res.json(response.data);
+  } catch (error) {
+    return next(error);
+  }
+});
+
+router.post('/pipeline/:reportId/finalize-completed-batch', async (req, res, next) => {
+  try {
+    const redis = await getRedis();
+    const reportId = req.params.reportId;
+    const [rawStatuses, ratiosRaw, finalReportRaw, normalizedRaw] = await Promise.all([
+      redis.hGetAll(`report:${reportId}:document_statuses`),
+      redis.get(`report:${reportId}:ratios`),
+      redis.get(`report:${reportId}:final_report`),
+      redis.get(`report:${reportId}:normalized_results`),
+    ]);
+
+    const documents = Object.values(rawStatuses || {}).map((raw) => parseJson(raw, null)).filter(Boolean);
+    const failed = documents.filter((doc) => String(doc.status || '').toLowerCase() === 'failed');
+    const completed = documents.filter((doc) => String(doc.status || '').toLowerCase() === 'completed');
+
+    if (finalReportRaw || ratiosRaw) {
+      return res.json({ status: 'already_completed', report_id: reportId });
+    }
+    if (documents.length === 0) {
+      return res.status(409).json({ error: 'No document statuses found for this report' });
+    }
+    if (failed.length) {
+      return res.status(409).json({ error: 'Cannot finalize while documents are failed', failed });
+    }
+    if (completed.length !== documents.length) {
+      return res.status(409).json({ error: 'Cannot finalize until all documents are completed', completed: completed.length, total: documents.length });
+    }
+
+    await redis.del(`report:${reportId}:extraction_failure`);
+    await triggerFinalizeCompletedBatch(reportId);
+    return res.json({
+      status: 'started',
+      report_id: reportId,
+      normalized_ready: Boolean(normalizedRaw),
+      completed: completed.length,
+      total: documents.length,
+    });
   } catch (error) {
     return next(error);
   }

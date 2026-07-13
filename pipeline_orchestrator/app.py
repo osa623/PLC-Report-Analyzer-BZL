@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from platform_core.job_framework import RedisQueue
 from . import storage
-from .full_pipeline import run_full_pipeline
+from .full_pipeline import finalize_completed_batch, retry_document_extraction, run_full_pipeline
 
 app = FastAPI(title="pipeline_orchestrator", version="0.1")
 
@@ -20,6 +20,16 @@ queue = RedisQueue("pipeline:jobs", url=os.environ.get("REDIS_URL", "redis://loc
 class RunFullPipelineRequest(BaseModel):
     pdf_paths: List[str]
     report_id: str | None = None
+
+
+class RetryDocumentExtractionRequest(BaseModel):
+    report_id: str
+    pdf_name: str
+    selected_pages: dict[str, list[int]]
+
+
+class FinalizeCompletedBatchRequest(BaseModel):
+    report_id: str
 
 
 @app.post("/submit")
@@ -74,6 +84,23 @@ async def healthz():
 @app.post("/run-full-pipeline")
 async def run_full_pipeline_endpoint(request: RunFullPipelineRequest, background_tasks: BackgroundTasks):
     background_tasks.add_task(run_full_pipeline, request.pdf_paths, request.report_id)
+    return JSONResponse({"status": "started", "report_id": request.report_id})
+
+
+@app.post("/retry-document-extraction")
+async def retry_document_extraction_endpoint(request: RetryDocumentExtractionRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(
+        retry_document_extraction,
+        request.report_id,
+        request.pdf_name,
+        request.selected_pages,
+    )
+    return JSONResponse({"status": "started", "report_id": request.report_id, "pdf_name": request.pdf_name})
+
+
+@app.post("/finalize-completed-batch")
+async def finalize_completed_batch_endpoint(request: FinalizeCompletedBatchRequest, background_tasks: BackgroundTasks):
+    background_tasks.add_task(finalize_completed_batch, request.report_id)
     return JSONResponse({"status": "started", "report_id": request.report_id})
 
 

@@ -7,7 +7,7 @@ from typing import Any
 
 
 _YEAR_ENTITY_RE = re.compile(
-    r"^(?P<year>\d{4})\s*\((?P<entity>Group|Bank|Company|Entity|Parent|Standalone)\)$",
+    r"^(?P<year>\d{4})\s*\((?P<entity>Group|Consolidated|Bank|Company|Entity|Parent|Standalone)\)$",
     re.IGNORECASE,
 )
 
@@ -39,6 +39,7 @@ _INCOME_FALLBACK_SECTION_KEYS = (
 )
 
 _ENTITY_PRIORITY = ("Group", "Consolidated", "Bank", "Company", "Entity", "Parent", "Standalone")
+_GROUP_ENTITY_KEYS = ("group", "consolidated")
 
 _DIRECT_FIELD_ALIASES = {
     "balance_sheet": {
@@ -123,20 +124,39 @@ def _currency_hint(payload: dict[str, Any]) -> str:
 
 def _detect_multiplier(currency_hint: str) -> float:
     hint = currency_hint.lower()
-    if "bn" in hint or "billion" in hint:
+    if re.search(r"\bbn\b", hint) or "billion" in hint:
         return 1_000_000_000.0
-    elif "mn" in hint or "million" in hint or "mln" in hint:
+    elif re.search(r"\bmn\b", hint) or "million" in hint or re.search(r"\bmln\b", hint):
         return 1_000_000.0
-    elif "000" in hint or "thousand" in hint or "k" in hint:
+    elif "000" in hint or "thousand" in hint or re.search(r"\bk\b", hint):
         return 1000.0
     return 1.0
 
 
-def _normalize_value(value: Any, currency_hint: str) -> float | None:
+def _is_per_share_label(label: Any) -> bool:
+    text = re.sub(r"\s+", " ", str(label or "").lower()).strip()
+    slug = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
+    return any(
+        term in text or term in slug
+        for term in (
+            "basic earnings per share",
+            "basic earnings per ordinary share",
+            "diluted earnings per share",
+            "diluted earnings per ordinary share",
+            "dividend per share",
+            "earnings_per_share",
+            "basic_earnings_per_share",
+            "diluted_earnings_per_share",
+            "dividend_per_share",
+        )
+    )
+
+
+def _normalize_value(value: Any, currency_hint: str, apply_multiplier: bool = True) -> float | None:
     number = _parse_number(value)
     if number is None:
         return None
-    multiplier = _detect_multiplier(currency_hint)
+    multiplier = _detect_multiplier(currency_hint) if apply_multiplier else 1.0
     result = number * multiplier
     # For large financial figures, round to integer to avoid ambiguous decimals
     # (e.g. 145.401 could be misread as 145,401 in some locales).
@@ -335,6 +355,7 @@ def _detect_master_years(rows: list[dict[str, Any]]) -> list[str]:
 
 def _get_year_value(row: dict[str, Any], year: str, currency_hint: str) -> float | None:
     matched_values: dict[str, float] = {}
+    apply_multiplier = not _is_per_share_label(_row_label(row))
 
     for key, value in row.items():
         if not isinstance(key, str):
@@ -342,7 +363,7 @@ def _get_year_value(row: dict[str, Any], year: str, currency_hint: str) -> float
         match = _YEAR_ENTITY_RE.match(key.strip())
         if not match or match.group("year") != year:
             continue
-        parsed = _normalize_value(value, currency_hint)
+        parsed = _normalize_value(value, currency_hint, apply_multiplier=apply_multiplier)
         if parsed is None:
             continue
         entity = match.group("entity").title()
@@ -400,8 +421,11 @@ def _field_map(statement_key: str, label: str) -> str | None:
             ("profit for the year", "net_profit"),
             ("equity holders of the bank", "profit_attributable_to_equity_holders"),
             ("non-controlling interests", "non_controlling_interests"),
+            ("basic earnings per share", "basic_earnings_per_share"),
             ("basic earnings per ordinary share (rs)", "basic_earnings_per_share"),
+            ("diluted earnings per share", "diluted_earnings_per_share"),
             ("diluted earnings per ordinary share (rs)", "diluted_earnings_per_share"),
+            ("dividend per share", "dividend_per_share"),
             ("dividend per share: gross (rs)", "dividend_per_share"),
         ]
     elif statement_key == "balance_sheet":
@@ -435,8 +459,8 @@ def _field_map(statement_key: str, label: str) -> str | None:
             ("other provisions", "other_provisions"),
             ("other liabilities", "other_liabilities"),
             ("subordinated term debts", "subordinated_term_debts"),
-            ("total assets", "current_assets"),
-            ("total liabilities", "current_liabilities"),
+            ("current assets", "current_assets"),
+            ("current liabilities", "current_liabilities"),
             ("total assets", "total_assets"),
             ("total liabilities", "total_liabilities"),
             ("total equity", "total_equity"),
@@ -467,8 +491,8 @@ def _field_map(statement_key: str, label: str) -> str | None:
             ("other assets", "other_assets"),
             ("purchase_and_construction_of_property_plant_equipment","CapEx"),
             ("purchase_of_property_plant_equipment", "CapEx"),
-            ("net_cash_inflow_from_operating_activities","operating cash_flow"),
-            ("net_cash_flow","operating cash_flow"),
+            ("cash_and_cash_equivalents_at_end_of_the_year","operating cash_flow"),
+            ("total_cash_flow", "operating cash_flow"),
             ("increase/(decrease) in operating liabilities", "increase_decrease_in_operating_liabilities"),
             ("financial liabilities measured at amortised cost - due to depositors", "due_to_depositors"),
             ("financial liabilities measured at amortised cost - other borrowings", "other_borrowings"),
@@ -538,11 +562,15 @@ def _build_from_financials_format(
             continue
             
         lowercase_keys = {k.lower(): k for k in entities_data.keys()}
-        # Process standalone/parent/entity first, then group/consolidated last
-        # so group-level values overwrite standalone (last-write-wins).
-        entity_priorities = ["standalone", "parent", "entity", "company", "bank", "consolidated", "group"]
-        other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
-        ordered_keys_to_process = other_keys + entity_priorities
+        group_keys = [key for key in _GROUP_ENTITY_KEYS if key in lowercase_keys]
+        # If group/consolidated data is present for a year, use only that
+        # entity set. Do not fill missing fields from bank/company/standalone.
+        if group_keys:
+            ordered_keys_to_process = [key for key in ("consolidated", "group") if key in lowercase_keys]
+        else:
+            entity_priorities = ["standalone", "parent", "entity", "company", "bank"]
+            other_keys = [k for k in lowercase_keys.keys() if k not in entity_priorities]
+            ordered_keys_to_process = other_keys + entity_priorities
         
         for k_lower in ordered_keys_to_process:
             if k_lower not in lowercase_keys:
