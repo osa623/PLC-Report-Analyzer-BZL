@@ -1,93 +1,159 @@
 # PLC Report Analyzer BZL
 
-Last updated: 2026-05-26
+Last updated: 2026-07-13
 
-Enterprise annual report analysis platform with a Node API gateway, Python pipeline services, Redis-backed transient artifacts, and generated analytical outputs (JSON plus styled PDF).
+Financial reports analytics platform for PLC annual reports. The repository implements a validation-gated pipeline that ingests PDFs, extracts and normalizes financial statements, validates the data, computes ratios and risk signals, and generates narrative and PDF outputs with transparent scope and limitation reporting.
 
-## Current System Architecture
+## Current System
 
-The system operates under a strict "Data First" architecture, where algorithmic validation rules enforce data correctness and AI is treated as an extraction assistant governed by strict structural boundaries. 
+This repository currently runs as a Node API gateway plus Python service modules and a background worker path:
 
-The pipeline ensures high accuracy through multi-extactor reconciliation, cross-statement validation, and absolute gateway checks before progressing to analytics.
+1. Node API gateway for upload orchestration and consolidated retrieval
+2. Extraction service for PDF parsing, structure detection, and canonical raw output
+3. Analysis service for validation, normalization, ratios, patterns, confidence, and risk
+4. Reporting service for narrative assembly and PDF generation
+5. Pipeline orchestrator API for queued job submission and retrieval
+6. Annual-report backend for auxiliary annual-report processing
+7. Pipeline worker (no HTTP port) that consumes queued orchestrator jobs
 
-### Active Services and Ports
+## Active Services and Ports
 
 | System | Running Port | Purpose |
 |---|---:|---|
-| nodeBackend | 3000 | Primary API entry, upload orchestration, pipeline monitoring, and state governance |
-| extraction_service | 8001 | PDF extraction executing multi-extractor voting and cross-statement reconciliation |
-| analysis_service | 8002 | Coverage scoring gates, accounting validation, advanced reporting & analytical logic |
+| nodeBackend | 3000 | Primary API entry, upload orchestration, and consolidated pipeline retrieval |
+| extraction_service | 8001 | PDF parsing, structure detection, extraction, and canonical raw artifacts |
+| analysis_service | 8002 | Validation gates, scale harmonization, ratios, patterns, confidence, and risk scoring |
 | reporting_service | 8003 | Final narrative composition and professional PDF report generation |
 | pipeline_orchestrator | 8100 | Queue-oriented job submission, status tracking, and result handling |
 | annual-report-backend | 5000 | Auxiliary annual-report processing backend |
-| pipeline_worker | no port | Background worker consuming orchestrator queue jobs |
+| pipeline_worker | no port | Background worker that consumes orchestrator queue jobs |
 
-## End-to-End Execution Flow
+## Full Runtime Flow
 
-### 1. Environment and Dependencies
+The latest flow is validation-gated and data-first:
 
-1. Create and activate virtual environment:
-`powershell
-python -m venv .venv
-. .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-`
+1. The frontend upload page calls `uploadReports(files)`.
+2. `POST /api/reports` stores upload metadata and starts the pipeline.
+3. The Node backend forwards the batch to the orchestrator path.
+4. The orchestrator runs the core document flow:
+	- document parsing
+	- structure detection
+	- parallel extraction
+	- reconciliation and aggregation
+	- validation gating
+	- analytics computation
+	- report generation
+5. Extracted and validated artifacts are written to Redis and the local pipeline storage.
+6. The Node API returns consolidated report, pipeline, raw, canonical, validated, analytics, and error responses.
+7. The frontend renders progress, validation, and dashboard views from the backend status contract.
 
-2. Create central environment file:
-`powershell
-Copy-Item .env.sample .env
-`
-Ensure all port and provider keys (e.g., GEMINI_API_KEY) are assigned correctly.
+## Validation and Data Rules
 
-### 2. Services Initialization
+1. The pipeline is not complete until the validated canonical dataset exists.
+2. Analysis and reporting must use validated data, not partial extraction output.
+3. Low-confidence or single-year runs still complete, but the UI must show the limitation explicitly.
+4. Missing or incomplete inputs should appear as transparent pipeline state, not silent fallback data.
 
-Use the central launcher script to bootstrap the full backend stack:
-`powershell
-.\scripts\start_services.ps1
-`
-*(Optionally include -NoReload in production/staging environments)*
+### Frontend state contract
 
-### 3. Pipeline Processing Stages
+The dashboard is driven by a single backend `pipeline_status` value:
 
-To ensure deterministic reliability, the backend orchestrates operations across granular, globally reported stages:
+- `PROCESSING`
+- `EXTRACTION_INCOMPLETE`
+- `VALIDATED_READY`
 
-1. **DOCUMENT_INGESTION**: Uploaded pipeline ingestion.
-2. **PAGE_CLASSIFICATION**: Classifying document segments and structure.
-3. **STATEMENT_DETECTION**: Identifying financial structures and bounds.
-4. **MULTI_EXTRACTOR_EXECUTION**: Executing specialized extractors (Balance Sheet, Cash Flow, Income, ESG, etc.) backed by \platform_core\.
-5. **CROSS_EXTRACTOR_RECONCILIATION**: Normalizing cross-linked entries and ensuring values align.
-6. **ACCOUNTING_VALIDATION**: Mathematical integrity verification (e.g., balance sheet identity).
-7. **COVERAGE_SCORING_GATE**: Strict hard-gate preventing unvalidated metrics from entering the reporting layer.
-8. **FINANCIAL_ANALYSIS**: Engine derivations for ratios, risk signals, and patterns.
-9. **REPORT_GENERATION**: PDF structuring, final data aggregation, and finalization.
+The frontend should only render analytics when `VALIDATED_READY` is present.
 
-### 4. System Output State Contract
+## Repository Architecture
 
-The nodeBackend governs the frontend's visual state through a mutually-exclusive global output phase:
-- **PROCESSING**: Dashboard renders live Pipeline Monitor (stages, statuses, progress logs) without prematurely showing metrics.
-- **EXTRACTION_INCOMPLETE**: Triggered when extraction fails the coverage or accounting gate. Interface delegates to an Extraction Audit Report detailing missing/failed equations without generating falsified analytics.
-- **VALIDATED_READY**: Pipeline succeeded, unlocking full analytics rendering, charting, and report PDF retrieval.
+### Backend and orchestration
 
-### Analytical and Domain Controls
-1. Balance sheet & identity assertions
-2. Standardized LKR normalization limits
-3. Cross-statement net income verification
-4. Chronological aggregation validation
-5. Fallback heuristics for non-machine-readable documents
+- `nodeBackend/` - Express gateway, routes, orchestration, upload handling, and response shaping.
+- `pipeline_orchestrator/` - queue-based job submission, status tracking, and batch execution.
+- `services/annual-report-backend/` - auxiliary annual report processing backend.
+- `services/company_service/` - company-related support logic.
+- `platform_core/` - shared infrastructure for service bootstrap, jobs, storage, validation, and LLM access.
 
-## Frontend Ecosystem
+### Pipeline services
 
-The platform exposes pipeline interactions through multiple clients:
-1. **mobile** (React Native / Expo app): Full flow interface optimized for mobile presentation. Start via \cd mobile; npm install; npm start\.
-2. **frontend** (Vite React app): Standard web application for extensive auditing.
-3. **frontend_I** (Legacy Vite React app): Alternate dashboard view interface.
+- `services/extraction_service/` - PDF parsing, page classification, structure detection, statement extraction, and canonical raw outputs.
+- `services/analysis_service/` - normalization, validation, ratios, risk, patterns, confidence, and canonical validated outputs.
+- `services/reporting_service/` - narrative composition, report assembly, and final PDF generation.
 
-## Repository Focus Areas & Design
+### Frontend and delivery
 
-- \platform_core/\: Shared backend architecture, interfaces, utilities, and infrastructure ensuring DRY principles across all python extractors.
-- \alance_sheet_extractor, cashflow_statement_extractor, esg_extractor, risk_extractor\, etc.: Micro-domain extraction endpoints.
-- \
-odeBackend/\: Express API gateway, deterministic state reporting (\pipelineContract\), and web routing.
-- \pipeline_orchestrator/\: Redised Async job execution workflows.
+- `frontend/` - Vite React app with upload, processing, mapping, validation, and dashboard routes.
+- `uploads/`, `outputs/`, `pipeline_artifacts/`, and `logs/` - file and runtime artifacts used by the pipeline.
 
-*All services utilize Redis for transient artifact storage and orchestration progression. Output analytical documents are collected permanently and temporarily stored financial segments are deleted post-run.*
+### Shared assets and support
+
+- `database/schema.sql` - relational schema definitions.
+- `docs/` - architecture notes, runbooks, observability guides, privacy, and rollout material.
+- `scripts/` - startup, health, and diagnostic scripts.
+- `tests/` - regression and step-based validation suites.
+
+## Key Data Artifacts
+
+Primary Redis and pipeline artifacts include:
+
+- `report:{report_id}:document_chunks`
+- `report:{report_id}:structure`
+- `report:{report_id}:canonical_raw`
+- `report:{report_id}:canonical_validated`
+- `report:{report_id}:ratios`
+- `report:{report_id}:patterns`
+- `report:{report_id}:risk`
+- `report:{report_id}:final_report`
+
+Filesystem outputs commonly land under:
+
+- `pipeline_artifacts/{report_id}/...`
+- `logs/{company}/{timestamp}/...`
+- `data/eval/` for final report and benchmark outputs when enabled
+
+## Workflow States
+
+The Node pipeline tracker currently uses these workflow states:
+
+- `UPLOADED`
+- `EXTRACTING`
+- `ANALYZING`
+- `GENERATING_REPORT`
+- `COMPLETED`
+- `LOW_CONFIDENCE`
+- `FAILED`
+
+## Service Endpoints and User Flows
+
+1. Upload flow: `POST /api/reports`
+2. Status flow: `GET /api/reports/:reportId`, `GET /api/pipeline/:reportId/stages`
+3. Document inspection: `GET /api/pipeline/:reportId/documents`
+4. Per-file detail: `GET /api/pipeline/:reportId/documents/:pdfName/data`
+5. Retry flow: `POST /api/pipeline/:reportId/documents/:pdfName/retry-extraction`
+6. Download flow: `GET /api/reports/:reportId/download`
+
+## Setup and Run
+
+1. Create and activate a Python virtual environment.
+2. Install dependencies from `requirements.txt`.
+3. Copy `.env.sample` to `.env` and set the required service URLs and provider keys.
+4. Start services with `.\scripts\start_services.ps1`.
+5. Verify ports with the `check-service-ports` workspace task.
+
+## Operational Notes
+
+1. Prefer `scripts/start_services.ps1` so all services use the same environment source.
+2. Restart all services if code changes do not show up in behavior.
+3. Keep temporary extracted statement artifacts out of permanent storage.
+4. Preserve LKR values and report the reporting-year scope explicitly.
+
+## Repository Focus Areas
+
+- `nodeBackend`: API gateway, orchestration, and consolidated retrieval
+- `services/extraction_service`: extraction, structure, and canonical raw artifacts
+- `services/analysis_service`: validation, normalization, analytics, and scoring
+- `services/reporting_service`: report generation and final outputs
+- `pipeline_orchestrator`: queue API and job lifecycle
+- `platform_core`: shared contracts and infrastructure
+- `frontend`: UI, state-driven pipeline monitoring, and inspection
+- `scripts`, `docs`, and `tests`: operations, architecture, and regression coverage
